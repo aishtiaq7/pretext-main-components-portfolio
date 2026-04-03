@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Lenis from 'lenis'
 import { prepareWithSegments } from '@chenglou/pretext'
 import type { PreparedTextWithSegments } from '@chenglou/pretext'
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion'
@@ -8,6 +9,7 @@ import { createOrb, moveOrbs, orbToObstacle, pauseAllOrbs } from './orbs'
 import { syncPool, renderHeadlineLines, renderBodyLines, renderOrbs, renderDropCap } from './renderer'
 import { Main } from './components/Main'
 import { TextString } from './components/TextString'
+import { ClockSection } from './components/ClockSection'
 import { ScrollSection } from './components/ScrollSection'
 import type { Orb, OrbDef, Stats } from './types'
 
@@ -52,6 +54,14 @@ export default function App() {
   const [stats, setStats] = useState<Stats>({ lines: 0, reflow: '0.0', fps: 60, cols: 0 })
   const [orbsHidden, setOrbsHidden] = useState(false)
   const orbsHiddenRef = useRef(false)
+
+  // Lenis smooth scroll
+  useEffect(() => {
+    const lenis = new Lenis({ lerp: 0.08, smoothWheel: true })
+    function raf(time: number) { lenis.raf(time); requestAnimationFrame(raf) }
+    requestAnimationFrame(raf)
+    return () => lenis.destroy()
+  }, [])
 
   useEffect(() => {
     const checkZoom = () => {
@@ -239,8 +249,12 @@ export default function App() {
         />
       </ScrollSection>
 
-      <ScrollSection fadeIn fadeOut={false}>
+      <ScrollSection fadeIn fadeOut>
         <TextString />
+      </ScrollSection>
+
+      <ScrollSection fadeIn fadeOut={false}>
+        <ClockSection />
       </ScrollSection>
     </>
   )

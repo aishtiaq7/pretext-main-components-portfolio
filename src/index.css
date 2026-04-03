@@ -49,8 +49,8 @@
   padding: 0;
 }
 
-html {
-  scroll-behavior: smooth;
+html.lenis, html.lenis body {
+  height: auto;
 }
 
 html, body {
@@ -104,7 +104,7 @@ body {
 /* ScrollSection — reusable section wrapper with scroll-driven fade */
 .scroll-section {
   position: relative;
-  height: 200vh;
+  height: 120vh;
 }
 
 .scroll-section-sticky {
@@ -112,6 +112,7 @@ body {
   top: 0;
   height: 100vh;
   overflow: hidden;
+  background: radial-gradient(ellipse at 50% 40%, #0f0f14 0%, #0a0a0c 100%);
 }
 
 /* Section 1: main + stage + orbs */
@@ -245,4 +246,70 @@ kbd {
   border-bottom-width: 2px;
   border-radius: 4px;
   vertical-align: baseline;
+}
+
+/* Clock section (Section 3) */
+.clock-section {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.clock-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.clock-canvas {
+  position: absolute;
+  z-index: 10;
+  cursor: grab;
+  pointer-events: auto;
+  box-shadow: 0 0 80px rgba(252, 49, 76, 0.25);
+  border-radius: 50%;
+}
+
+.clock-canvas:active {
+  cursor: grabbing;
+}
+
+.clock-headline-line {
+  position: absolute;
+  white-space: pre;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+  z-index: 2;
+}
+
+.clock-body-line {
+  position: absolute;
+  white-space: pre;
+  z-index: 1;
+  color: #e8e4dc;
+}
+
+.clock-drop-cap {
+  position: absolute;
+  z-index: 2;
+  font-weight: 700;
+  color: #FC314C;
+}
+
+.clock-pq-box {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+  border-left: 3px solid #FC314C;
+  padding-left: 14px;
+}
+
+.clock-pq-line {
+  position: absolute;
+  white-space: pre;
+  font-style: italic;
+  color: #FC6D80;
 }
