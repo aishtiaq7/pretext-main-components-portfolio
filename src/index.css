@@ -315,3 +315,57 @@ kbd {
   .site-header { padding: 8px 16px; gap: 12px; }
   .header-hints { font-size: 11px; gap: 3px 12px; }
 }
+
+/* TextString section */
+.textstring-section {
+  position: relative;
+  min-height: 100vh;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+
+.textstring-container {
+  position: relative;
+  width: 100%;
+  /* max-width: 600px; */
+  height: 100vh;
+  margin: 0 auto;
+  padding: 0 20px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.textstring-letter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  font: 20px Georgia, serif;
+  line-height: 1;
+  color: #e8e4dc;
+  pointer-events: none;
+  white-space: pre;
+}
+
+.textstring-letter.draggable {
+  pointer-events: auto;
+  cursor: grab;
+  z-index: 10;
+  touch-action: none;
+}
+
+.textstring-letter.dragging {
+  cursor: grabbing;
+}
+
+.textstring-hint {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s;
+  font: 600 14px var(--font-body);
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

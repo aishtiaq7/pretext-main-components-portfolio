@@ -8,7 +8,8 @@ import { createOrb, moveOrbs, orbToObstacle, pauseAllOrbs } from './orbs'
 import { syncPool, renderHeadlineLines, renderBodyLines, renderOrbs, renderDropCap } from './renderer'
 import { Header } from './components/Header'
 import { Main } from './components/Main'
-import { Footer } from './components/Footer'
+// import { Footer } from './components/Footer'
+import { TextString } from './components/TextString'
 import type { Orb, OrbDef, Stats } from './types'
 
 const BODY_FONT = '18px "Atkinson Hyperlegible", system-ui, sans-serif'
@@ -51,6 +52,7 @@ export default function App() {
   const skipAnimation = respectMotionPref && reducedMotion
   const [textReady, setTextReady] = useState(false)
   const [liveMessage, setLiveMessage] = useState('')
+  // @ts-expect-error Footer temporarily commented out
   const [stats, setStats] = useState<Stats>({ lines: 0, reflow: '0.0', fps: 60, cols: 0 })
   const [orbsHidden, setOrbsHidden] = useState(false)
   const orbsHiddenRef = useRef(false)
@@ -130,7 +132,15 @@ export default function App() {
 
     syncPool(stageRef.current, linePoolRef.current, allBodyLines.length, 'line')
     renderBodyLines(linePoolRef.current, allBodyLines, BODY_FONT, BODY_LINE_HEIGHT)
-    if (!hideOrbs) renderOrbs(orbsRef.current, orbElsRef.current, scrollY)
+    if (!hideOrbs) {
+      // Hide orbs once user scrolls past the first section
+      const stageBottom = stageRef.current.getBoundingClientRect().bottom
+      const orbContainer = stageRef.current.parentElement?.querySelector('.orb-container') as HTMLElement | null
+      if (orbContainer) {
+        orbContainer.style.visibility = stageBottom < 0 ? 'hidden' : ''
+      }
+      renderOrbs(orbsRef.current, orbElsRef.current, scrollY)
+    }
 
     if (!isStatic) {
       fpsTimestamps.current.push(now)
@@ -244,7 +254,9 @@ export default function App() {
         onOrbFocus={(label) => setLiveMessage(`${label} selected. Use Option plus arrow keys to move, Space to pause.`)}
       />
 
-      <Footer stats={stats} />
+      <TextString />
+
+      {/* <Footer stats={stats} /> */}
     </>
   )
 }
