@@ -64,15 +64,13 @@ export const renderBodyLines = (
 export const renderOrbs = (
   orbs: Orb[],
   orbEls: (HTMLButtonElement | null)[],
-  scrollY: number,
 ) => {
   for (let i = 0; i < orbs.length; i++) {
     const o = orbs[i]
     const el = orbEls[i]
     if (!el) continue
-    const visualY = o.paused ? o.y - (scrollY - o.frozenScrollY) : o.y
     el.style.left = `${o.x - o.r}px`
-    el.style.top = `${visualY - o.r}px`
+    el.style.top = `${o.y - o.r}px`
     el.style.width = `${o.r * 2}px`
     el.style.height = `${o.r * 2}px`
     el.style.visibility = 'visible'

@@ -48,15 +48,14 @@ const applyRepulsion = (orbs: Orb[], dt: number) => {
   }
 }
 
-export const orbToObstacle = (o: Orb, scrollY: number): CircleObs => ({
+export const orbToObstacle = (o: Orb): CircleObs => ({
   cx: o.x,
-  cy: o.paused ? o.y + o.frozenScrollY : o.y + scrollY,
+  cy: o.y,
   r: o.r, hPad: 14, vPad: 4,
 })
 
-export const pauseAllOrbs = (orbs: Orb[], paused: boolean, scrollY: number) => {
+export const pauseAllOrbs = (orbs: Orb[], paused: boolean) => {
   for (const o of orbs) {
     o.paused = paused
-    if (paused) o.frozenScrollY = scrollY
   }
 }

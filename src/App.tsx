@@ -6,10 +6,9 @@ import { PARAGRAPHS } from './content'
 import { fitHeadline, layoutPages, measureDropCap } from './layout'
 import { createOrb, moveOrbs, orbToObstacle, pauseAllOrbs } from './orbs'
 import { syncPool, renderHeadlineLines, renderBodyLines, renderOrbs, renderDropCap } from './renderer'
-import { Header } from './components/Header'
 import { Main } from './components/Main'
-// import { Footer } from './components/Footer'
 import { TextString } from './components/TextString'
+import { ScrollSection } from './components/ScrollSection'
 import type { Orb, OrbDef, Stats } from './types'
 
 const BODY_FONT = '18px "Atkinson Hyperlegible", system-ui, sans-serif'
@@ -18,9 +17,6 @@ const HEADLINE_FONT_FAMILY = '"Atkinson Hyperlegible", system-ui, sans-serif'
 const HEADLINE_TEXT = 'Text animations and accessibility'
 const GUTTER = 48
 const COL_GAP = 40
-const STATS_BAR_HEIGHT = 42
-const HINT_BAR_HEIGHT = 40
-const BOTTOM_RESERVE = STATS_BAR_HEIGHT + HINT_BAR_HEIGHT + 12
 const DROP_CAP_LINES = 3
 const PARAGRAPH_GAP = Math.round(BODY_LINE_HEIGHT * 0.7)
 const MOVE_STEP = 20
@@ -86,12 +82,11 @@ export default function App() {
     lastTimeRef.current = now
 
     const { clientWidth: pw, clientHeight: ph } = document.documentElement
-    const { scrollY } = window
 
     const hideOrbs = orbsHiddenRef.current
     if (!isStatic && !hideOrbs) moveOrbs(orbsRef.current, dt, pw, ph)
 
-    const circleObs = hideOrbs ? [] : orbsRef.current.map((o) => orbToObstacle(o, scrollY))
+    const circleObs = hideOrbs ? [] : orbsRef.current.map((o) => orbToObstacle(o))
     const t0 = performance.now()
 
     const headlineMaxW = Math.min(pw - GUTTER * 2, 900)
@@ -105,7 +100,7 @@ export default function App() {
     renderHeadlineLines(headlinePoolRef.current, hlLines, hlLeft, GUTTER, hlFont, hlLineHeight)
 
     const bodyTop = GUTTER + hlHeight + 20
-    const pageHeight = ph - BOTTOM_RESERVE - GUTTER
+    const pageHeight = ph - GUTTER * 2
     const colCount = pw > 1000 ? 3 : pw > 640 ? 2 : 1
     const totalGutter = GUTTER * 2 + COL_GAP * (colCount - 1)
     const colWidth = Math.floor((Math.min(pw, 1100) - totalGutter) / colCount)
@@ -127,19 +122,15 @@ export default function App() {
     })
 
     const reflowTime = performance.now() - t0
-    const maxLineY = allBodyLines.reduce((max, l) => Math.max(max, l.y), 0)
-    stageRef.current.style.height = `${Math.max(ph, maxLineY + BODY_LINE_HEIGHT + BOTTOM_RESERVE + GUTTER)}px`
+
+    // Lock stage to viewport height — ScrollSection clips overflow
+    stageRef.current.style.height = `${ph}px`
 
     syncPool(stageRef.current, linePoolRef.current, allBodyLines.length, 'line')
     renderBodyLines(linePoolRef.current, allBodyLines, BODY_FONT, BODY_LINE_HEIGHT)
+
     if (!hideOrbs) {
-      // Hide orbs once user scrolls past the first section
-      const stageBottom = stageRef.current.getBoundingClientRect().bottom
-      const orbContainer = stageRef.current.parentElement?.querySelector('.orb-container') as HTMLElement | null
-      if (orbContainer) {
-        orbContainer.style.visibility = stageBottom < 0 ? 'hidden' : ''
-      }
-      renderOrbs(orbsRef.current, orbElsRef.current, scrollY)
+      renderOrbs(orbsRef.current, orbElsRef.current)
     }
 
     if (!isStatic) {
@@ -156,7 +147,7 @@ export default function App() {
       e.preventDefault()
       setIsPaused((p) => {
         const next = !p
-        pauseAllOrbs(orbsRef.current, next, window.scrollY)
+        pauseAllOrbs(orbsRef.current, next)
         setLiveMessage(next ? 'All orbs paused' : 'All orbs resumed')
         return next
       })
@@ -177,7 +168,6 @@ export default function App() {
 
   const toggleOrbPause = (orb: Orb) => {
     orb.paused = !orb.paused
-    if (orb.paused) orb.frozenScrollY = window.scrollY
     setLiveMessage(`${orb.label}: ${orb.paused ? 'paused' : 'moving'}`)
     if (orbsRef.current.every((o) => o.paused)) setIsPaused(true)
     else if (orbsRef.current.every((o) => !o.paused)) setIsPaused(false)
@@ -212,7 +202,7 @@ export default function App() {
     if (!orb) return
     const actions: Record<string, () => void> = {
       ArrowUp:    () => { orb.y = Math.max(orb.r, orb.y - MOVE_STEP) },
-      ArrowDown:  () => { orb.y = Math.min(window.innerHeight - BOTTOM_RESERVE - orb.r, orb.y + MOVE_STEP) },
+      ArrowDown:  () => { orb.y = Math.min(window.innerHeight - orb.r, orb.y + MOVE_STEP) },
       ArrowLeft:  () => { orb.x = Math.max(orb.r, orb.x - MOVE_STEP) },
       ArrowRight: () => { orb.x = Math.min(window.innerWidth - orb.r, orb.x + MOVE_STEP) },
       ' ':        () => toggleOrbPause(orb),
@@ -225,38 +215,33 @@ export default function App() {
   const toggleGlobalPause = () => {
     const next = !isPaused
     setIsPaused(next)
-    pauseAllOrbs(orbsRef.current, next, window.scrollY)
+    pauseAllOrbs(orbsRef.current, next)
     setLiveMessage(next ? 'All orbs paused' : 'All orbs resumed')
   }
 
   return (
     <>
-      <Header
-        isPaused={isPaused}
-        respectMotionPref={respectMotionPref}
-        onTogglePause={toggleGlobalPause}
-        onToggleMotionPref={() => setRespectMotionPref((r) => !r)}
-      />
+      <ScrollSection fadeIn={false} fadeOut>
+        <Main
+          headlineText={HEADLINE_TEXT}
+          stageRef={stageRef}
+          dropCapElRef={dropCapElRef}
+          orbDefs={ORB_DEFS}
+          orbElsRef={orbElsRef}
+          orbs={orbsRef.current}
+          orbsHidden={orbsHidden}
+          liveMessage={liveMessage}
+          onOrbPointerDown={handleOrbPointerDown}
+          onOrbPointerMove={handleOrbPointerMove}
+          onOrbPointerUp={handleOrbPointerUp}
+          onOrbKeyDown={handleOrbKeyDown}
+          onOrbFocus={(label) => setLiveMessage(`${label} selected. Use Option plus arrow keys to move, Space to pause.`)}
+        />
+      </ScrollSection>
 
-      <Main
-        headlineText={HEADLINE_TEXT}
-        stageRef={stageRef}
-        dropCapElRef={dropCapElRef}
-        orbDefs={ORB_DEFS}
-        orbElsRef={orbElsRef}
-        orbs={orbsRef.current}
-        orbsHidden={orbsHidden}
-        liveMessage={liveMessage}
-        onOrbPointerDown={handleOrbPointerDown}
-        onOrbPointerMove={handleOrbPointerMove}
-        onOrbPointerUp={handleOrbPointerUp}
-        onOrbKeyDown={handleOrbKeyDown}
-        onOrbFocus={(label) => setLiveMessage(`${label} selected. Use Option plus arrow keys to move, Space to pause.`)}
-      />
-
-      <TextString />
-
-      {/* <Footer stats={stats} /> */}
+      <ScrollSection fadeIn fadeOut={false}>
+        <TextString />
+      </ScrollSection>
     </>
   )
 }
