@@ -7,32 +7,23 @@ import { PARAGRAPHS } from './content'
 import { fitHeadline, layoutPages, measureDropCap } from './layout'
 import { createOrb, moveOrbs, orbToObstacle, pauseAllOrbs } from './orbs'
 import { syncPool, renderHeadlineLines, renderBodyLines, renderOrbs, renderDropCap } from './renderer'
-import { Main } from './components/Main'
+import { Main, HEADLINE_TEXT, ORB_DEFS } from './components/Main'
 import { TextString } from './components/TextString'
 import { ClockSection } from './components/ClockSection'
 import { PretextTutorial } from './components/PretextTutorial'
 import { ThreeIntro } from './components/ThreeIntro'
 import { SectionSix } from './components/SectionSix'
 import { ScrollSection } from './components/ScrollSection'
-import type { Orb, OrbDef, Stats } from './types'
+import type { Orb } from './types'
 
 const BODY_FONT = '18px "Atkinson Hyperlegible", system-ui, sans-serif'
 const BODY_LINE_HEIGHT = 30
 const HEADLINE_FONT_FAMILY = '"Atkinson Hyperlegible", system-ui, sans-serif'
-const HEADLINE_TEXT = 'Text animations and accessibility'
 const GUTTER = 48
 const COL_GAP = 40
 const DROP_CAP_LINES = 3
 const PARAGRAPH_GAP = Math.round(BODY_LINE_HEIGHT * 0.7)
 const MOVE_STEP = 20
-
-const ORB_DEFS: OrbDef[] = [
-  { fx: 0.52, fy: 0.22, r: 110, vx: 24, vy: 16, color: [196, 163, 90], label: 'Golden orb' },
-  { fx: 0.18, fy: 0.48, r: 85, vx: -19, vy: 26, color: [100, 140, 255], label: 'Blue orb' },
-  { fx: 0.74, fy: 0.58, r: 95, vx: 16, vy: -21, color: [232, 100, 130], label: 'Pink orb' },
-  { fx: 0.38, fy: 0.72, r: 75, vx: -26, vy: -14, color: [80, 200, 140], label: 'Green orb' },
-  { fx: 0.86, fy: 0.18, r: 65, vx: -13, vy: 19, color: [150, 100, 220], label: 'Violet orb' },
-]
 
 export default function App() {
   const stageRef = useRef<HTMLDivElement>(null)
@@ -45,17 +36,13 @@ export default function App() {
   const rafRef = useRef(0)
   const lastTimeRef = useRef(0)
   const activeOrbRef = useRef<Orb | null>(null)
-  const fpsTimestamps = useRef<number[]>([])
 
-  const [isPaused, setIsPaused] = useState(false)
+  const [, setIsPaused] = useState(false)
   const reducedMotion = usePrefersReducedMotion()
-  // @ts-expect-error Header temporarily removed
-  const [respectMotionPref, setRespectMotionPref] = useState(true)
+  const [respectMotionPref] = useState(true)
   const skipAnimation = respectMotionPref && reducedMotion
   const [textReady, setTextReady] = useState(false)
   const [liveMessage, setLiveMessage] = useState('')
-  // @ts-expect-error Footer temporarily commented out
-  const [stats, setStats] = useState<Stats>({ lines: 0, reflow: '0.0', fps: 60, cols: 0 })
   const [orbsHidden, setOrbsHidden] = useState(false)
   const orbsHiddenRef = useRef(false)
 
@@ -101,7 +88,6 @@ export default function App() {
     if (!isStatic && !hideOrbs) moveOrbs(orbsRef.current, dt, pw, ph)
 
     const circleObs = hideOrbs ? [] : orbsRef.current.map((o) => orbToObstacle(o))
-    const t0 = performance.now()
 
     const headlineMaxW = Math.min(pw - GUTTER * 2, 900)
     const { fontSize: hlSize, lines: hlLines } = fitHeadline(HEADLINE_TEXT, HEADLINE_FONT_FAMILY, headlineMaxW, Math.floor(ph * 0.35))
@@ -135,9 +121,6 @@ export default function App() {
       paragraphGap: PARAGRAPH_GAP, circleObs, dropCapRect, gutter: GUTTER,
     })
 
-    const reflowTime = performance.now() - t0
-
-    // Lock stage to viewport height — ScrollSection clips overflow
     stageRef.current.style.height = `${ph}px`
 
     syncPool(stageRef.current, linePoolRef.current, allBodyLines.length, 'line')
@@ -146,13 +129,6 @@ export default function App() {
     if (!hideOrbs) {
       renderOrbs(orbsRef.current, orbElsRef.current)
     }
-
-    if (!isStatic) {
-      fpsTimestamps.current.push(now)
-      fpsTimestamps.current = fpsTimestamps.current.filter((t) => t >= now - 1000)
-    }
-
-    setStats({ lines: allBodyLines.length, reflow: reflowTime.toFixed(1), fps: isStatic ? 0 : fpsTimestamps.current.length, cols: colCount })
   }
 
   useEffect(() => {
@@ -226,22 +202,12 @@ export default function App() {
     if (action) { e.preventDefault(); action() }
   }
 
-  // @ts-expect-error Header temporarily removed
-  const toggleGlobalPause = () => {
-    const next = !isPaused
-    setIsPaused(next)
-    pauseAllOrbs(orbsRef.current, next)
-    setLiveMessage(next ? 'All orbs paused' : 'All orbs resumed')
-  }
-
   return (
     <>
       <ScrollSection fadeIn={false} fadeOut>
         <Main
-          headlineText={HEADLINE_TEXT}
           stageRef={stageRef}
           dropCapElRef={dropCapElRef}
-          orbDefs={ORB_DEFS}
           orbElsRef={orbElsRef}
           orbs={orbsRef.current}
           orbsHidden={orbsHidden}

@@ -39,6 +39,14 @@
   --font-display: 'Atkinson Hyperlegible', system-ui, sans-serif;
   --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  --color-bg: #0f0f14;
+  --color-bg-deep: #0a0a0c;
+  --color-text: #e8e4dc;
+  --color-accent: #c4a35a;
+  --color-surface: rgba(6, 6, 10, 0.88);
+
+  --bg-gradient: radial-gradient(ellipse at 50% 40%, var(--color-bg) 0%, var(--color-bg-deep) 100%);
 }
 
 *,
@@ -54,8 +62,8 @@ html.lenis, html.lenis body {
 }
 
 html, body {
-  background: radial-gradient(ellipse at 50% 40%, #0f0f14 0%, #0a0a0c 100%);
-  color: #e8e4dc;
+  background: var(--bg-gradient);
+  color: var(--color-text);
   min-height: 100vh;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
@@ -79,7 +87,7 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid #c4a35a;
+  outline: 3px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -112,7 +120,7 @@ body {
   top: 0;
   height: 100vh;
   overflow: hidden;
-  background: radial-gradient(ellipse at 50% 40%, #0f0f14 0%, #0a0a0c 100%);
+  background: var(--bg-gradient);
 }
 
 /* Section 1: main + stage + orbs */
@@ -133,7 +141,7 @@ main {
   white-space: pre;
   z-index: 1;
   visibility: hidden;
-  color: #e8e4dc;
+  color: var(--color-text);
 }
 
 .headline-line {
@@ -150,7 +158,7 @@ main {
   position: absolute;
   z-index: 2;
   font-weight: 700;
-  color: #c4a35a;
+  color: var(--color-accent);
 }
 
 .orb-container {
@@ -179,7 +187,7 @@ main {
 
 .orb:active { cursor: grabbing; }
 .orb.paused { opacity: 0.45; }
-.orb:focus-visible { outline: 3px solid #c4a35a; outline-offset: 4px; }
+.orb:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 4px; }
 
 /* TextString section */
 .textstring-section {
@@ -247,10 +255,14 @@ kbd {
   vertical-align: baseline;
 }
 
-/* Clock section (Section 3) */
+/* Reusable section patterns */
+.section-full {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
 
-/* Tutorial section (Section 4) */
-.tutorial-section {
+.section-centered {
   position: relative;
   width: 100%;
   height: 100%;
@@ -259,24 +271,18 @@ kbd {
   justify-content: center;
 }
 
-.tutorial-container {
+.section-inner {
   max-width: 600px;
   padding: 0 24px;
 }
 
-.tutorial-text {
+.section-body-text {
   font: 20px Georgia, serif;
   line-height: 1.6;
-  color: #e8e4dc;
+  color: var(--color-text);
 }
 
 /* Three.js section */
-.three-section {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
 .three-container {
   width: 100%;
   height: 100%;
@@ -284,27 +290,6 @@ kbd {
 
 .three-container canvas {
   display: block;
-}
-
-/* Section Six */
-.section-six {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.section-six-container {
-  max-width: 600px;
-  padding: 0 24px;
-}
-
-.section-six-text {
-  font: 20px Georgia, serif;
-  line-height: 1.6;
-  color: #e8e4dc;
 }
 
 /* Clock section (Section 3) */
@@ -348,7 +333,7 @@ kbd {
   position: absolute;
   white-space: pre;
   z-index: 1;
-  color: #e8e4dc;
+  color: var(--color-text);
 }
 
 .clock-drop-cap {

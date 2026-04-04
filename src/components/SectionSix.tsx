@@ -1,8 +1,8 @@
 export function SectionSix() {
   return (
-    <section className="section-six">
-      <div className="section-six-container">
-        <p className="section-six-text">
+    <section className="section-centered">
+      <div className="section-inner">
+        <p className="section-body-text">
           Section six — a blank canvas.
         </p>
       </div>

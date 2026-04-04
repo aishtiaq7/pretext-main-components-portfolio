@@ -1,11 +1,19 @@
 import { PARAGRAPHS } from '../content'
-import type { OrbDef, Orb } from '../types'
+import type { Orb, OrbDef } from '../types'
+
+const HEADLINE_TEXT = 'Text animations and accessibility'
+
+const ORB_DEFS: OrbDef[] = [
+  { fx: 0.52, fy: 0.22, r: 110, vx: 24, vy: 16, color: [196, 163, 90], label: 'Golden orb' },
+  { fx: 0.18, fy: 0.48, r: 85, vx: -19, vy: 26, color: [100, 140, 255], label: 'Blue orb' },
+  { fx: 0.74, fy: 0.58, r: 95, vx: 16, vy: -21, color: [232, 100, 130], label: 'Pink orb' },
+  { fx: 0.38, fy: 0.72, r: 75, vx: -26, vy: -14, color: [80, 200, 140], label: 'Green orb' },
+  { fx: 0.86, fy: 0.18, r: 65, vx: -13, vy: 19, color: [150, 100, 220], label: 'Violet orb' },
+]
 
 type Props = {
-  headlineText: string
   stageRef: React.RefObject<HTMLDivElement | null>
   dropCapElRef: React.RefObject<HTMLDivElement | null>
-  orbDefs: OrbDef[]
   orbElsRef: React.RefObject<(HTMLButtonElement | null)[]>
   orbs: Orb[]
   orbsHidden: boolean
@@ -22,15 +30,17 @@ const orbLabel = (def: OrbDef, i: number, total: number, paused: boolean) =>
   `use Option plus arrow keys to move. ` +
   (paused ? 'Press Space to resume.' : 'Press Space to pause.')
 
+export { HEADLINE_TEXT, ORB_DEFS }
+
 export const Main = ({
-  headlineText, stageRef, dropCapElRef, orbDefs, orbElsRef, orbs, orbsHidden,
+  stageRef, dropCapElRef, orbElsRef, orbs, orbsHidden,
   liveMessage, onOrbPointerDown, onOrbPointerMove, onOrbPointerUp, onOrbKeyDown, onOrbFocus,
 }: Props) => (
   <main>
     <div aria-live="polite" aria-atomic="true" className="sr-only">{liveMessage}</div>
 
     <div className="readable-text" lang="es" role="region" aria-label="Article text">
-      <h1>{headlineText}</h1>
+      <h1>{HEADLINE_TEXT}</h1>
       {PARAGRAPHS.map((p, i) => <p key={i}>{p}</p>)}
     </div>
 
@@ -39,15 +49,15 @@ export const Main = ({
     </div>
 
     {!orbsHidden && (
-      <section aria-label={`${orbDefs.length} draggable orbs`} className="orb-container">
-        {orbDefs.map((def, i) => (
+      <section aria-label={`${ORB_DEFS.length} draggable orbs`} className="orb-container">
+        {ORB_DEFS.map((def, i) => (
           <button
             key={i}
             ref={(el) => { orbElsRef.current[i] = el }}
             type="button"
             className="orb"
             aria-roledescription="draggable orb"
-            aria-label={orbLabel(def, i, orbDefs.length, orbs[i]?.paused ?? false)}
+            aria-label={orbLabel(def, i, ORB_DEFS.length, orbs[i]?.paused ?? false)}
             onPointerDown={(e) => onOrbPointerDown(e, i)}
             onPointerMove={onOrbPointerMove}
             onPointerUp={onOrbPointerUp}

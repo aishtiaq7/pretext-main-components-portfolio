@@ -83,7 +83,7 @@ export function ThreeIntro() {
   }, [])
 
   return (
-    <section className="three-section">
+    <section className="section-full">
       <div ref={containerRef} className="three-container" />
     </section>
   )
