@@ -11,6 +11,8 @@ import { Main } from './components/Main'
 import { TextString } from './components/TextString'
 import { ClockSection } from './components/ClockSection'
 import { PretextTutorial } from './components/PretextTutorial'
+import { ThreeIntro } from './components/ThreeIntro'
+import { SectionSix } from './components/SectionSix'
 import { ScrollSection } from './components/ScrollSection'
 import type { Orb, OrbDef, Stats } from './types'
 
@@ -260,8 +262,16 @@ export default function App() {
         <ClockSection />
       </ScrollSection>
 
-      <ScrollSection fadeIn fadeOut={false}>
+      <ScrollSection fadeIn fadeOut>
         <PretextTutorial />
+      </ScrollSection>
+
+      <ScrollSection fadeIn fadeOut>
+        <ThreeIntro />
+      </ScrollSection>
+
+      <ScrollSection fadeIn fadeOut={false}>
+        <SectionSix />
       </ScrollSection>
     </>
   )
