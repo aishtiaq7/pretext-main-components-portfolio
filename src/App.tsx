@@ -10,6 +10,7 @@ import { syncPool, renderHeadlineLines, renderBodyLines, renderOrbs, renderDropC
 import { Main } from './components/Main'
 import { TextString } from './components/TextString'
 import { ClockSection } from './components/ClockSection'
+import { PretextTutorial } from './components/PretextTutorial'
 import { ScrollSection } from './components/ScrollSection'
 import type { Orb, OrbDef, Stats } from './types'
 
@@ -46,6 +47,7 @@ export default function App() {
 
   const [isPaused, setIsPaused] = useState(false)
   const reducedMotion = usePrefersReducedMotion()
+  // @ts-expect-error Header temporarily removed
   const [respectMotionPref, setRespectMotionPref] = useState(true)
   const skipAnimation = respectMotionPref && reducedMotion
   const [textReady, setTextReady] = useState(false)
@@ -66,7 +68,7 @@ export default function App() {
   useEffect(() => {
     const checkZoom = () => {
       const zoom = window.outerWidth / window.innerWidth
-      const hidden = zoom >= 1.5 || window.innerWidth < 500
+      const hidden = zoom >= 1.5
       orbsHiddenRef.current = hidden
       setOrbsHidden(hidden)
     }
@@ -110,7 +112,7 @@ export default function App() {
     renderHeadlineLines(headlinePoolRef.current, hlLines, hlLeft, GUTTER, hlFont, hlLineHeight)
 
     const bodyTop = GUTTER + hlHeight + 20
-    const pageHeight = ph - GUTTER * 2
+    const pageHeight = ph - bodyTop - GUTTER
     const colCount = pw > 1000 ? 3 : pw > 640 ? 2 : 1
     const totalGutter = GUTTER * 2 + COL_GAP * (colCount - 1)
     const colWidth = Math.floor((Math.min(pw, 1100) - totalGutter) / colCount)
@@ -222,6 +224,7 @@ export default function App() {
     if (action) { e.preventDefault(); action() }
   }
 
+  // @ts-expect-error Header temporarily removed
   const toggleGlobalPause = () => {
     const next = !isPaused
     setIsPaused(next)
@@ -253,8 +256,12 @@ export default function App() {
         <TextString />
       </ScrollSection>
 
-      <ScrollSection fadeIn fadeOut={false}>
+      <ScrollSection fadeIn fadeOut>
         <ClockSection />
+      </ScrollSection>
+
+      <ScrollSection fadeIn fadeOut={false}>
+        <PretextTutorial />
       </ScrollSection>
     </>
   )

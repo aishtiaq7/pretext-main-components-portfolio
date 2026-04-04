@@ -5,15 +5,17 @@ const STATS_BAR_HEIGHT = 42
 const HINT_BAR_HEIGHT = 40
 const BOTTOM_RESERVE = STATS_BAR_HEIGHT + HINT_BAR_HEIGHT + 12
 
-export const createOrb = (d: OrbDef, w: number, h: number): Orb => ({
+export const createOrb = (d: OrbDef, w: number, h: number): Orb => {
+  const scale = w < 500 ? 0.5 : w < 768 ? 0.65 : 1
+  return {
   x: d.fx * w, y: d.fy * h,
-  r: d.r, vx: d.vx, vy: d.vy,
+  r: Math.round(d.r * scale), vx: d.vx, vy: d.vy,
   color: d.color, label: d.label,
   paused: false, dragging: false,
   dragStartX: 0, dragStartY: 0,
   dragStartOrbX: 0, dragStartOrbY: 0,
   frozenScrollY: 0,
-})
+}}
 
 export const moveOrbs = (orbs: Orb[], dt: number, pw: number, ph: number) => {
   for (const o of orbs) {

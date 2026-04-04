@@ -5,7 +5,7 @@ import type { LayoutCursor, PreparedTextWithSegments } from '@chenglou/pretext'
 const BODY_FONT = '18px "Iowan Old Style", "Palatino Linotype", "Apple SD Gothic Neo", "Noto Serif KR", "Book Antiqua", Palatino, serif'
 const BODY_LINE_HEIGHT = 30
 const HEADLINE_FONT_FAMILY = '"Iowan Old Style", "Palatino Linotype", "Apple SD Gothic Neo", "Noto Serif KR", "Book Antiqua", Palatino, serif'
-const HEADLINE_TEXT = 'WAKE UP WITH ALARMY'
+const HEADLINE_TEXT = 'RESPECT THE CLOCK'
 const GUTTER = 48
 const COL_GAP = 40
 const DROP_CAP_LINES = 3
@@ -16,23 +16,25 @@ const NARROW_CLOCK_SCALE = 0.7
 const PQ_FONT = `italic 19px ${HEADLINE_FONT_FAMILY}`
 const PQ_LINE_HEIGHT = 27
 
-const BODY_TEXT = `Alarmy는 전 세계 7,500만 사용자가 선택한 알람 앱입니다. 단순히 소리를 울리는 앱이 아닙니다. 사진 찍기, 수학 문제 풀기, QR 코드 스캔 등 미션을 완료해야만 알람이 꺼집니다. 확실히 잠에서 깨어나야 할 때, Alarmy가 있습니다.
+const BODY_TEXT = `There is a conversation that happens in every project, at every company, in every Slack channel where deadlines live. Someone says "this should be quick" about something that is not quick. Someone else says "can you just" before describing three weeks of work. And the clock keeps ticking, indifferent to the gap between what was asked and what it actually takes.
 
-매일 아침, 수백만 명의 사용자가 Alarmy와 함께 하루를 시작합니다. 기상 미션부터 수면 분석, 코골이 녹음까지 — 건강한 수면 습관을 만드는 종합적인 수면 솔루션입니다. 단순한 알람 앱을 넘어, 당신의 아침을 바꾸는 라이프스타일 도구입니다.
+I have sat in meetings where a feature was described in two sentences and expected in two days. I have received messages at 11 PM on a Friday that begin with "hey, quick question" and end with an architecture decision. I have watched timelines get cut in half by people who have never opened a code editor, and I have smiled and said "I will see what I can do" more times than I should have.
 
-미션 알람은 Alarmy의 핵심입니다. 사진 미션은 지정한 장소에서 사진을 찍어야 알람이 해제됩니다. 침대에서 눈을 세면대까지 걸어가야 하죠. 흔들기 미션은 스마트폰을 일정 횟수 흔들어야 합니다. 수학 미션은 간단한 연산부터 복잡한 방정식까지, 두뇌를 깨우는 데 효과적입니다. 타이핑 미션은 주어진 문장을 정확히 입력해야 합니다. 이 모든 미션은 하나의 목표를 향합니다 — 당신이 확실히 잠에서 깨어나는 것.
+The problem is not that the work is hard. The work is always hard. The problem is the assumption that because someone can describe what they want simply, it must be simple to build. A button is never just a button. It is state management, accessibility, error handling, loading states, edge cases, browser quirks, and the inevitable moment where the design changes after you have already shipped.
 
-수면 분석 기능은 수면 패턴을 추적하고, 코골이를 녹음하여 수면 품질을 시각화합니다. 매일 밤 얼마나 깊이 잤는지, 몇 번 뒤척였는지, 코골이가 얼마나 심했는지를 데이터로 보여줍니다. 이 데이터는 더 나은 수면 습관을 만드는 출발점이 됩니다.
+Time is the only resource that does not scale. You cannot hire more of it. You cannot optimize it with a better algorithm. You cannot deploy it to a faster server. When someone wastes your time, they are spending something that neither of you can earn back. And yet it gets spent casually, as if there were an infinite supply.
 
-알람 소리도 풍부합니다. 인기 음악부터 커스텀 사운드까지, 원하는 소리로 아침을 맞이하세요. Spotify와 연동하면 좋아하는 플레이리스트로 기상할 수 있습니다. 점점 커지는 볼륨, 진동 패턴, 스누즈 설정 등 세밀한 설정이 가능합니다.
+I learned to protect my time the hard way. By burning out. By delivering on impossible deadlines and being rewarded with more impossible deadlines. By saying yes until yes stopped meaning anything. The turning point was not dramatic. It was a Tuesday. I looked at my calendar and realized I had eight hours of meetings and was still expected to write code. Something had to give, and for once it was not going to be me.
 
-Alarmy는 2012년 처음 세상에 나왔습니다. 그때부터 지금까지, "확실히 깨워주는 알람"이라는 하나의 약속을 지켜왔습니다. App Store와 Google Play에서 모두 최고 평점을 유지하고 있으며, 전 세계 150개국 이상에서 사랑받고 있습니다. 매일 아침, Alarmy는 수백만 명의 하루를 엽니다.
+Now I set boundaries. Not because I am difficult, but because good work requires space. A developer who is constantly interrupted produces fragmented code. A designer who is always in meetings never enters flow state. A team that treats urgency as the default loses the ability to distinguish what actually matters.
 
-이 페이지의 텍스트는 CSS가 아닌 JavaScript로 레이아웃됩니다. pretext 라이브러리는 DOM에 건드리지 않고 텍스트를 측정하고 배치합니다. 화면 중앙의 시계를 드래그해보세요. 텍스트가 실시간으로 시계를 피해 흘러가는 것을 볼 수 있습니다. 이것이 DOM 없는 텍스트 레이아웃의 힘입니다.`
+The clock on this page is not decoration. Drag it around, watch the text reflow in real time. The text respects the clock. It flows around it, adjusts to it, makes room for it. That is not a technical trick. That is a metaphor. When you respect the constraints, the work finds its shape. When you pretend the constraints do not exist, everything breaks.
+
+Every hour has a cost. Every "quick call" has a cost. Every context switch, every scope creep, every "let's just add one more thing" has a cost. The best teams I have worked with understood this. They did not treat developer time as free. They did not confuse presence with productivity. They knew that the most expensive line of code is the one written by someone who did not have time to think.`
 
 const PULLQUOTE_TEXTS = [
-  '"확실히 잠에서 깨어나야 할 때, Alarmy가 답입니다. 전 세계 7,500만 사용자가 증명합니다."',
-  '"15킬로바이트, 의존성 제로, DOM 읽기 제로. 그리고 텍스트는 흐릅니다."',
+  '"A button is never just a button. It is state management, accessibility, error handling, and the moment where the design changes after you have already shipped."',
+  '"Every hour has a cost. The best teams do not treat developer time as free. They do not confuse presence with productivity."',
 ]
 
 type Interval = { left: number; right: number }
@@ -162,7 +164,7 @@ function drawClock(ctx: CanvasRenderingContext2D, r: number) {
   ctx.font = `600 ${Math.round(r * 0.1)}px "Helvetica Neue", Helvetica, sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('ALARMY', 0, r * 0.28)
+  ctx.fillText('RESPECT', 0, r * 0.28)
 
   const hAngle = ((hours + minutes / 60) * Math.PI) / 6 - Math.PI / 2
   ctx.beginPath(); ctx.moveTo(0, 0)
@@ -201,7 +203,7 @@ export function ClockSection() {
   const dropCapWidthRef = useRef(0)
 
   useEffect(() => {
-    const stage = stageRef.current
+    const stage = stageRef.current!
     if (!stage) return
 
     clockRef.current.x = window.innerWidth / 2

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
-const FULL_TEXT = "Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, \u201cand what is the use of a book,\u201d thought Alice \u201cwithout pictures or conversations?\u201d So she was considering in her own mind (as well as she could, for the hot day made her feel very sleepy and stupid), whether the pleasure of making a daisy-chain would be worth the trouble of getting up and picking the daisies, when suddenly a White Rabbit with pink eyes ran close by her. There was nothing so very remarkable in that; nor did Alice think it so very much out of the way to hear the Rabbit say to itself, \u201cOh dear! Oh dear! I shall be late!\u201d"
-const SHORT_TEXT = "Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, \u201cand what is the use of a book,\u201d thought Alice \u201cwithout pictures or conversations?\u201d So she was considering in her own mind (as well as she could, for the hot day made her feel very sleepy and stupid)."
+const FULL_TEXT = "SFU grad. Startup founder. Instructor. I think in components and dream in keyframes. I have shipped React Native apps to both stores, taught 40 students how to build full-stack applications, and turned email chaos into order management systems. I find peace in a clean git history and purpose in a well-tested pipeline. Vancouver is home. The terminal is where I live."
+const SHORT_TEXT = "SFU grad. Startup founder. Instructor. I think in components and dream in keyframes. I have shipped React Native apps to both stores and taught 40 students how to build full-stack applications. Vancouver is home. The terminal is where I live."
 
 const FONT = '20px Georgia'
 const LINE_HEIGHT = 28
