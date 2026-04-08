@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Lenis from 'lenis'
+import Snap from 'lenis/snap'
 import { prepareWithSegments } from '@chenglou/pretext'
 import type { PreparedTextWithSegments } from '@chenglou/pretext'
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion'
@@ -46,12 +47,23 @@ export default function App() {
   const [orbsHidden, setOrbsHidden] = useState(false)
   const orbsHiddenRef = useRef(false)
 
-  // Lenis smooth scroll
+  // Lenis smooth scroll + snap
   useEffect(() => {
-    const lenis = new Lenis({ lerp: 0.08, smoothWheel: true })
+    const lenis = new Lenis({ lerp: 0.04, smoothWheel: true })
+
+    const snap = new Snap(lenis, {
+      type: 'proximity',
+      lerp: 0.025,
+      easing: (t: number) => 1 - Math.pow(1 - t, 5),
+      duration: 2,
+      debounce: 150,
+    })
+    const sections = document.querySelectorAll('.scroll-section')
+    snap.addElements(Array.from(sections) as HTMLElement[])
+
     function raf(time: number) { lenis.raf(time); requestAnimationFrame(raf) }
     requestAnimationFrame(raf)
-    return () => lenis.destroy()
+    return () => { snap.destroy(); lenis.destroy() }
   }, [])
 
   useEffect(() => {
