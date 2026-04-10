@@ -1,7 +1,7 @@
 import { PARAGRAPHS } from '../content'
 import type { Orb, OrbDef } from '../types'
 
-const HEADLINE_TEXT = 'Text animations and accessibility'
+const HEADLINE_TEXT = 'Web Dev Evolves, As do I'
 
 const ORB_DEFS: OrbDef[] = [
   { fx: 0.52, fy: 0.22, r: 110, vx: 24, vy: 16, color: [196, 163, 90], label: 'Golden orb' },
