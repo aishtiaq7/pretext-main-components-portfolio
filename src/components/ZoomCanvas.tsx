@@ -20,7 +20,7 @@ export function ZoomCanvas({ zoom, panX, panY, children }: Props) {
         transform: `translate(${tx}px, ${ty}px) scale(${zoom})`,
       }}
     >
-      {/* Notebook decorations */}
+      {/* Notebook decorations — move with the canvas */}
       <div className="notebook-margin-line" />
       <div className="notebook-hole" style={{ left: '12%', top: 20 }} />
       <div className="notebook-hole" style={{ left: '50%', top: 20 }} />

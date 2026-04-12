@@ -31,8 +31,9 @@ export function HandwritingEntity({
   })
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Don't capture if it's on an interactive child (canvas, button, etc.)
-    if ((e.target as HTMLElement).tagName === 'CANVAS') return
+    // Don't capture if it's on an interactive child (canvas, textstring letters, etc.)
+    const target = e.target as HTMLElement
+    if (target.tagName === 'CANVAS' || target.closest('[data-interactive]')) return
 
     e.stopPropagation()
     ref.current?.setPointerCapture(e.pointerId)

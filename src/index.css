@@ -531,6 +531,159 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   NOTEBOOK PAGE — clock + reflowing text entity
+   ═══════════════════════════════════════════════════════════ */
+.notebook-page {
+  position: relative;
+  background: rgba(245, 242, 235, 0.95);
+  border: 1px solid rgba(180, 175, 165, 0.5);
+  border-radius: 4px;
+  box-shadow: 2px 3px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  touch-action: none;
+}
+
+.np-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.np-headline {
+  position: absolute;
+  white-space: pre;
+  font-weight: 700;
+  color: #2a2520;
+  letter-spacing: -0.5px;
+  z-index: 2;
+}
+
+.np-body-line {
+  position: absolute;
+  white-space: pre;
+  z-index: 1;
+  color: #3a3530;
+}
+
+.np-drop-cap {
+  position: absolute;
+  z-index: 2;
+  font-weight: 700;
+  color: #FC314C;
+}
+
+.np-clock {
+  position: absolute;
+  z-index: 10;
+  cursor: grab;
+  pointer-events: auto;
+  box-shadow: 0 0 60px rgba(252, 49, 76, 0.2);
+  border-radius: 50%;
+  touch-action: none;
+}
+
+.np-clock:active {
+  cursor: grabbing;
+}
+
+.np-pq-box {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+  border-left: 3px solid #FC314C;
+  padding-left: 14px;
+}
+
+.np-pq-line {
+  position: absolute;
+  white-space: pre;
+  font-style: italic;
+  color: #8a4a55;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DRAGGABLE TEXT — zoom-aware physics text for canvas
+   ═══════════════════════════════════════════════════════════ */
+.draggable-text-container {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  background: rgba(232, 228, 217, 0.35);
+  border-radius: 10px;
+  border: 1px solid rgba(180, 175, 165, 0.3);
+  touch-action: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TEXTSTRING — physics text demo (embedded entity)
+   ═══════════════════════════════════════════════════════════ */
+.textstring-section {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.textstring-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.textstring-letter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  font: 20px Georgia, serif;
+  line-height: 1;
+  color: #4a4540;
+  pointer-events: none;
+  white-space: pre;
+}
+
+.textstring-letter.draggable {
+  pointer-events: auto;
+  cursor: grab;
+  z-index: 10;
+  touch-action: none;
+}
+
+.textstring-letter.dragging {
+  cursor: grabbing;
+}
+
+.textstring-hint {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s;
+  font: 600 14px 'Patrick Hand', cursive;
+  color: rgba(90, 85, 75, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(60, 55, 48, 0.85);
+  background: rgba(200, 195, 185, 0.3);
+  border: 1px solid rgba(180, 175, 165, 0.4);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  vertical-align: baseline;
+}
+
+/* ═══════════════════════════════════════════════════════════
    THREE.JS CONTAINER — for embedded entity
    ═══════════════════════════════════════════════════════════ */
 .section-full {
