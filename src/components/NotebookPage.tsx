@@ -214,6 +214,7 @@ export function NotebookPage({ width = 1400, height = 1000 }: Props) {
     })
 
     function syncPool(pool: HTMLDivElement[], count: number, cls: string) {
+      if (!stage) return
       while (pool.length < count) {
         const el = document.createElement('div')
         el.className = cls
@@ -225,7 +226,7 @@ export function NotebookPage({ width = 1400, height = 1000 }: Props) {
 
     function render() {
       const prepared = preparedRef.current
-      if (!prepared) return
+      if (!prepared || !stage) return
 
       const pw = stage.clientWidth
       const ph = stage.clientHeight
