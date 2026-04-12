@@ -67,19 +67,6 @@ export const MEETING_NOTE =
 export const ENTITIES: EntityDef[] = [
   // ── Hero / Brand (center canvas) ──────────────────────
   {
-    id: 'brand',
-    x: 40,
-    y: 14,
-    rotate: -5,
-    font: '"Permanent Marker", cursive',
-    fontSize: '7.5rem',
-    fontWeight: '400',
-    color: '#3a3530',
-    opacity: 0.92,
-    content: BRAND_NAME,
-    type: 'text',
-  },
-  {
     id: 'tagline',
     x: 38,
     y: 21,

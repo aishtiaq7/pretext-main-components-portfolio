@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { ENTITIES, ALICE_QUOTE } from './entities'
+import { ENTITIES, ALICE_QUOTE, BRAND_NAME } from './entities'
 import type { FixedRegion } from './types'
 import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
@@ -15,6 +15,7 @@ import type { PageDef } from './components/PageWrapper'
 // PAGE DEFINITIONS — siblings of doodle entities on the canvas
 // ═══════════════════════════════════════════════════════════
 const PAGES: PageDef[] = [
+  { id: 'brand-page', x: 35, y: 22, width: 1100, height: 220, fixed: true, component: 'brand', borderless: true },
   { id: 'clock-page', x: 25, y: 30, width: 1500, height: 1100, fixed: true, component: 'clock' },
   { id: 'three-page', x: 79, y: 34, width: 420, height: 420, fixed: false, component: 'three', borderless: true },
   { id: 'text-page', x: 8, y: 50, width: 480, height: 340, fixed: false, component: 'text', borderless: true },
@@ -120,6 +121,22 @@ export default function App() {
   // Render page content by component id
   const renderPage = (component: string) => {
     switch (component) {
+      case 'brand':
+        return (
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+            <span style={{
+              fontFamily: '"Permanent Marker", cursive',
+              fontSize: '7.5rem',
+              fontWeight: 400,
+              color: '#3a3530',
+              opacity: 0.92,
+              transform: 'rotate(-5deg)',
+              whiteSpace: 'nowrap',
+            }}>
+              {BRAND_NAME}
+            </span>
+          </div>
+        )
       case 'clock':
         return <NotebookPage width={1500} height={1100} />
       case 'three':
