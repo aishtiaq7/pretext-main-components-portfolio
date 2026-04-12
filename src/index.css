@@ -254,165 +254,6 @@ body {
   z-index: 10;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   CROSS NAVBAR — Perpendicular cross widget
-   ═══════════════════════════════════════════════════════════ */
-.cross-navbar {
-  position: fixed;
-  z-index: 110;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: auto;
-}
-
-/* Grip handle */
-.cross-grip {
-  width: 36px;
-  height: 22px;
-  background: var(--nav-bg);
-  border-radius: 6px 6px 0 0;
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: none;
-}
-
-.cross-grip:active {
-  cursor: grabbing;
-}
-
-.grip-dots {
-  display: grid;
-  grid-template-columns: repeat(3, 4px);
-  gap: 3px;
-}
-
-.grip-dots span {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--grip-color);
-}
-
-/* Vertical arm */
-.cross-vertical {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  background: var(--nav-bg);
-  padding: 8px 6px;
-  border-radius: 0 0 0 0;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* Horizontal arm */
-.cross-horizontal {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--nav-bg);
-  padding: 6px 8px;
-  border-radius: 0 0 10px 10px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* Cross buttons */
-.cross-btn {
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  color: rgba(220, 215, 205, 0.8);
-  font-size: 14px;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-  font-family: system-ui;
-  line-height: 1;
-}
-
-.cross-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Cross label (zoom %) */
-.cross-label {
-  font-size: 10px;
-  color: rgba(200, 195, 185, 0.6);
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.5px;
-  text-align: center;
-  min-width: 32px;
-}
-
-/* ── Slider styling ────────────────────────────────────── */
-.cross-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-}
-
-.cross-slider-v {
-  writing-mode: vertical-lr;
-  direction: rtl;
-  width: 20px;
-  height: 120px;
-}
-
-.cross-slider-h {
-  width: 120px;
-  height: 20px;
-}
-
-/* Track */
-.cross-slider::-webkit-slider-runnable-track {
-  background: var(--slider-track);
-  border-radius: 3px;
-  height: 4px;
-}
-
-.cross-slider-v::-webkit-slider-runnable-track {
-  width: 4px;
-  height: auto;
-}
-
-/* Thumb */
-.cross-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--slider-accent);
-  border: 2px solid rgba(30, 28, 22, 0.8);
-  cursor: pointer;
-  margin-top: -5px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-.cross-slider::-moz-range-track {
-  background: var(--slider-track);
-  border-radius: 3px;
-  height: 4px;
-  border: none;
-}
-
-.cross-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--slider-accent);
-  border: 2px solid rgba(30, 28, 22, 0.8);
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
 
 /* ═══════════════════════════════════════════════════════════
    SCROLL INPUTS — Right-edge compact widget
@@ -481,12 +322,12 @@ body {
   writing-mode: vertical-lr;
   direction: rtl;
   width: 16px;
-  height: 100px;
+  height: 120px;
 }
 
 .scroll-slider-h,
 .scroll-slider-z {
-  width: 100px;
+  width: 120px;
   height: 16px;
 }
 
@@ -528,6 +369,51 @@ body {
   border: 1.5px solid rgba(30, 28, 22, 0.8);
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Mid-row: Y slider + minimap side-by-side */
+.scroll-mid-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Minimap */
+.scroll-minimap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  background: rgba(20, 18, 14, 0.5);
+  border: 1px solid rgba(200, 195, 185, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: crosshair;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.minimap-page {
+  position: absolute;
+  border: 1px solid rgba(200, 195, 185, 0.1);
+  background: rgba(200, 195, 185, 0.03);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.minimap-viewport {
+  position: absolute;
+  background: rgba(200, 184, 130, 0.12);
+  border: 1.5px solid rgba(200, 184, 130, 0.4);
+  border-radius: 2px;
+  cursor: grab;
+  touch-action: none;
+  transition: width 0.15s ease, height 0.15s ease;
+}
+
+.minimap-viewport:active {
+  cursor: grabbing;
+  background: rgba(200, 184, 130, 0.22);
+  border-color: rgba(200, 184, 130, 0.65);
 }
 
 /* ═══════════════════════════════════════════════════════════

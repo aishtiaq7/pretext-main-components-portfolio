@@ -5,7 +5,6 @@ import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
 import type { CanvasObstacle } from './components/HandwritingEntity'
-import { CrossNavbar } from './components/CrossNavbar'
 import { ScrollInputs } from './components/ScrollInputs'
 import { ThreeIntro } from './components/ThreeIntro'
 import { NotebookPage } from './components/NotebookPage'
@@ -244,11 +243,6 @@ export default function App() {
         </ZoomCanvas>
       </div>
 
-      <CrossNavbar
-        zoom={zoom} panX={panX}
-        setZoom={(fn) => setZoom(z => clamp(fn(z), 0.15, 3.0))}
-        setPanX={(fn) => setPanX(p => clamp(fn(p), -1800, 1800))}
-      />
       <ScrollInputs
         zoom={zoom} panX={panX} panY={panY}
         setZoom={(fn) => setZoom(z => clamp(fn(z), 0.15, 3.0))}

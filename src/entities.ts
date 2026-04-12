@@ -974,8 +974,8 @@ export const ENTITIES: EntityDef[] = [
     content: 'deadline',
     type: 'text',
     obstacle: true,
-    obstacleW: 218,
-    obstacleH: 51,
+    obstacleW: 275,
+    obstacleH: 58,
   },
   {
     id: 'obs-asap',
@@ -990,8 +990,8 @@ export const ENTITIES: EntityDef[] = [
     content: 'ASAP',
     type: 'text',
     obstacle: true,
-    obstacleW: 119,
-    obstacleH: 42,
+    obstacleW: 195,
+    obstacleH: 55,
   },
   {
     id: 'obs-scope-creep',
@@ -1006,8 +1006,8 @@ export const ENTITIES: EntityDef[] = [
     content: 'scope creep',
     type: 'text',
     obstacle: true,
-    obstacleW: 204,
-    obstacleH: 44,
+    obstacleW: 260,
+    obstacleH: 52,
   },
   {
     id: 'obs-quick-call',
@@ -1022,8 +1022,8 @@ export const ENTITIES: EntityDef[] = [
     content: 'quick call',
     type: 'text',
     obstacle: true,
-    obstacleW: 165,
-    obstacleH: 42,
+    obstacleW: 220,
+    obstacleH: 50,
   },
   {
     id: 'obs-one-more-thing',
@@ -1038,8 +1038,8 @@ export const ENTITIES: EntityDef[] = [
     content: 'one more thing',
     type: 'text',
     obstacle: true,
-    obstacleW: 226,
-    obstacleH: 39,
+    obstacleW: 290,
+    obstacleH: 48,
   },
 
   // ═══════════════════════════════════════════════════════

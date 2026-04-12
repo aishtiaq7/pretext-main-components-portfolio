@@ -21,7 +21,7 @@ type Line = { x: number; y: number; text: string }
 type Iv = { left: number; right: number }
 
 const MIN_SLOT = 20
-const OBS_PAD = 4 // px padding around ellipse
+const OBS_PAD = 14 // px padding around ellipse
 
 function carveSlots(base: Iv, blocked: Iv[]): Iv[] {
   let slots = [base]
