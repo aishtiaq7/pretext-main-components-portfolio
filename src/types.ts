@@ -51,3 +51,19 @@ export type Stats = {
   fps: number
   cols: number
 }
+
+export type EntityDef = {
+  id: string
+  x: number
+  y: number
+  rotate: number
+  font: string
+  fontSize: string
+  fontWeight: string
+  color: string
+  opacity: number
+  content?: string
+  maxWidth?: number
+  type: 'text' | 'component'
+  componentId?: string
+}

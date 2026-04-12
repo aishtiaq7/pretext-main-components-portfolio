@@ -1,4 +1,8 @@
-/* Self-hosted fonts — no external requests, no render blocking, no CLS */
+/* ═══════════════════════════════════════════════════════════
+   NOTEBOOK CANVAS — Global Styles
+   ═══════════════════════════════════════════════════════════ */
+
+/* Self-hosted fonts — kept for components that still reference them */
 @font-face {
   font-family: 'Atkinson Hyperlegible';
   font-style: normal;
@@ -14,20 +18,6 @@
   src: url('/fonts/atkinson-700.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Atkinson Hyperlegible';
-  font-style: italic;
-  font-weight: 400;
-  font-display: optional;
-  src: url('/fonts/atkinson-400i.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Atkinson Hyperlegible';
-  font-style: italic;
-  font-weight: 700;
-  font-display: optional;
-  src: url('/fonts/atkinson-700i.woff2') format('woff2');
-}
-@font-face {
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 400;
@@ -35,20 +25,21 @@
   src: url('/fonts/jetbrains-400.woff2') format('woff2');
 }
 
+/* ── Variables ─────────────────────────────────────────── */
 :root {
-  --font-display: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-
-  --color-bg: #0f0f14;
-  --color-bg-deep: #0a0a0c;
-  --color-text: #e8e4dc;
-  --color-accent: #c4a35a;
-  --color-surface: rgba(6, 6, 10, 0.88);
-
-  --bg-gradient: radial-gradient(ellipse at 50% 40%, var(--color-bg) 0%, var(--color-bg-deep) 100%);
+  --canvas-bg: #e8e4d9;
+  --canvas-bg-warm: #ebe7dc;
+  --header-bg: #111;
+  --header-text: #f0ece3;
+  --nav-bg: rgba(24, 22, 18, 0.82);
+  --nav-bg-hover: rgba(34, 32, 26, 0.9);
+  --slider-accent: #c8b882;
+  --slider-track: rgba(120, 115, 105, 0.3);
+  --margin-red: #d4a0a0;
+  --grip-color: rgba(180, 175, 165, 0.6);
 }
 
+/* ── Reset ─────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -57,22 +48,22 @@
   padding: 0;
 }
 
-html.lenis, html.lenis body {
-  height: auto;
-}
-
 html, body {
-  background: var(--bg-gradient);
-  color: var(--color-text);
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--canvas-bg);
 }
 
 body {
-  font-family: var(--font-body);
+  font-family: 'Patrick Hand', cursive, system-ui, sans-serif;
   line-height: 1.6;
+}
+
+#root {
+  height: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -82,12 +73,11 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-accent);
+  outline: 3px solid var(--slider-accent);
   outline-offset: 2px;
 }
 
@@ -101,188 +91,454 @@ body {
   border: 0;
 }
 
-.readable-text {
-  position: absolute;
-  left: -9999px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
+/* ═══════════════════════════════════════════════════════════
+   PAGE BACKGROUND — Notebook paper
+   ═══════════════════════════════════════════════════════════ */
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--canvas-bg);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 31px,
+      rgba(180, 175, 165, 0.35) 31px,
+      rgba(180, 175, 165, 0.35) 32px
+    );
 }
 
-/* ScrollSection — reusable section wrapper with scroll-driven fade */
-.scroll-section {
-  position: relative;
-  height: 120vh;
-}
-
-.scroll-section-sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: hidden;
-  background: var(--bg-gradient);
-}
-
-/* Section 1: main + stage + orbs */
-main {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.stage {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.line {
-  position: absolute;
-  white-space: pre;
-  z-index: 1;
-  visibility: hidden;
-  color: var(--color-text);
-}
-
-.headline-line {
-  position: absolute;
-  white-space: pre;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.5px;
-  z-index: 2;
-  visibility: hidden;
-}
-
-.drop-cap {
-  position: absolute;
-  z-index: 2;
-  font-weight: 700;
-  color: var(--color-accent);
-}
-
-.orb-container {
+/* Subtle edge vignette */
+.page-bg::after {
+  content: '';
   position: absolute;
   inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.06) 100%
+  );
   pointer-events: none;
-  z-index: 10;
 }
 
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  z-index: 10;
-  will-change: transform;
-  cursor: grab;
-  pointer-events: auto;
-  border: none;
-  padding: 0;
-  font: inherit;
-  visibility: hidden;
-  color: inherit;
-  appearance: none;
-  -webkit-appearance: none;
-  touch-action: none;
-}
-
-.orb:active { cursor: grabbing; }
-.orb.paused { opacity: 0.45; }
-.orb:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 4px; }
-
-/* TextString section */
-.textstring-section {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.textstring-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  margin: 0 auto;
-  padding: 0 20px;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.textstring-letter {
-  position: absolute;
+/* ═══════════════════════════════════════════════════════════
+   TOP HEADER
+   ═══════════════════════════════════════════════════════════ */
+.top-header {
+  position: fixed;
   top: 0;
   left: 0;
-  will-change: transform;
-  font: 20px Georgia, serif;
-  line-height: 1;
-  color: #e8e4dc;
-  pointer-events: none;
-  white-space: pre;
+  right: 0;
+  height: 44px;
+  background: var(--header-bg);
+  color: var(--header-text);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  user-select: none;
 }
 
-.textstring-letter.draggable {
-  pointer-events: auto;
+.top-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-header-logo {
+  width: 24px;
+  height: 24px;
+}
+
+.top-header-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.top-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.top-header-link {
+  color: var(--header-text);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.top-header-link:hover {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ZOOM VIEWPORT + CANVAS
+   ═══════════════════════════════════════════════════════════ */
+.zoom-viewport {
+  position: fixed;
+  top: 44px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 1;
   cursor: grab;
-  z-index: 10;
   touch-action: none;
 }
 
-.textstring-letter.dragging {
+.zoom-viewport:active {
   cursor: grabbing;
 }
 
-.textstring-hint {
+.zoom-canvas {
   position: absolute;
+  width: 3000px;
+  height: 3000px;
+  left: 50%;
+  top: 50%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* ── Notebook decorations on canvas ────────────────────── */
+.notebook-margin-line {
+  position: absolute;
+  left: 130px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--margin-red);
+  opacity: 0.4;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.8s;
-  font: 600 14px var(--font-body);
-  color: rgba(255, 255, 255, 0.35);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  z-index: 0;
 }
 
-kbd {
-  display: inline-block;
-  padding: 1px 6px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-bottom-width: 2px;
+.notebook-hole {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(200, 195, 185, 0.4);
+  border: 2px solid rgba(180, 175, 165, 0.35);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ENTITY — Draggable handwriting doodle
+   ═══════════════════════════════════════════════════════════ */
+.entity {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  z-index: 5;
+  transition: filter 0.2s;
+}
+
+.entity:active {
+  cursor: grabbing;
+}
+
+.entity:hover {
+  filter: brightness(0.92);
+  z-index: 10;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CROSS NAVBAR — Perpendicular cross widget
+   ═══════════════════════════════════════════════════════════ */
+.cross-navbar {
+  position: fixed;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+
+/* Grip handle */
+.cross-grip {
+  width: 36px;
+  height: 22px;
+  background: var(--nav-bg);
+  border-radius: 6px 6px 0 0;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+.cross-grip:active {
+  cursor: grabbing;
+}
+
+.grip-dots {
+  display: grid;
+  grid-template-columns: repeat(3, 4px);
+  gap: 3px;
+}
+
+.grip-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--grip-color);
+}
+
+/* Vertical arm */
+.cross-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--nav-bg);
+  padding: 8px 6px;
+  border-radius: 0 0 0 0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Horizontal arm */
+.cross-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--nav-bg);
+  padding: 6px 8px;
+  border-radius: 0 0 10px 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Cross buttons */
+.cross-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: rgba(220, 215, 205, 0.8);
+  font-size: 14px;
+  cursor: pointer;
   border-radius: 4px;
-  vertical-align: baseline;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  font-family: system-ui;
+  line-height: 1;
 }
 
-/* Reusable section patterns */
+.cross-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Cross label (zoom %) */
+.cross-label {
+  font-size: 10px;
+  color: rgba(200, 195, 185, 0.6);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+  text-align: center;
+  min-width: 32px;
+}
+
+/* ── Slider styling ────────────────────────────────────── */
+.cross-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.cross-slider-v {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 20px;
+  height: 120px;
+}
+
+.cross-slider-h {
+  width: 120px;
+  height: 20px;
+}
+
+/* Track */
+.cross-slider::-webkit-slider-runnable-track {
+  background: var(--slider-track);
+  border-radius: 3px;
+  height: 4px;
+}
+
+.cross-slider-v::-webkit-slider-runnable-track {
+  width: 4px;
+  height: auto;
+}
+
+/* Thumb */
+.cross-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--slider-accent);
+  border: 2px solid rgba(30, 28, 22, 0.8);
+  cursor: pointer;
+  margin-top: -5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.cross-slider::-moz-range-track {
+  background: var(--slider-track);
+  border-radius: 3px;
+  height: 4px;
+  border: none;
+}
+
+.cross-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--slider-accent);
+  border: 2px solid rgba(30, 28, 22, 0.8);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCROLL INPUTS — Right-edge compact widget
+   ═══════════════════════════════════════════════════════════ */
+.scroll-inputs {
+  position: fixed;
+  z-index: 105;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--nav-bg);
+  padding: 0 10px 12px;
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: auto;
+  min-width: 56px;
+}
+
+/* Grip handle */
+.scroll-grip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 0 4px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.scroll-grip:active {
+  cursor: grabbing;
+}
+
+.grip-bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--grip-color);
+}
+
+/* Track containers */
+.scroll-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scroll-track-label {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(200, 195, 185, 0.5);
+  min-width: 10px;
+  text-align: center;
+}
+
+/* Scroll sliders */
+.scroll-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.scroll-slider-v {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 16px;
+  height: 100px;
+}
+
+.scroll-slider-h,
+.scroll-slider-z {
+  width: 100px;
+  height: 16px;
+}
+
+.scroll-slider::-webkit-slider-runnable-track {
+  background: var(--slider-track);
+  border-radius: 2px;
+  height: 3px;
+}
+
+.scroll-slider-v::-webkit-slider-runnable-track {
+  width: 3px;
+  height: auto;
+}
+
+.scroll-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--slider-accent);
+  border: 1.5px solid rgba(30, 28, 22, 0.8);
+  cursor: pointer;
+  margin-top: -4.5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.scroll-slider::-moz-range-track {
+  background: var(--slider-track);
+  border-radius: 2px;
+  height: 3px;
+  border: none;
+}
+
+.scroll-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--slider-accent);
+  border: 1.5px solid rgba(30, 28, 22, 0.8);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   THREE.JS CONTAINER — for embedded entity
+   ═══════════════════════════════════════════════════════════ */
 .section-full {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.section-centered {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.section-inner {
-  max-width: 600px;
-  padding: 0 24px;
-}
-
-.section-body-text {
-  font: 20px Georgia, serif;
-  line-height: 1.6;
-  color: var(--color-text);
-}
-
-/* Three.js section */
 .three-container {
   width: 100%;
   height: 100%;
@@ -290,86 +546,4 @@ kbd {
 
 .three-container canvas {
   display: block;
-}
-
-/* Section Six — mouse repulsion text */
-.section-six {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.section-six-stage {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  touch-action: none;
-}
-
-/* Clock section (Section 3) */
-.clock-section {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.clock-stage {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.clock-canvas {
-  position: absolute;
-  z-index: 10;
-  cursor: grab;
-  pointer-events: auto;
-  box-shadow: 0 0 80px rgba(252, 49, 76, 0.25);
-  border-radius: 50%;
-  touch-action: none;
-}
-
-.clock-canvas:active {
-  cursor: grabbing;
-}
-
-.clock-headline-line {
-  position: absolute;
-  white-space: pre;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.5px;
-  z-index: 2;
-}
-
-.clock-body-line {
-  position: absolute;
-  white-space: pre;
-  z-index: 1;
-  color: var(--color-text);
-}
-
-.clock-drop-cap {
-  position: absolute;
-  z-index: 2;
-  font-weight: 700;
-  color: #FC314C;
-}
-
-.clock-pq-box {
-  position: absolute;
-  pointer-events: none;
-  z-index: 3;
-  border-left: 3px solid #FC314C;
-  padding-left: 14px;
-}
-
-.clock-pq-line {
-  position: absolute;
-  white-space: pre;
-  font-style: italic;
-  color: #FC6D80;
 }
