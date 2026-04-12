@@ -211,7 +211,7 @@ body {
   position: absolute;
   left: 130px;
   top: 0;
-  bottom: 0;
+  height: 3000px;
   width: 2px;
   background: var(--margin-red);
   opacity: 0.4;
