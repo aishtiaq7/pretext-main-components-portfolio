@@ -70,6 +70,9 @@ export type EntityDef = {
   obstacle?: boolean     // red draggable obstacle — text reflows around it
   obstacleW?: number     // bounding box width in px (including padding)
   obstacleH?: number     // bounding box height in px (including padding)
+  imgSrc?: string        // image path (SVG/PNG/GIF) — renders <img> instead of text
+  imgW?: number          // display width in px
+  imgH?: number          // display height in px
 }
 
 export type FixedRegion = {

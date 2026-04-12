@@ -18,16 +18,15 @@ export type ObstacleRect = {
 }
 
 type Line = { x: number; y: number; text: string }
+type Iv = { left: number; right: number }
 
-const MIN_SLOT = 30
+const MIN_SLOT = 20
+const OBS_PAD = 4 // px padding around ellipse
 
-function carveSlots(
-  base: { left: number; right: number },
-  blocked: { left: number; right: number }[],
-): { left: number; right: number }[] {
+function carveSlots(base: Iv, blocked: Iv[]): Iv[] {
   let slots = [base]
   for (const b of blocked) {
-    const next: typeof slots = []
+    const next: Iv[] = []
     for (const s of slots) {
       if (b.right <= s.left || b.left >= s.right) { next.push(s); continue }
       if (b.left > s.left) next.push({ left: s.left, right: b.left })
@@ -36,6 +35,25 @@ function carveSlots(
     slots = next
   }
   return slots.filter(s => s.right - s.left >= MIN_SLOT)
+}
+
+// Elliptical interval — same algorithm as the clock in NotebookPage.
+// Treats each obstacle as an ellipse inscribed in its bounding box.
+// For each text line band, computes the horizontal extent of the ellipse
+// at that vertical position — giving tight, organic wrapping.
+function ellipseInterval(
+  obs: ObstacleRect,
+  bandTop: number, bandBottom: number,
+): Iv | null {
+  const cx = obs.x + obs.w / 2
+  const cy = obs.y + obs.h / 2
+  const a = obs.w / 2 + OBS_PAD  // horizontal semi-axis + padding
+  const b = obs.h / 2 + OBS_PAD  // vertical semi-axis + padding
+  if (bandTop >= cy + b || bandBottom <= cy - b) return null
+  const minDy = cy >= bandTop && cy <= bandBottom ? 0 : cy < bandTop ? bandTop - cy : cy - bandBottom
+  if (minDy >= b) return null
+  const maxDx = a * Math.sqrt(1 - (minDy * minDy) / (b * b))
+  return { left: cx - maxDx, right: cx + maxDx }
 }
 
 function remToPx(fontSize: string): number {
@@ -80,10 +98,10 @@ export function ReflowText({ text, maxWidth, fontFamily, fontSize, color, opacit
 
     while (safety++ < 300) {
       const bT = lineTop, bB = lineTop + lineHeight
-      const blocked: { left: number; right: number }[] = []
+      const blocked: Iv[] = []
       for (const obs of obstacles) {
-        if (bB <= obs.y || bT >= obs.y + obs.h) continue
-        blocked.push({ left: obs.x, right: obs.x + obs.w })
+        const iv = ellipseInterval(obs, bT, bB)
+        if (iv) blocked.push(iv)
       }
 
       const slots = carveSlots({ left: 0, right: maxWidth }, blocked)

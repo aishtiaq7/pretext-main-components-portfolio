@@ -90,13 +90,34 @@ export default function App() {
     setPagePositions(prev => ({ ...prev, [id]: { x, y } }))
   }, [])
 
+  const animRef = useRef<number | null>(null)
+
   const handleEntityClick = useCallback((id: string) => {
     const pos = positions[id]
     if (!pos) return
     const canvasX = (pos.x / 100) * 3000
     const canvasY = (pos.y / 100) * 3000
-    setPanX(clamp(-(canvasX - 1500) * zoomRef.current, -1800, 1800))
-    setPanY(clamp(-(canvasY - 1500) * zoomRef.current, -1800, 1800))
+    const targetX = clamp(-(canvasX - 1500) * zoomRef.current, -1800, 1800)
+    const targetY = clamp(-(canvasY - 1500) * zoomRef.current, -1800, 1800)
+
+    const startX = panXRef.current
+    const startY = panYRef.current
+    const startTime = performance.now()
+    const duration = 600 // ms
+
+    if (animRef.current) cancelAnimationFrame(animRef.current)
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime
+      const t = Math.min(elapsed / duration, 1)
+      // ease-out cubic
+      const ease = 1 - Math.pow(1 - t, 3)
+      setPanX(startX + (targetX - startX) * ease)
+      setPanY(startY + (targetY - startY) * ease)
+      if (t < 1) animRef.current = requestAnimationFrame(animate)
+      else animRef.current = null
+    }
+    animRef.current = requestAnimationFrame(animate)
   }, [positions])
 
   // Wheel → zoom / pan

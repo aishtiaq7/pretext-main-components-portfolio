@@ -111,7 +111,16 @@ export function HandwritingEntity({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      {hasReflow ? (
+      {entity.imgSrc ? (
+        <img
+          src={entity.imgSrc}
+          alt={entity.content || ''}
+          width={entity.imgW}
+          height={entity.imgH}
+          style={{ pointerEvents: 'none', display: 'block' }}
+          draggable={false}
+        />
+      ) : hasReflow ? (
         <ReflowText
           text={entity.content!}
           maxWidth={entity.maxWidth!}
