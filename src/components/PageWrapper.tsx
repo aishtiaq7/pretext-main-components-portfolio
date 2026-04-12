@@ -9,6 +9,7 @@ export type PageDef = {
   height: number  // px on canvas
   fixed: boolean
   component: string
+  borderless?: boolean  // true = looks like a regular entity, no visible box
 }
 
 function resolvePageCollisions(
@@ -79,7 +80,7 @@ export function PageWrapper({ page, x, y, zoom, pageRegions, onPositionChange, c
   return (
     <div
       ref={ref}
-      className="page-wrapper"
+      className={page.borderless ? 'page-wrapper page-wrapper-borderless' : 'page-wrapper'}
       style={{
         left: `${x}%`,
         top: `${y}%`,

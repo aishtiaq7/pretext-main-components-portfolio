@@ -16,8 +16,8 @@ import type { PageDef } from './components/PageWrapper'
 // ═══════════════════════════════════════════════════════════
 const PAGES: PageDef[] = [
   { id: 'clock-page', x: 25, y: 30, width: 1500, height: 1100, fixed: true, component: 'clock' },
-  { id: 'three-page', x: 79, y: 34, width: 420, height: 420, fixed: false, component: 'three' },
-  { id: 'text-page', x: 8, y: 50, width: 480, height: 340, fixed: false, component: 'text' },
+  { id: 'three-page', x: 79, y: 34, width: 420, height: 420, fixed: false, component: 'three', borderless: true },
+  { id: 'text-page', x: 8, y: 50, width: 480, height: 340, fixed: false, component: 'text', borderless: true },
 ]
 
 function clamp(val: number, min: number, max: number) {
@@ -124,7 +124,7 @@ export default function App() {
         return <NotebookPage width={1500} height={1100} />
       case 'three':
         return (
-          <div className="notebook-page" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: 380, height: 380, pointerEvents: 'none' }}>
               <ThreeIntro />
             </div>
@@ -132,9 +132,9 @@ export default function App() {
         )
       case 'text':
         return (
-          <div className="text-card-page">
-            <h2>Down the Rabbit Hole</h2>
-            <p>{ALICE_QUOTE}</p>
+          <div style={{ width: '100%', height: '100%', padding: 24 }}>
+            <h2 style={{ font: '700 1.8rem "Indie Flower", cursive', color: '#2a2520', marginBottom: 12 }}>Down the Rabbit Hole</h2>
+            <p style={{ font: '1.2rem "Kalam", cursive', lineHeight: 1.6, color: '#3a3530' }}>{ALICE_QUOTE}</p>
           </div>
         )
       default:

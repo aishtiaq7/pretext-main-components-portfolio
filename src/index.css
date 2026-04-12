@@ -548,6 +548,14 @@ body {
   cursor: grabbing;
 }
 
+/* Borderless pages — invisible collision zone, looks like a regular entity */
+.page-wrapper-borderless {
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+}
+
 /* Simple text card page */
 .text-card-page {
   width: 100%;

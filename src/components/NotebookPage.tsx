@@ -375,9 +375,10 @@ export function NotebookPage({ width = 1400, height = 1000 }: Props) {
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const d = dragRef.current
     if (!d) return
-    clockRef.current.x = d.cx + (e.clientX - d.sx) / d.scale
-    clockRef.current.y = d.cy + (e.clientY - d.sy) / d.scale
-  }, [])
+    const r = clockRef.current.r
+    clockRef.current.x = Math.max(r, Math.min(width - r, d.cx + (e.clientX - d.sx) / d.scale))
+    clockRef.current.y = Math.max(r, Math.min(height - r, d.cy + (e.clientY - d.sy) / d.scale))
+  }, [width, height])
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragRef.current) return
