@@ -210,9 +210,9 @@ body {
 .notebook-margin-line {
   position: absolute;
   left: 130px;
-  top: 0;
-  height: 3000px;
-  width: 2px;
+  top: -10000px;
+  height: 23000px;
+  width: 3px;
   background: var(--margin-red);
   opacity: 0.4;
   pointer-events: none;
