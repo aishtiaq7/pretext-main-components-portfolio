@@ -67,6 +67,9 @@ export type EntityDef = {
   type: 'text' | 'component'
   componentId?: string
   fixed?: boolean
+  obstacle?: boolean     // red draggable obstacle — text reflows around it
+  obstacleW?: number     // bounding box width in px (including padding)
+  obstacleH?: number     // bounding box height in px (including padding)
 }
 
 export type FixedRegion = {

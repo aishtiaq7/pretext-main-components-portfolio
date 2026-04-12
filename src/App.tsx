@@ -4,6 +4,7 @@ import type { FixedRegion } from './types'
 import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
+import type { CanvasObstacle } from './components/HandwritingEntity'
 import { CrossNavbar } from './components/CrossNavbar'
 import { ScrollInputs } from './components/ScrollInputs'
 import { ThreeIntro } from './components/ThreeIntro'
@@ -54,6 +55,17 @@ export default function App() {
       h: (p.height / 3000) * 100,
     })),
     [pagePositions],
+  )
+
+  // Compute obstacle rects from obstacle entities (for text reflow)
+  const obstacleRects: CanvasObstacle[] = useMemo(() =>
+    ENTITIES
+      .filter(e => e.obstacle)
+      .map(e => {
+        const pos = positions[e.id] || { x: e.x, y: e.y }
+        return { id: e.id, x: pos.x, y: pos.y, wPx: e.obstacleW || 0, hPx: e.obstacleH || 0 }
+      }),
+    [positions],
   )
 
   const zoomRef = useRef(zoom)
@@ -184,6 +196,7 @@ export default function App() {
                 y={pos.y}
                 zoom={zoom}
                 fixedRegions={pageRegions}
+                obstacles={obstacleRects}
                 onPositionChange={handleEntityPositionChange}
                 onClick={() => handleEntityClick(entity.id)}
               />
