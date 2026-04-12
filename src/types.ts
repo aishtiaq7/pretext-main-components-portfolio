@@ -66,4 +66,13 @@ export type EntityDef = {
   maxWidth?: number
   type: 'text' | 'component'
   componentId?: string
+  fixed?: boolean
+}
+
+export type FixedRegion = {
+  id: string
+  x: number
+  y: number
+  w: number
+  h: number
 }

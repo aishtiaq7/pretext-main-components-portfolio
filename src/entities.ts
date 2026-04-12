@@ -69,7 +69,7 @@ export const ENTITIES: EntityDef[] = [
   {
     id: 'brand',
     x: 40,
-    y: 44,
+    y: 14,
     rotate: -5,
     font: '"Permanent Marker", cursive',
     fontSize: '7.5rem',
@@ -82,7 +82,7 @@ export const ENTITIES: EntityDef[] = [
   {
     id: 'tagline',
     x: 38,
-    y: 51,
+    y: 21,
     rotate: 2,
     font: '"Caveat", cursive',
     fontSize: '3rem',
@@ -119,46 +119,6 @@ export const ENTITIES: EntityDef[] = [
     color: '#3a3530',
     opacity: 0.75,
     content: CLOCK_HEADLINE,
-    type: 'text',
-  },
-  {
-    id: 'clock-component',
-    x: 74,
-    y: 28,
-    rotate: 3,
-    font: 'system-ui',
-    fontSize: '1rem',
-    fontWeight: '400',
-    color: '#4a4540',
-    opacity: 1,
-    type: 'component',
-    componentId: 'clock',
-  },
-  {
-    id: 'three-component',
-    x: 68,
-    y: 52,
-    rotate: -1,
-    font: 'system-ui',
-    fontSize: '1rem',
-    fontWeight: '400',
-    color: '#4a4540',
-    opacity: 1,
-    type: 'component',
-    componentId: 'three',
-  },
-  {
-    id: 'respect-body',
-    x: 52,
-    y: 34,
-    rotate: 1,
-    font: '"Kalam", cursive',
-    fontSize: '1.2rem',
-    fontWeight: '300',
-    color: '#5a554e',
-    opacity: 0.68,
-    content: RESPECT_BODY,
-    maxWidth: 380,
     type: 'text',
   },
 
@@ -380,7 +340,7 @@ export const ENTITIES: EntityDef[] = [
   },
   {
     id: 'tag-git',
-    x: 52,
+    x: 78,
     y: 44,
     rotate: 4,
     font: '"Patrick Hand", cursive',
@@ -392,20 +352,6 @@ export const ENTITIES: EntityDef[] = [
     type: 'text',
   },
 
-  // ── Interactive: Notebook page (clock + reflowing text) ─
-  {
-    id: 'notebook-page',
-    x: 25,
-    y: 30,
-    rotate: 0,
-    font: 'system-ui',
-    fontSize: '1rem',
-    fontWeight: '400',
-    color: '#4a4540',
-    opacity: 1,
-    type: 'component',
-    componentId: 'notebook-page',
-  },
 
   // ── Fill: Top area (y 0–20%) ──────────────────────────
   {
@@ -543,7 +489,7 @@ export const ENTITIES: EntityDef[] = [
   {
     id: 'underline-1',
     x: 46,
-    y: 49,
+    y: 70,
     rotate: -1,
     font: 'system-ui',
     fontSize: '1rem',
@@ -558,7 +504,7 @@ export const ENTITIES: EntityDef[] = [
   {
     id: 'email-chaos',
     x: 50,
-    y: 56,
+    y: 70,
     rotate: -2,
     font: '"Kalam", cursive',
     fontSize: '1.3rem',
@@ -584,7 +530,7 @@ export const ENTITIES: EntityDef[] = [
   {
     id: 'arrow-down',
     x: 55,
-    y: 50,
+    y: 70,
     rotate: 0,
     font: 'system-ui',
     fontSize: '2.5rem',
@@ -922,7 +868,7 @@ export const ENTITIES: EntityDef[] = [
   },
   {
     id: 'doodle-arrow',
-    x: 28,
+    x: 16,
     y: 40,
     rotate: -8,
     font: 'system-ui',
@@ -1095,7 +1041,7 @@ export const ENTITIES: EntityDef[] = [
   },
   {
     id: 'bold-arrow-right',
-    x: 30,
+    x: 16,
     y: 32,
     rotate: 2,
     font: 'system-ui',
