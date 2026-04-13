@@ -8,6 +8,7 @@ import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
 import type { CanvasObstacle } from './components/HandwritingEntity'
 import { ScrollInputs } from './components/ScrollInputs'
+import type { MinimapShape } from './components/ScrollInputs'
 import { ThreeIntro } from './components/ThreeIntro'
 import { NotebookPage } from './components/NotebookPage'
 import { PageWrapper } from './components/PageWrapper'
@@ -134,6 +135,36 @@ export default function App() {
 
     return regions
   }, [pagePositions, positions, activeWidget])
+
+  // Compute minimap shapes — realtime abstraction of the canvas.
+  // Only includes meaningful entities (pages, sections, widgets, obstacles);
+  // skips doodles/accents/watermarks which are too small (<2px) to render.
+  const minimapShapes: MinimapShape[] = useMemo(() => {
+    const shapes: MinimapShape[] = []
+
+    // Pages (skip the invisible header-zone drag-blocker)
+    for (const p of PAGES) {
+      if (p.id === 'header-zone') continue
+      const pos = pagePositions[p.id] ?? { x: p.x, y: p.y }
+      shapes.push({ id: p.id, type: 'page', x: pos.x, y: pos.y, w: p.width, h: p.height })
+    }
+
+    // Sections, widgets, obstacles from the entity list
+    for (const e of ENTITIES) {
+      const pos = positions[e.id] ?? { x: e.x, y: e.y }
+      if (e.category === 'section') {
+        const size = SECTION_SIZES[e.id]
+        if (size) shapes.push({ id: e.id, type: 'section', x: pos.x, y: pos.y, w: size.w, h: size.h })
+      } else if (e.category === 'widget') {
+        const size = WIDGET_SIZES[e.id]
+        if (size) shapes.push({ id: e.id, type: 'widget', x: pos.x, y: pos.y, w: size.w, h: size.h })
+      } else if (e.obstacle) {
+        shapes.push({ id: e.id, type: 'obstacle', x: pos.x, y: pos.y, w: e.obstacleW ?? 80, h: e.obstacleH ?? 40 })
+      }
+    }
+
+    return shapes
+  }, [pagePositions, positions])
 
   // Compute obstacle rects for text reflow — ONLY red obstacle entities
   // (deadline, ASAP, …). Reflow paragraphs don't interact with each other.
@@ -418,7 +449,7 @@ export default function App() {
         </ZoomCanvas>
       </div>
 
-      <ScrollInputs />
+      <ScrollInputs shapes={minimapShapes} />
     </>
   )
 }

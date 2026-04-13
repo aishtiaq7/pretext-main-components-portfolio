@@ -9,15 +9,22 @@ const MINIMAP = 120
 const MINIMAP_SCALE = MINIMAP / CANVAS
 const NAVBAR_H = 44
 
-// Page outlines for the minimap (x,y in canvas %; w,h in canvas px)
-const MINIMAP_PAGES = [
-  { x: 32, y: 10, w: 1100, h: 220 },
-  { x: 30, y: 16, w: 1500, h: 1100 },
-  { x: 72, y: 16, w: 420, h: 420 },
-  { x: 72, y: 24, w: 480, h: 340 },
-]
+// Realtime shape descriptor — computed in App.tsx from live canvas state.
+// x,y are canvas % (0-100); w,h are canvas px.
+export type MinimapShape = {
+  id: string
+  type: 'page' | 'section' | 'widget' | 'obstacle'
+  x: number
+  y: number
+  w: number
+  h: number
+}
 
-export function ScrollInputs() {
+type Props = {
+  shapes: MinimapShape[]
+}
+
+export function ScrollInputs({ shapes }: Props) {
   const { zoom, panX, panY } = useViewport()
   const [pos, setPos] = useState({ x: -80, y: 140 })
   const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
@@ -155,18 +162,26 @@ export function ScrollInputs() {
           onPointerUp={handleMinimapUp}
           onPointerCancel={handleMinimapUp}
         >
-          {MINIMAP_PAGES.map((p, i) => (
-            <div
-              key={i}
-              className="minimap-page"
-              style={{
-                left: (p.x / 100) * MINIMAP,
-                top: (p.y / 100) * MINIMAP,
-                width: p.w * MINIMAP_SCALE,
-                height: p.h * MINIMAP_SCALE,
-              }}
-            />
-          ))}
+          <svg
+            className="minimap-svg"
+            width={MINIMAP}
+            height={MINIMAP}
+            viewBox={`0 0 ${MINIMAP} ${MINIMAP}`}
+          >
+            {shapes.map(s => {
+              const mx = (s.x / 100) * MINIMAP
+              const my = (s.y / 100) * MINIMAP
+              const mw = s.w * MINIMAP_SCALE
+              const mh = s.h * MINIMAP_SCALE
+              if (s.type === 'obstacle') {
+                // tiny dot at center — represents a reflow obstacle
+                return <circle key={s.id} cx={mx + mw / 2} cy={my + mh / 2} r={1.3} className="mm-obstacle" />
+              }
+              // skip shapes that would render sub-pixel
+              if (mw < 1 || mh < 1) return null
+              return <rect key={s.id} x={mx} y={my} width={mw} height={mh} className={`mm-${s.type}`} />
+            })}
+          </svg>
           <div
             className="minimap-viewport"
             style={{ left: vLeft, top: vTop, width: vW, height: vH }}

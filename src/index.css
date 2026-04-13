@@ -397,12 +397,37 @@ body {
   touch-action: none;
 }
 
-.minimap-page {
+/* Minimap content SVG — realtime abstraction of canvas */
+.minimap-svg {
   position: absolute;
-  border: 1px solid rgba(200, 195, 185, 0.1);
-  background: rgba(200, 195, 185, 0.03);
-  border-radius: 1px;
+  inset: 0;
   pointer-events: none;
+}
+
+/* Pages: thin outline, very faint fill */
+.mm-page {
+  fill: rgba(232, 228, 217, 0.06);
+  stroke: rgba(200, 195, 185, 0.35);
+  stroke-width: 0.6;
+}
+
+/* Sections: medium fill, subtle border */
+.mm-section {
+  fill: rgba(200, 184, 130, 0.18);
+  stroke: rgba(200, 184, 130, 0.4);
+  stroke-width: 0.6;
+}
+
+/* Widgets: accent-red fill */
+.mm-widget {
+  fill: rgba(200, 48, 48, 0.35);
+  stroke: rgba(200, 48, 48, 0.55);
+  stroke-width: 0.6;
+}
+
+/* Obstacles: small red dots */
+.mm-obstacle {
+  fill: rgba(212, 160, 160, 0.7);
 }
 
 .minimap-viewport {
