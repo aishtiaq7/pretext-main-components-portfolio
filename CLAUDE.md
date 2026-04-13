@@ -92,6 +92,15 @@ public/
 | section    | pinnable  | no           | no            | Photo galleries, about     |
 | widget     | on click  | no           | yes           | Large interactive blocks   |
 
+**IMPORTANT — before creating or updating any instance, consult
+[object-types.md](./object-types.md).** It contains the decision tree, behavioral
+details, required fields, and example entries for every type (including variants
+like Reflow Paragraph, Motion Obstacle, and Emoji Accent). Reuse existing types
+where behavior matches; only introduce a new type after user confirmation.
+
+Also follow the presentation conventions in [my-output-format.md](./my-output-format.md)
+when showing layout snapshots back to the user.
+
 To add a new entity: create an entry in the matching `src/entities/*.ts` file following the
 `EntityDef` type. It auto-renders — no component changes needed.
 

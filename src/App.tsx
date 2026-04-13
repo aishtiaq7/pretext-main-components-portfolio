@@ -30,7 +30,10 @@ const PAGES: PageDef[] = [
   { id: 'clock-page', x: 3, y: 16, width: 1500, height: 1100, fixed: true, component: 'clock' },
   // Tightened: cube directly below notebook, rabbit hole below cube (left column, x:5)
   { id: 'three-page', x: 5, y: 30.5, width: 420, height: 420, fixed: false, component: 'three', borderless: true, rotate: 8 },
-  { id: 'text-page', x: 5, y: 36.5, width: 480, height: 340, fixed: false, component: 'text', borderless: true, rotate: -6 },
+  // Rabbit Hole — draggable card. borderless:false → gets the 2px black frame,
+  // transparent bg lets paragraph text show through. Collides with paragraphs
+  // (via pageCollisionRegions) so it never overlaps them.
+  { id: 'text-page', x: 45, y: 25, width: 480, height: 340, fixed: false, component: 'text', borderless: false, rotate: -4 },
 ]
 
 // Section entity dimensions (used for collision regions)
@@ -136,6 +139,36 @@ export default function App() {
 
     return regions
   }, [pagePositions, positions, activeWidget])
+
+  // Extended collision list — pages-only. Pages bump into reflow paragraphs
+  // (same no-overlap semantics they already have with sections), while
+  // entities (red obstacles, paragraphs themselves) continue to use the
+  // smaller `pageRegions` so red words can still land on paragraphs and
+  // paragraphs can still freely overlap each other.
+  const pageCollisionRegions: FixedRegion[] = useMemo(() => {
+    const regions: FixedRegion[] = [...pageRegions]
+    for (const e of ENTITIES) {
+      if (e.maxWidth && e.content && !e.obstacle && e.category !== 'section') {
+        const pos = positions[e.id] || { x: e.x, y: e.y }
+        const rem = e.fontSize.match(/([\d.]+)rem/)
+        const px = e.fontSize.match(/([\d.]+)px/)
+        const fontPx = rem ? parseFloat(rem[1]) * 16 : px ? parseFloat(px[1]) : 16
+        const lineH = Math.round(fontPx * 1.5)
+        const isBold = (e.fontWeight === '700' || e.fontWeight === 'bold')
+        const charFactor = isBold ? 0.62 : 0.55
+        const charsPerLine = Math.max(8, Math.floor(e.maxWidth / (fontPx * charFactor)))
+        const lines = Math.max(1, Math.ceil((e.content?.length || 0) / charsPerLine))
+        regions.push({
+          id: e.id,
+          x: pos.x,
+          y: pos.y,
+          w: (e.maxWidth / CANVAS) * 100,
+          h: (lines * lineH / CANVAS) * 100,
+        })
+      }
+    }
+    return regions
+  }, [pageRegions, positions])
 
   // Compute minimap shapes — realtime abstraction of the canvas.
   // Only includes meaningful entities (pages, sections, widgets, obstacles);
@@ -376,8 +409,18 @@ export default function App() {
       case 'text':
         return (
           <div style={{ width: '100%', height: '100%', padding: 24 }}>
-            <h2 style={{ font: '700 1.8rem "Indie Flower", cursive', color: '#2a2520', marginBottom: 12 }}>Down the Rabbit Hole</h2>
-            <p style={{ font: '1.2rem "Kalam", cursive', lineHeight: 1.6, color: '#3a3530' }}>{ALICE_QUOTE}</p>
+            <h2 style={{
+              font: '700 1.8rem "Indie Flower", cursive',
+              color: '#1a1714',
+              marginBottom: 12,
+              textShadow: '0 1px 0 rgba(232, 228, 217, 0.8)',
+            }}>Down the Rabbit Hole</h2>
+            <p style={{
+              font: '1.15rem "Kalam", cursive',
+              lineHeight: 1.55,
+              color: '#2a2520',
+              textShadow: '0 1px 0 rgba(232, 228, 217, 0.8)',
+            }}>{ALICE_QUOTE}</p>
           </div>
         )
       default:
@@ -454,7 +497,7 @@ export default function App() {
                 x={pos.x}
                 y={pos.y}
                 zoom={zoom}
-                pageRegions={pageRegions}
+                pageRegions={pageCollisionRegions}
                 onPositionChange={handlePagePositionChange}
               >
                 {renderPage(page.component)}

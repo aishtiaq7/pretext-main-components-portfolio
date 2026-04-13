@@ -454,9 +454,9 @@ body {
   z-index: 50;
   overflow: hidden;
   border-radius: 4px;
-  border: 2px solid rgba(60, 55, 48, 0.55); /* prominent border for borderless:false */
-  background: rgba(245, 242, 235, 0.6);
-  box-shadow: none;                          /* shadow removed */
+  border: 2px solid #000;       /* hard 2px solid black edge for borderless:false pages */
+  background: transparent;      /* paragraph text shows through behind the page */
+  box-shadow: none;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
