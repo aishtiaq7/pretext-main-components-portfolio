@@ -19,7 +19,7 @@ export function SectionPhotoGallery() {
       <div className="section-photo-grid">
         {SECTION_PHOTOS.map((photo, i) => (
           <div
-            key={photo.src}
+            key={`${photo.src}-${i}`}
             className="section-polaroid"
             style={{
               transform: `rotate(${photo.rotate}deg)`,
