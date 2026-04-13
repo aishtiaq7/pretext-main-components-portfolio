@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { ENTITIES, ALICE_QUOTE, BRAND_NAME } from './entities'
+import { ENTITIES, BRAND_NAME, ALICE_QUOTE } from './entities'
 import type { FixedRegion } from './types'
+import { CANVAS, PAN_LIMIT } from './constants'
+import { useViewportZoom, getViewport, setZoom, setPan, setPanX } from './store/viewport'
 import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
@@ -10,32 +12,64 @@ import { ThreeIntro } from './components/ThreeIntro'
 import { NotebookPage } from './components/NotebookPage'
 import { PageWrapper } from './components/PageWrapper'
 import type { PageDef } from './components/PageWrapper'
+import { SectionPhotoGallery, GALLERY_W, GALLERY_H } from './components/SectionPhotoGallery'
+import { SectionAbout, ABOUT_W, ABOUT_H } from './components/SectionAbout'
+import { WIDGET_W, WIDGET_H } from './entities/widgets'
 
 // ═══════════════════════════════════════════════════════════
 // PAGE DEFINITIONS — siblings of doodle entities on the canvas
 // ═══════════════════════════════════════════════════════════
 const PAGES: PageDef[] = [
-  { id: 'brand-page', x: 35, y: 22, width: 1100, height: 220, fixed: true, component: 'brand', borderless: true },
-  { id: 'clock-page', x: 25, y: 30, width: 1500, height: 1100, fixed: true, component: 'clock' },
-  { id: 'three-page', x: 79, y: 34, width: 420, height: 420, fixed: false, component: 'three', borderless: true },
-  { id: 'text-page', x: 8, y: 50, width: 480, height: 340, fixed: false, component: 'text', borderless: true },
+  { id: 'brand-page', x: 32, y: 10, width: 1100, height: 220, fixed: true, component: 'brand', borderless: true },
+  { id: 'clock-page', x: 30, y: 16, width: 1500, height: 1100, fixed: true, component: 'clock' },
+  { id: 'three-page', x: 72, y: 16, width: 420, height: 420, fixed: false, component: 'three', borderless: true },
+  { id: 'text-page', x: 72, y: 24, width: 480, height: 340, fixed: false, component: 'text', borderless: true },
 ]
+
+// Section entity dimensions (used for collision regions)
+// All photo-gallery sections share GALLERY_W/H, all about-block share ABOUT_W/H
+const SECTION_SIZES: Record<string, { w: number; h: number }> = {
+  'section-photos':   { w: GALLERY_W, h: GALLERY_H },
+  'section-photos-2': { w: GALLERY_W, h: GALLERY_H },
+  'section-photos-3': { w: GALLERY_W, h: GALLERY_H },
+  'section-about':    { w: ABOUT_W, h: ABOUT_H },
+  'section-about-2':  { w: ABOUT_W, h: ABOUT_H },
+  'section-about-3':  { w: ABOUT_W, h: ABOUT_H },
+}
+
+// Widget entity dimensions (used for collision regions + pushing)
+const WIDGET_SIZES: Record<string, { w: number; h: number }> = {
+  'widget-placeholder': { w: WIDGET_W, h: WIDGET_H },
+}
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val))
 }
 
 export default function App() {
-  const [zoom, setZoom] = useState(1.0)
-  const [panX, setPanX] = useState(0)
-  const [panY, setPanY] = useState(0)
+  // Only re-renders App when zoom changes (not on pan)
+  const zoom = useViewportZoom()
 
-  // Entity positions (doodles)
+  // Entity positions (doodles + obstacles + accents + watermarks + images + sections)
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>(() => {
     const pos: Record<string, { x: number; y: number }> = {}
     for (const e of ENTITIES) pos[e.id] = { x: e.x, y: e.y }
     return pos
   })
+
+  // Pinned state — initialized from entity definitions, toggleable at runtime
+  const [pinnedState, setPinnedState] = useState<Record<string, boolean>>(() => {
+    const state: Record<string, boolean> = {}
+    for (const e of ENTITIES) {
+      if (e.pinned !== undefined) state[e.id] = e.pinned
+    }
+    return state
+  })
+
+  // Active widget — only one at a time, null = none active
+  const [activeWidget, setActiveWidget] = useState<string | null>(null)
+  const activeWidgetRef = useRef<string | null>(null)
+  activeWidgetRef.current = activeWidget
 
   // Page positions (for draggable pages)
   const [pagePositions, setPagePositions] = useState<Record<string, { x: number; y: number }>>(() => {
@@ -45,16 +79,51 @@ export default function App() {
   })
 
   // Compute page regions — used by both entity collision and page-to-page collision
-  const pageRegions: FixedRegion[] = useMemo(() =>
-    PAGES.map(p => ({
+  const pageRegions: FixedRegion[] = useMemo(() => {
+    const regions: FixedRegion[] = PAGES.map(p => ({
       id: p.id,
       x: pagePositions[p.id]?.x ?? p.x,
       y: pagePositions[p.id]?.y ?? p.y,
-      w: (p.width / 3000) * 100,
-      h: (p.height / 3000) * 100,
-    })),
-    [pagePositions],
-  )
+      w: (p.width / CANVAS) * 100,
+      h: (p.height / CANVAS) * 100,
+    }))
+
+    // Add section entities as collision regions too
+    for (const e of ENTITIES) {
+      if (e.category === 'section') {
+        const size = SECTION_SIZES[e.id]
+        if (size) {
+          const pos = positions[e.id] || { x: e.x, y: e.y }
+          regions.push({
+            id: e.id,
+            x: pos.x,
+            y: pos.y,
+            w: (size.w / CANVAS) * 100,
+            h: (size.h / CANVAS) * 100,
+          })
+        }
+      }
+    }
+
+    // Add active widget as collision region so entities avoid it
+    if (activeWidget) {
+      const size = WIDGET_SIZES[activeWidget]
+      if (size) {
+        const pos = positions[activeWidget]
+        if (pos) {
+          regions.push({
+            id: activeWidget,
+            x: pos.x,
+            y: pos.y,
+            w: (size.w / CANVAS) * 100,
+            h: (size.h / CANVAS) * 100,
+          })
+        }
+      }
+    }
+
+    return regions
+  }, [pagePositions, positions, activeWidget])
 
   // Compute obstacle rects from obstacle entities (for text reflow)
   const obstacleRects: CanvasObstacle[] = useMemo(() =>
@@ -67,12 +136,6 @@ export default function App() {
     [positions],
   )
 
-  const zoomRef = useRef(zoom)
-  const panXRef = useRef(panX)
-  const panYRef = useRef(panY)
-  zoomRef.current = zoom
-  panXRef.current = panX
-  panYRef.current = panY
   const viewportRef = useRef<HTMLDivElement>(null)
 
   const canvasDragRef = useRef<{
@@ -82,11 +145,49 @@ export default function App() {
   } | null>(null)
 
   const handleEntityPositionChange = useCallback((id: string, x: number, y: number) => {
-    setPositions(prev => ({ ...prev, [id]: { x, y } }))
+    setPositions(prev => {
+      const next = { ...prev, [id]: { x, y } }
+
+      // If this is the active widget, push overlapping entities out of the way
+      const widgetSize = WIDGET_SIZES[id]
+      if (widgetSize && activeWidgetRef.current === id) {
+        const wW = (widgetSize.w / CANVAS) * 100
+        const wH = (widgetSize.h / CANVAS) * 100
+        const margin = 0.3 // canvas %
+
+        for (const e of ENTITIES) {
+          if (e.id === id || e.category === 'widget') continue
+          const ePos = next[e.id] || { x: e.x, y: e.y }
+          if (ePos.x >= x && ePos.x <= x + wW && ePos.y >= y && ePos.y <= y + wH) {
+            const dl = ePos.x - x
+            const dr = (x + wW) - ePos.x
+            const dt = ePos.y - y
+            const db = (y + wH) - ePos.y
+            const min = Math.min(dl, dr, dt, db)
+            const push = { ...ePos }
+            if (min === dl) push.x = x - margin
+            else if (min === dr) push.x = x + wW + margin
+            else if (min === dt) push.y = y - margin
+            else push.y = y + wH + margin
+            next[e.id] = push
+          }
+        }
+      }
+
+      return next
+    })
   }, [])
 
   const handlePagePositionChange = useCallback((id: string, x: number, y: number) => {
     setPagePositions(prev => ({ ...prev, [id]: { x, y } }))
+  }, [])
+
+  const handlePinToggle = useCallback((id: string) => {
+    setPinnedState(prev => ({ ...prev, [id]: !prev[id] }))
+  }, [])
+
+  const handleWidgetActivate = useCallback((id: string) => {
+    setActiveWidget(prev => prev === id ? null : id)
   }, [])
 
   const animRef = useRef<number | null>(null)
@@ -94,13 +195,14 @@ export default function App() {
   const handleEntityClick = useCallback((id: string) => {
     const pos = positions[id]
     if (!pos) return
-    const canvasX = (pos.x / 100) * 3000
-    const canvasY = (pos.y / 100) * 3000
-    const targetX = clamp(-(canvasX - 1500) * zoomRef.current, -1800, 1800)
-    const targetY = clamp(-(canvasY - 1500) * zoomRef.current, -1800, 1800)
+    const { zoom: z, panX: curPanX, panY: curPanY } = getViewport()
+    const canvasX = (pos.x / 100) * CANVAS
+    const canvasY = (pos.y / 100) * CANVAS
+    const targetX = clamp(-(canvasX - CANVAS / 2) * z, -PAN_LIMIT, PAN_LIMIT)
+    const targetY = clamp(-(canvasY - CANVAS / 2) * z, -PAN_LIMIT, PAN_LIMIT)
 
-    const startX = panXRef.current
-    const startY = panYRef.current
+    const startX = curPanX
+    const startY = curPanY
     const startTime = performance.now()
     const duration = 600 // ms
 
@@ -111,8 +213,10 @@ export default function App() {
       const t = Math.min(elapsed / duration, 1)
       // ease-out cubic
       const ease = 1 - Math.pow(1 - t, 3)
-      setPanX(startX + (targetX - startX) * ease)
-      setPanY(startY + (targetY - startY) * ease)
+      setPan(
+        startX + (targetX - startX) * ease,
+        startY + (targetY - startY) * ease,
+      )
       if (t < 1) animRef.current = requestAnimationFrame(animate)
       else animRef.current = null
     }
@@ -125,9 +229,17 @@ export default function App() {
     if (!viewport) return
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
-      if (e.ctrlKey || e.metaKey) setZoom(z => clamp(z * (1 - e.deltaY * 0.01), 0.15, 3.0))
-      else if (e.shiftKey) setPanX(p => clamp(p - e.deltaY, -1800, 1800))
-      else setZoom(z => clamp(z + (-e.deltaY * 0.002), 0.15, 3.0))
+      if (e.shiftKey) {
+        const { panX: px } = getViewport()
+        setPanX(px - e.deltaY)
+        return
+      }
+      const { zoom: z } = getViewport()
+      if (e.ctrlKey || e.metaKey) {
+        setZoom(z * (1 - e.deltaY * 0.01))
+      } else {
+        setZoom(z + (-e.deltaY * 0.002))
+      }
     }
     viewport.addEventListener('wheel', handleWheel, { passive: false })
     return () => viewport.removeEventListener('wheel', handleWheel)
@@ -136,18 +248,33 @@ export default function App() {
   // Viewport drag → pan canvas
   const handleViewportPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('zoom-canvas')) return
-    canvasDragRef.current = { startX: e.clientX, startY: e.clientY, startPanX: panXRef.current, startPanY: panYRef.current, active: true }
+    const { panX: px, panY: py } = getViewport()
+    canvasDragRef.current = { startX: e.clientX, startY: e.clientY, startPanX: px, startPanY: py, active: true }
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }, [])
   const handleViewportPointerMove = useCallback((e: React.PointerEvent) => {
     const d = canvasDragRef.current; if (!d?.active) return
-    setPanX(clamp(d.startPanX + (e.clientX - d.startX), -1800, 1800))
-    setPanY(clamp(d.startPanY + (e.clientY - d.startY), -1800, 1800))
+    setPan(
+      d.startPanX + (e.clientX - d.startX),
+      d.startPanY + (e.clientY - d.startY),
+    )
   }, [])
   const handleViewportPointerUp = useCallback((e: React.PointerEvent) => {
     if (!canvasDragRef.current?.active) return
     ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
     canvasDragRef.current = null
+  }, [])
+
+  // Render section content by component id
+  const renderSection = useCallback((componentId: string) => {
+    switch (componentId) {
+      case 'photo-gallery':
+        return <SectionPhotoGallery />
+      case 'about-block':
+        return <SectionAbout />
+      default:
+        return null
+    }
   }, [])
 
   // Render page content by component id
@@ -191,6 +318,15 @@ export default function App() {
     }
   }
 
+  // Merge runtime pinned state into entities for rendering
+  const entitiesWithPinState = useMemo(() =>
+    ENTITIES.map(e => ({
+      ...e,
+      pinned: pinnedState[e.id] ?? e.pinned ?? false,
+    })),
+    [pinnedState],
+  )
+
   return (
     <>
       <div className="page-bg" />
@@ -204,9 +340,9 @@ export default function App() {
         onPointerUp={handleViewportPointerUp}
         onPointerCancel={handleViewportPointerUp}
       >
-        <ZoomCanvas zoom={zoom} panX={panX} panY={panY}>
+        <ZoomCanvas>
           {/* ── Doodle entities (z-index 5) ── */}
-          {ENTITIES.map((entity) => {
+          {entitiesWithPinState.map((entity) => {
             const pos = positions[entity.id] || { x: entity.x, y: entity.y }
             return (
               <HandwritingEntity
@@ -218,7 +354,11 @@ export default function App() {
                 fixedRegions={pageRegions}
                 obstacles={obstacleRects}
                 onPositionChange={handleEntityPositionChange}
+                onPinToggle={entity.category === 'section' ? handlePinToggle : undefined}
                 onClick={() => handleEntityClick(entity.id)}
+                renderSection={entity.category === 'section' ? renderSection : undefined}
+                isWidgetActive={entity.category === 'widget' ? activeWidget === entity.id : undefined}
+                onWidgetActivate={entity.category === 'widget' ? handleWidgetActivate : undefined}
               />
             )
           })}
@@ -243,12 +383,7 @@ export default function App() {
         </ZoomCanvas>
       </div>
 
-      <ScrollInputs
-        zoom={zoom} panX={panX} panY={panY}
-        setZoom={(fn) => setZoom(z => clamp(fn(z), 0.15, 3.0))}
-        setPanX={(fn) => setPanX(p => clamp(fn(p), -1800, 1800))}
-        setPanY={(fn) => setPanY(p => clamp(fn(p), -1800, 1800))}
-      />
+      <ScrollInputs />
     </>
   )
 }

@@ -1,32 +1,24 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
+import { CANVAS, PAN_LIMIT } from '../constants'
+import { useViewport, setZoom, setPan, setPanX, setPanY, getViewport } from '../store/viewport'
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val))
 }
-
-const CANVAS = 3000
 const MINIMAP = 120
 const MINIMAP_SCALE = MINIMAP / CANVAS
 const NAVBAR_H = 44
 
 // Page outlines for the minimap (x,y in canvas %; w,h in canvas px)
 const MINIMAP_PAGES = [
-  { x: 35, y: 22, w: 1100, h: 220 },
-  { x: 25, y: 30, w: 1500, h: 1100 },
-  { x: 79, y: 34, w: 420, h: 420 },
-  { x: 8, y: 50, w: 480, h: 340 },
+  { x: 32, y: 10, w: 1100, h: 220 },
+  { x: 30, y: 16, w: 1500, h: 1100 },
+  { x: 72, y: 16, w: 420, h: 420 },
+  { x: 72, y: 24, w: 480, h: 340 },
 ]
 
-type Props = {
-  zoom: number
-  panX: number
-  panY: number
-  setZoom: (fn: (z: number) => number) => void
-  setPanX: (fn: (p: number) => number) => void
-  setPanY: (fn: (p: number) => number) => void
-}
-
-export function ScrollInputs({ zoom, panX, panY, setZoom, setPanX, setPanY }: Props) {
+export function ScrollInputs() {
+  const { zoom, panX, panY } = useViewport()
   const [pos, setPos] = useState({ x: -80, y: 140 })
   const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
   const minimapDragRef = useRef<{ sx: number; sy: number; oPanX: number; oPanY: number } | null>(null)
@@ -63,8 +55,9 @@ export function ScrollInputs({ zoom, panX, panY, setZoom, setPanX, setPanY }: Pr
 
   // ── Minimap viewport rect (derived from pan/zoom state) ──────────
 
-  const canvasLeft = 1500 - (viewSize.w / 2 + panX) / zoom
-  const canvasTop = 1500 - (viewSize.h / 2 + panY) / zoom
+  const half = CANVAS / 2
+  const canvasLeft = half - (viewSize.w / 2 + panX) / zoom
+  const canvasTop = half - (viewSize.h / 2 + panY) / zoom
   const canvasW = viewSize.w / zoom
   const canvasH = viewSize.h / zoom
 
@@ -82,11 +75,14 @@ export function ScrollInputs({ zoom, panX, panY, setZoom, setPanX, setPanY }: Pr
 
   const handleMinimapMove = useCallback((e: React.PointerEvent) => {
     if (!minimapDragRef.current) return
+    const { zoom: z } = getViewport()
     const dx = e.clientX - minimapDragRef.current.sx
     const dy = e.clientY - minimapDragRef.current.sy
-    setPanX(() => clamp(minimapDragRef.current!.oPanX - (dx / MINIMAP_SCALE) * zoom, -1800, 1800))
-    setPanY(() => clamp(minimapDragRef.current!.oPanY - (dy / MINIMAP_SCALE) * zoom, -1800, 1800))
-  }, [zoom, setPanX, setPanY])
+    setPan(
+      clamp(minimapDragRef.current.oPanX - (dx / MINIMAP_SCALE) * z, -PAN_LIMIT, PAN_LIMIT),
+      clamp(minimapDragRef.current.oPanY - (dy / MINIMAP_SCALE) * z, -PAN_LIMIT, PAN_LIMIT),
+    )
+  }, [])
 
   const handleMinimapUp = useCallback((e: React.PointerEvent) => {
     if (!minimapDragRef.current) return
@@ -98,23 +94,24 @@ export function ScrollInputs({ zoom, panX, panY, setZoom, setPanX, setPanY }: Pr
   const handleMinimapBgDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation()
     if (!minimapRef.current) return
+    const { zoom: z } = getViewport()
     const bounds = minimapRef.current.getBoundingClientRect()
     const mx = e.clientX - bounds.left
     const my = e.clientY - bounds.top
-    const newPanX = clamp((1500 - mx / MINIMAP_SCALE) * zoom, -1800, 1800)
-    const newPanY = clamp((1500 - my / MINIMAP_SCALE) * zoom, -1800, 1800)
-    setPanX(() => newPanX)
-    setPanY(() => newPanY)
+    const newPanX = clamp((CANVAS / 2 - mx / MINIMAP_SCALE) * z, -PAN_LIMIT, PAN_LIMIT)
+    const newPanY = clamp((CANVAS / 2 - my / MINIMAP_SCALE) * z, -PAN_LIMIT, PAN_LIMIT)
+    setPan(newPanX, newPanY)
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     minimapDragRef.current = { sx: e.clientX, sy: e.clientY, oPanX: newPanX, oPanY: newPanY }
-  }, [zoom, setPanX, setPanY])
+  }, [])
 
   // Drag viewport rect from current position (no jump)
   const handleRectDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation()
+    const { panX: px, panY: py } = getViewport()
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-    minimapDragRef.current = { sx: e.clientX, sy: e.clientY, oPanX: panX, oPanY: panY }
-  }, [panX, panY])
+    minimapDragRef.current = { sx: e.clientX, sy: e.clientY, oPanX: px, oPanY: py }
+  }, [])
 
   return (
     <div
@@ -141,10 +138,10 @@ export function ScrollInputs({ zoom, panX, panY, setZoom, setPanX, setPanY }: Pr
           <input
             type="range"
             className="scroll-slider scroll-slider-v"
-            min={-1800}
-            max={1800}
+            min={-PAN_LIMIT}
+            max={PAN_LIMIT}
             value={panY}
-            onChange={(e) => setPanY(() => +e.target.value)}
+            onChange={(e) => setPanY(+e.target.value)}
             aria-label="Vertical pan"
           />
         </div>
@@ -190,7 +187,7 @@ export function ScrollInputs({ zoom, panX, panY, setZoom, setPanX, setPanY }: Pr
           min={-1800}
           max={1800}
           value={panX}
-          onChange={(e) => setPanX(() => +e.target.value)}
+          onChange={(e) => setPanX(+e.target.value)}
           aria-label="Horizontal pan"
         />
       </div>
@@ -205,7 +202,7 @@ export function ScrollInputs({ zoom, panX, panY, setZoom, setPanX, setPanY }: Pr
           max={3}
           step={0.01}
           value={zoom}
-          onChange={(e) => setZoom(() => clamp(+e.target.value, 0.15, 3))}
+          onChange={(e) => setZoom(+e.target.value)}
           aria-label="Zoom"
         />
       </div>

@@ -198,8 +198,7 @@ body {
 
 .zoom-canvas {
   position: absolute;
-  width: 3000px;
-  height: 3000px;
+  /* width/height set inline via CANVAS constant */
   left: 50%;
   top: 50%;
   transform-origin: 0 0;
@@ -252,6 +251,12 @@ body {
 .entity:hover {
   filter: brightness(0.92);
   z-index: 10;
+}
+
+/* Sections are bordered boxes — brightness filter looks glitchy on them */
+.entity.entity-section:hover {
+  filter: none;
+  z-index: 40;
 }
 
 
@@ -633,4 +638,317 @@ kbd {
 
 .three-container canvas {
   display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ENTITY VARIANTS — pinned, accent, frozen, section
+   ═══════════════════════════════════════════════════════════ */
+
+/* Pinned entities — not draggable */
+.entity-pinned {
+  cursor: default !important;
+}
+.entity-pinned:active {
+  cursor: default !important;
+}
+
+/* Pin indicator — small pushpin in top-left */
+.pin-indicator {
+  position: absolute;
+  top: -10px;
+  left: -6px;
+  width: 14px;
+  height: 18px;
+  opacity: 0.5;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+}
+
+/* Accent entities — animated, click to freeze */
+.entity-accent {
+  will-change: transform;
+}
+
+.entity-frozen {
+  will-change: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION ENTITIES — large notebook-style block containers
+   ═══════════════════════════════════════════════════════════ */
+.entity-section {
+  z-index: 40;
+}
+
+.section-block {
+  position: relative;
+  background: rgba(245, 242, 235, 0.96);
+  border: 2px solid rgba(120, 115, 105, 0.5);
+  border-radius: 6px;
+  box-shadow:
+    3px 4px 20px rgba(0, 0, 0, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Draggable section — dashed outline to signal "you can drag me" */
+.entity-section.entity-draggable .section-block {
+  border: 2px dashed rgba(200, 48, 48, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(200, 48, 48, 0.08),
+    3px 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Notebook ruled lines inside sections */
+.section-ruled-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 31px,
+      rgba(180, 175, 165, 0.25) 31px,
+      rgba(180, 175, 165, 0.25) 32px
+    );
+  z-index: 0;
+}
+
+/* Section header area */
+.section-header {
+  position: relative;
+  z-index: 1;
+  padding: 28px 36px 16px;
+  border-bottom: 2px solid rgba(180, 175, 165, 0.3);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.section-title {
+  font: 700 3.2rem "Permanent Marker", cursive;
+  color: #2a2520;
+  letter-spacing: -0.5px;
+}
+
+.section-subtitle {
+  font: 400 1.3rem "JetBrains Mono", monospace;
+  color: rgba(90, 85, 75, 0.45);
+}
+
+/* Corner note */
+.section-corner-note {
+  position: absolute;
+  bottom: 16px;
+  right: 24px;
+  font: 400 1.1rem "Kalam", cursive;
+  color: rgba(90, 85, 75, 0.4);
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   POLAROID PHOTOS — inside sections
+   ═══════════════════════════════════════════════════════════ */
+.section-photo-grid {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 48px;
+  padding: 60px 56px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.section-polaroid {
+  background: #fff;
+  padding: 14px 14px 48px;
+  border-radius: 2px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s;
+  flex-shrink: 0;
+}
+
+.section-polaroid:hover {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.polaroid-img-wrap {
+  width: 520px;
+  height: 400px;
+  overflow: hidden;
+  background: #e8e4d9;
+  border-radius: 1px;
+}
+
+.polaroid-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Fix rotation — photos are shot in landscape stored as portrait */
+  image-orientation: from-image;
+}
+
+.polaroid-caption {
+  display: block;
+  text-align: center;
+  padding-top: 12px;
+  font: 400 1.4rem "Kalam", cursive;
+  color: #5a5550;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ABOUT SECTION — text + inset photo layout
+   ═══════════════════════════════════════════════════════════ */
+.section-about-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 48px;
+  padding: 40px 48px 48px;
+}
+
+.section-about-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-about-paragraph {
+  font: 400 1.55rem "Patrick Hand", cursive;
+  line-height: 1.75;
+  color: #3a3530;
+  margin-bottom: 24px;
+}
+
+.section-about-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.section-about-photo-wrap {
+  flex-shrink: 0;
+  padding-top: 16px;
+}
+
+.section-polaroid-inset .polaroid-img-wrap {
+  width: 360px;
+  height: 280px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PIN BUTTON — toggle pinned state on sections
+   ═══════════════════════════════════════════════════════════ */
+.pin-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  width: 32px;
+  height: 38px;
+  padding: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pin-btn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.pin-btn-active {
+  opacity: 0.7;
+}
+
+.pin-btn-active .pin-icon {
+  filter: none;
+}
+
+.pin-btn-inactive {
+  opacity: 0.3;
+}
+
+.pin-btn-inactive .pin-icon {
+  transform: rotate(30deg);
+  filter: grayscale(0.5);
+}
+
+.pin-icon {
+  width: 20px;
+  height: 28px;
+  pointer-events: none;
+  transition: transform 0.2s;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   WIDGET ENTITIES — large draggable blocks, click to activate
+   ═══════════════════════════════════════════════════════════ */
+.entity-widget {
+  z-index: 45;
+  transition: filter 0.2s, box-shadow 0.3s;
+}
+
+.widget-block {
+  position: relative;
+  background: rgba(200, 48, 48, 0.06);
+  border: 3px dashed rgba(200, 48, 48, 0.35);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.widget-label {
+  color: #c83030;
+  opacity: 0.5;
+  letter-spacing: 2px;
+  pointer-events: none;
+}
+
+.widget-hint {
+  font: 400 1rem "Patrick Hand", cursive;
+  color: rgba(200, 48, 48, 0.4);
+  pointer-events: none;
+}
+
+/* Active state — solid border, lifted, grabbable */
+.entity-widget-active .widget-block {
+  border-style: solid;
+  border-color: rgba(200, 48, 48, 0.6);
+  background: rgba(200, 48, 48, 0.1);
+  box-shadow:
+    0 4px 24px rgba(200, 48, 48, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.entity-widget-active .widget-label {
+  opacity: 0.8;
+}
+
+.entity-widget-active:active {
+  cursor: grabbing;
+}
+
+.entity-widget-active:active .widget-block {
+  box-shadow:
+    0 8px 32px rgba(200, 48, 48, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.12);
 }

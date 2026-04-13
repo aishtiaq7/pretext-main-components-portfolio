@@ -52,6 +52,25 @@ export type Stats = {
   cols: number
 }
 
+// ═══════════════════════════════════════════════════════════
+// ENTITY CATEGORIES
+// ═══════════════════════════════════════════════════════════
+export type EntityCategory =
+  | 'doodle'      // scattered text — tags, snippets, quotes, decorative
+  | 'obstacle'    // red draggable text — causes text reflow
+  | 'accent'      // bold punchy words — animated jitter, click-to-freeze
+  | 'watermark'   // large faint background text — pinned, slow pulse
+  | 'image'       // SVG doodle images — subtle drift
+  | 'section'     // block sections — pinnable, overflow hidden, photo galleries
+  | 'widget'      // large draggable blocks — click to activate, pushes entities
+
+export type JitterType =
+  | 'none'        // no animation
+  | 'wobble'      // rotation oscillation
+  | 'drift'       // slow positional float
+  | 'pulse'       // font-size breathing
+  | 'wobble-drift' // combined
+
 export type EntityDef = {
   id: string
   x: number
@@ -73,6 +92,11 @@ export type EntityDef = {
   imgSrc?: string        // image path (SVG/PNG/GIF) — renders <img> instead of text
   imgW?: number          // display width in px
   imgH?: number          // display height in px
+
+  // ── New fields ──
+  category: EntityCategory
+  jitter?: JitterType     // animation type (default: 'none')
+  pinned?: boolean        // if true, shows pin icon, not draggable
 }
 
 export type FixedRegion = {

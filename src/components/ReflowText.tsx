@@ -105,7 +105,7 @@ export function ReflowText({ text, maxWidth, fontFamily, fontSize, color, opacit
       }
 
       const slots = carveSlots({ left: 0, right: maxWidth }, blocked)
-      if (!slots.length) { lineTop += lineHeight; if (lineTop > 3000) break; continue }
+      if (!slots.length) { lineTop += lineHeight; if (lineTop > 8000) break; continue }
 
       let exhausted = false
       for (const slot of slots.sort((a, b) => a.left - b.left)) {

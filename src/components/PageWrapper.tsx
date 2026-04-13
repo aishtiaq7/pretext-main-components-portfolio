@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import type { FixedRegion } from '../types'
+import { CANVAS } from '../constants'
 
 export type PageDef = {
   id: string
@@ -17,8 +18,8 @@ function resolvePageCollisions(
   selfId: string, selfW: number, selfH: number,
   regions: FixedRegion[],
 ): { x: number; y: number } {
-  const pw = (selfW / 3000) * 100
-  const ph = (selfH / 3000) * 100
+  const pw = (selfW / CANVAS) * 100
+  const ph = (selfH / CANVAS) * 100
   for (const r of regions) {
     if (r.id === selfId) continue
     if (x < r.x + r.w && x + pw > r.x && y < r.y + r.h && y + ph > r.y) {
@@ -65,8 +66,9 @@ export function PageWrapper({ page, x, y, zoom, pageRegions, onPositionChange, c
     if (!dragRef.current.dragging) return
     const dx = (e.clientX - dragRef.current.startX) / zoom
     const dy = (e.clientY - dragRef.current.startY) / zoom
-    let newX = dragRef.current.startElX + (dx / 30)
-    let newY = dragRef.current.startElY + (dy / 30)
+    const pctPerPx = CANVAS / 100
+    let newX = dragRef.current.startElX + (dx / pctPerPx)
+    let newY = dragRef.current.startElY + (dy / pctPerPx)
     const resolved = resolvePageCollisions(newX, newY, page.id, page.width, page.height, pageRegions)
     onPositionChange(page.id, resolved.x, resolved.y)
   }
