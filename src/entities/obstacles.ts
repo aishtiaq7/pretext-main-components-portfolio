@@ -10,19 +10,23 @@ const DEFAULTS = {
   pinned: false,
 }
 
-// CLUSTER 5 — 3 Red Obstacles, aligned on same y as sections & reflow paras.
-// x: 35 (reflow paras start x: 38 → ~1% gap, very close).
+// CLUSTER 5 — 4 Red Obstacles, right of the notebook (notebook ends at x:21.75)
+// x: 22 (right at notebook edge), paired with reflow paras at x: 25
 export const OBSTACLES: EntityDef[] = [
-  { id: 'obs-deadline', x: 35, y: 30.5, rotate: -12,
-    font: '"Permanent Marker", cursive', fontSize: '2.2rem', fontWeight: '400',
-    content: 'deadline', obstacleW: 200, obstacleH: 46,
+  { id: 'obs-deadline', x: 22, y: 17, rotate: -10,
+    font: '"Permanent Marker", cursive', fontSize: '1.8rem', fontWeight: '400',
+    content: 'deadline', obstacleW: 160, obstacleH: 38,
     ...DEFAULTS },
-  { id: 'obs-asap', x: 35, y: 42, rotate: -18,
-    font: '"Rock Salt", cursive', fontSize: '2rem', fontWeight: '400',
-    content: 'ASAP', obstacleW: 145, obstacleH: 44,
+  { id: 'obs-asap', x: 22, y: 20, rotate: -14,
+    font: '"Rock Salt", cursive', fontSize: '1.6rem', fontWeight: '400',
+    content: 'ASAP', obstacleW: 120, obstacleH: 36,
     ...DEFAULTS },
-  { id: 'obs-scope-creep', x: 35, y: 61, rotate: -14,
-    font: '"Caveat", cursive', fontSize: '2.2rem', fontWeight: '700',
-    content: 'scope creep', obstacleW: 190, obstacleH: 42,
+  { id: 'obs-scope-creep', x: 22, y: 23, rotate: -12,
+    font: '"Caveat", cursive', fontSize: '1.8rem', fontWeight: '700',
+    content: 'scope creep', obstacleW: 155, obstacleH: 34,
+    ...DEFAULTS },
+  { id: 'obs-bug', x: 22, y: 26, rotate: -8,
+    font: '"Permanent Marker", cursive', fontSize: '1.7rem', fontWeight: '400',
+    content: 'BUG!', obstacleW: 120, obstacleH: 38,
     ...DEFAULTS },
 ]

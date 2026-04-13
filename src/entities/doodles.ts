@@ -13,36 +13,52 @@ const DEFAULTS = {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 3 Reflow Paragraphs at x: 38 — doubled size (wider maxWidth + bigger font).
-// y: 30.5 / 42 / 58 — aligned with sections on the left.
+// 4 Reflow Paragraphs, RIGHT of notebook (x: 25)
+//   - rf-1, rf-2 → DRAGGABLE  (pinned: false, fontWeight: 700 → whole para bold)
+//   - rf-3, rf-4 → PINNED     (pinned: true,  fontWeight: 400)
+// Each para's leading words tell its status: "DRAG ME —" vs "PINNED —"
 // ═══════════════════════════════════════════════════════════
 export const DOODLES: EntityDef[] = [
   // ── CLUSTER 1 (Plain Text) — HIDDEN ──
-  // { id: 'pt-1', x: 28, y: 18, rotate: -18, font: '"Permanent Marker", cursive', fontSize: '2.2rem', fontWeight: '400', color: '#2a2520', opacity: 0.85, content: BRAND_NAME, ...DEFAULTS },
-  // { id: 'pt-2', x: 28, y: 22, rotate: -22, font: '"Permanent Marker", cursive', fontSize: '2rem', fontWeight: '400', color: '#4a4540', opacity: 0.75, content: 'FULL STACK', ...DEFAULTS },
-  // { id: 'pt-3', x: 28, y: 26, rotate: -14, font: '"JetBrains Mono", monospace', fontSize: '1.4rem', fontWeight: '400', color: '#5a8a5a', opacity: 0.7, content: 'const life = () => code()', ...DEFAULTS },
-
   // ── CLUSTER 2 (Thought) — HIDDEN ──
-  // { id: 'th-1', x: 40, y: 18, rotate: -20, font: '"Satisfy", cursive', fontSize: '1.8rem', fontWeight: '400', color: '#4a4540', opacity: 0.78, content: 'I think in components', ...DEFAULTS },
-  // { id: 'th-2', x: 40, y: 22, rotate: -16, font: '"Satisfy", cursive', fontSize: '1.8rem', fontWeight: '400', color: '#4a4540', opacity: 0.78, content: 'dream in keyframes', ...DEFAULTS },
 
-  // ── CLUSTER 3 — Reflow Paragraphs (3, doubled-size, aligned with sections) ──
-  { id: 'rf-1', x: 38, y: 30.5, rotate: -6,
-    font: '"Patrick Hand", cursive', fontSize: '1.6rem', fontWeight: '400',
+  // ── Row 1 — DRAGGABLE ──
+  { id: 'rf-1', x: 25, y: 17, rotate: -5,
+    font: '"Patrick Hand", cursive', fontSize: '1.25rem', fontWeight: '700',
+    color: '#2a2520', opacity: 0.9,
+    content: 'DRAG ME — I can be dragged around the canvas. The deadline still reflows me wherever I land.',
+    maxWidth: 340,
+    ...DEFAULTS,
+    pinned: false,   // ← draggable override
+  },
+
+  // ── Row 2 — DRAGGABLE ──
+  { id: 'rf-2', x: 25, y: 20, rotate: -7,
+    font: '"Patrick Hand", cursive', fontSize: '1.25rem', fontWeight: '700',
+    color: '#2a2520', opacity: 0.9,
+    content: 'DRAG ME — Pick me up anywhere. The text inside still obeys the red obstacles nearby.',
+    maxWidth: 340,
+    ...DEFAULTS,
+    pinned: false,   // ← draggable override
+  },
+
+  // ── Row 3 — PINNED ──
+  { id: 'rf-3', x: 25, y: 23, rotate: -4,
+    font: '"Patrick Hand", cursive', fontSize: '1.25rem', fontWeight: '400',
     color: '#3a3530', opacity: 0.85,
-    content: 'When deadlines loom, the paragraph bends around the word. Drop the red obstacle on this text and watch the lines rewrap in real time as you drag. Every character finds a new home, respecting the boundaries imposed by the intruder. The layout here is alive and breathing; it treats every red word as a physical force on the page.',
-    maxWidth: 550,
-    ...DEFAULTS },
-  { id: 'rf-2', x: 38, y: 42, rotate: -8,
-    font: '"Patrick Hand", cursive', fontSize: '1.6rem', fontWeight: '400',
+    content: 'PINNED — I stay here. Only obstacles placed over me can change my layout.',
+    maxWidth: 340,
+    ...DEFAULTS,
+    // pinned: true (inherited from DEFAULTS)
+  },
+
+  // ── Row 4 — PINNED ──
+  { id: 'rf-4', x: 25, y: 26, rotate: -6,
+    font: '"Patrick Hand", cursive', fontSize: '1.25rem', fontWeight: '400',
     color: '#3a3530', opacity: 0.85,
-    content: 'Every obstacle you add becomes a force. The text respects gravity, wrapping around whatever red word gets in its way at the moment you look. The page is not paper — it is a living medium that adapts to the objects placed upon it. Nothing here is static, and every movement triggers the engine to recompute line breaks.',
-    maxWidth: 550,
-    ...DEFAULTS },
-  { id: 'rf-3', x: 38, y: 61, rotate: -5,
-    font: '"Patrick Hand", cursive', fontSize: '1.6rem', fontWeight: '400',
-    color: '#3a3530', opacity: 0.85,
-    content: 'Scope creep warps the plan like a heavy stone warps paper. Paragraphs adapt to the dropped obstacle and reshape themselves line by line, rebalancing word weights as the obstacle moves. The layout is never finished — it is always responding to what you drag onto it, continuously, frame by frame.',
-    maxWidth: 550,
-    ...DEFAULTS },
+    content: 'PINNED — Locked in place. Drag a red word onto me to watch the lines reflow.',
+    maxWidth: 340,
+    ...DEFAULTS,
+    // pinned: true (inherited from DEFAULTS)
+  },
 ]

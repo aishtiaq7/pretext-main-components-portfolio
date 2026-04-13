@@ -22,7 +22,7 @@ import { WIDGET_W, WIDGET_H } from './entities/widgets'
 const PAGES: PageDef[] = [
   // Invisible drag-blocker covering the header row (y: 0-14).
   // Obstacles dragged up will bounce off its bottom edge, so they can't cover brand/tagline/emojis.
-  { id: 'header-zone', x: 0, y: 0, width: 8000, height: 1120, fixed: true, component: 'header-zone', borderless: true },
+  { id: 'header-zone', x: 0, y: 0, width: 8000, height: 1120, fixed: true, component: 'header-zone', borderless: false },
   { id: 'brand-page', x: 3, y: 10, width: 1100, height: 220, fixed: true, component: 'brand', borderless: true },
   { id: 'clock-page', x: 3, y: 16, width: 1500, height: 1100, fixed: true, component: 'clock' },
   // Tightened: cube directly below notebook, rabbit hole below cube (left column, x:5)
