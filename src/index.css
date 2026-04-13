@@ -429,7 +429,9 @@ body {
   z-index: 50;
   overflow: hidden;
   border-radius: 4px;
-  box-shadow: 2px 3px 16px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(60, 55, 48, 0.55); /* prominent border for borderless:false */
+  background: rgba(245, 242, 235, 0.6);
+  box-shadow: none;                          /* shadow removed */
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
