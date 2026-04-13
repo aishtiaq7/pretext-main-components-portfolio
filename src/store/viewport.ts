@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { PAN_LIMIT } from '../constants'
+import { CANVAS, PAN_LIMIT } from '../constants'
 
 // ═══════════════════════════════════════════════════════════
 // Viewport store — single source of truth for zoom + pan
@@ -50,6 +50,32 @@ export function setZoom(raw: number) {
     zoom: z,
     panX: clamp(state.panX * ratio, -PAN_LIMIT, PAN_LIMIT),
     panY: clamp(state.panY * ratio, -PAN_LIMIT, PAN_LIMIT),
+  }
+  emit()
+}
+
+/**
+ * Zoom anchored at a viewport-relative point (e.g. cursor position).
+ * The canvas point currently under (anchorX, anchorY) stays under the cursor
+ * after the zoom change — matches pinch-to-zoom UX in Figma / Miro / tldraw.
+ */
+export function setZoomAnchored(rawZoom: number, anchorX: number, anchorY: number) {
+  const zNext = clamp(rawZoom, MIN_ZOOM, MAX_ZOOM)
+  if (zNext === state.zoom) return
+  const half = CANVAS / 2
+  const zPrev = state.zoom
+  // Canvas-local coord under the anchor before zoom:
+  //   cx = (anchorX - tx) / z   where tx = -half*z + panX
+  //   => cx = (anchorX - panX)/z + half
+  const cx = (anchorX - state.panX) / zPrev + half
+  const cy = (anchorY - state.panY) / zPrev + half
+  // Solve for new pan so the same cx,cy lands at anchorX,anchorY under zNext.
+  const panX = anchorX + (half - cx) * zNext
+  const panY = anchorY + (half - cy) * zNext
+  state = {
+    zoom: zNext,
+    panX: clamp(panX, -PAN_LIMIT, PAN_LIMIT),
+    panY: clamp(panY, -PAN_LIMIT, PAN_LIMIT),
   }
   emit()
 }

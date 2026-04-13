@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { ENTITIES, BRAND_NAME, ALICE_QUOTE } from './entities'
 import type { FixedRegion } from './types'
 import { CANVAS, PAN_LIMIT } from './constants'
-import { useViewportZoom, getViewport, setZoom, setPan, setPanX } from './store/viewport'
+import { useViewportZoom, getViewport, setZoomAnchored, setPan } from './store/viewport'
 import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
@@ -226,23 +226,43 @@ export default function App() {
     animRef.current = requestAnimationFrame(animate)
   }, [positions])
 
-  // Wheel → zoom / pan
+  // Wheel / trackpad gestures
+  // ─────────────────────────────────────────────────────────
+  // Convention (matches Figma / Miro / tldraw):
+  //   • Two-finger trackpad swipe (any axis) → pan (uses native inertia)
+  //   • Pinch-to-zoom on macOS trackpad       → cursor-anchored zoom
+  //     (browsers synthesize ctrlKey=true for pinch events)
+  //   • Cmd / Ctrl + wheel                    → cursor-anchored zoom
+  //   • Shift + wheel (mouse users)           → horizontal pan
+  //   • Plain mouse wheel                     → vertical pan
   useEffect(() => {
     const viewport = viewportRef.current
     if (!viewport) return
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
-      if (e.shiftKey) {
-        const { panX: px } = getViewport()
-        setPanX(px - e.deltaY)
+      const rect = viewport.getBoundingClientRect()
+      const anchorX = e.clientX - rect.left
+      const anchorY = e.clientY - rect.top
+
+      // Pinch (ctrlKey auto-set by browser) or explicit modifier → zoom at cursor
+      if (e.ctrlKey || e.metaKey) {
+        const { zoom: z } = getViewport()
+        // Multiplicative zoom feels linear perceptually
+        const factor = Math.exp(-e.deltaY * 0.01)
+        setZoomAnchored(z * factor, anchorX, anchorY)
         return
       }
-      const { zoom: z } = getViewport()
-      if (e.ctrlKey || e.metaKey) {
-        setZoom(z * (1 - e.deltaY * 0.01))
-      } else {
-        setZoom(z + (-e.deltaY * 0.002))
+
+      // Shift + wheel → horizontal pan (mouse-wheel convenience)
+      if (e.shiftKey) {
+        const { panX: px, panY: py } = getViewport()
+        setPan(px - e.deltaY, py)
+        return
       }
+
+      // Default: pan using both axes (trackpad swipe or mouse wheel)
+      const { panX: px, panY: py } = getViewport()
+      setPan(px - e.deltaX, py - e.deltaY)
     }
     viewport.addEventListener('wheel', handleWheel, { passive: false })
     return () => viewport.removeEventListener('wheel', handleWheel)

@@ -46,34 +46,34 @@ export const DOODLES: EntityDef[] = [
     color: '#5a8a5a', opacity: 0.7, content: 'const life = () => code()',
     ...DEFAULTS },
 
-  // ── CLUSTER 2 — Thought (x: 14, 2 items stacked) ─────────
-  { id: 'th-1', x: 14, y: 18, rotate: -2,
+  // ── CLUSTER 2 — Thought (x: 10, 2 items stacked) ─────────
+  { id: 'th-1', x: 10, y: 18, rotate: -2,
     font: '"Satisfy", cursive', fontSize: '1.8rem', fontWeight: '400',
     color: '#4a4540', opacity: 0.78, content: 'I think in components',
     ...DEFAULTS },
-  { id: 'th-2', x: 14, y: 24, rotate: 2,
+  { id: 'th-2', x: 10, y: 22, rotate: 2,
     font: '"Satisfy", cursive', fontSize: '1.8rem', fontWeight: '400',
     color: '#4a4540', opacity: 0.78, content: 'dream in keyframes',
     ...DEFAULTS },
 
-  // ── CLUSTER 3 — Reflow Paragraph (x: 50, 3 items side-by-side) ──
+  // ── CLUSTER 3 — Reflow Paragraph (x: 18, 3 items stacked) ──
   // Red obstacles can be dragged onto any of these to trigger reflow.
-  { id: 'rf-1', x: 50, y: 18, rotate: 0,
+  { id: 'rf-1', x: 18, y: 18, rotate: 0,
     font: '"Patrick Hand", cursive', fontSize: '1.2rem', fontWeight: '400',
     color: '#3a3530', opacity: 0.82,
-    content: 'Drop a red word here — lines bend around the obstacle like water around a stone.',
-    maxWidth: 180,
+    content: 'Drop a red word here — lines bend around the obstacle.',
+    maxWidth: 200,
     ...DEFAULTS },
-  { id: 'rf-2', x: 55, y: 18, rotate: 0,
+  { id: 'rf-2', x: 18, y: 22, rotate: 0,
     font: '"Patrick Hand", cursive', fontSize: '1.2rem', fontWeight: '400',
     color: '#3a3530', opacity: 0.82,
-    content: 'Every obstacle reshapes the paragraph. Deadlines act like gravity wells in text.',
-    maxWidth: 180,
+    content: 'Every obstacle reshapes the paragraph. Deadlines act like gravity.',
+    maxWidth: 200,
     ...DEFAULTS },
-  { id: 'rf-3', x: 60, y: 18, rotate: 0,
+  { id: 'rf-3', x: 18, y: 26, rotate: 0,
     font: '"Patrick Hand", cursive', fontSize: '1.2rem', fontWeight: '400',
     color: '#3a3530', opacity: 0.82,
-    content: 'Scope creep warps the layout. The text itself has to respect the red words.',
-    maxWidth: 180,
+    content: 'Scope creep warps layout. Text has to respect the red words.',
+    maxWidth: 200,
     ...DEFAULTS },
 ]
