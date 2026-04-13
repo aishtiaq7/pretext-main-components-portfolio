@@ -13,67 +13,36 @@ const DEFAULTS = {
 }
 
 // ═══════════════════════════════════════════════════════════
-// CLUSTER LAYOUT — each render type packed tight, left → right
+// 3 Reflow Paragraphs at x: 38 — doubled size (wider maxWidth + bigger font).
+// y: 30.5 / 42 / 58 — aligned with sections on the left.
 // ═══════════════════════════════════════════════════════════
-//
-//   x:  3       14         30-49        50       72-78     80       90
-//   ────┬───────┬──────────┬────────────┬────────┬────────┬───────┬─────
-//       │       │          │            │        │        │       │
-//    ┌──┤CLUSTER│CLUSTER 2 │ NOTEBOOK   │CLUSTER │ CUBE + │CLSTR 4│CLSTR 5
-//    │  │   1   │          │ (page —    │   3    │ RABBIT │ Emoji │ Red
-//    │  │ Plain │ Thought  │  clock-    │ Reflow │ HOLE   │       │ Obstacle
-//    │  │ Text  │ (2)      │  page)     │ Para   │ (pages)│ (3)   │ (3)
-// y=18──┤  (3)  │          │            │  (3)   │        │       │
-//    │  ├───────┤          │            ├────────┤        │       │
-// y=22├──┼───────┤          │            │        │        │       │
-//    │  │       │          │            │        │        │       │
-// y=26├──┼───────┼──────────┤            ├────────┤        │       │
-//
-// (Emojis live in accents.ts; obstacles in obstacles.ts; sections in sections.ts)
-//
 export const DOODLES: EntityDef[] = [
-  // ── CLUSTER 1 — Plain Text (x: 3, 3 items stacked) ───────
-  { id: 'pt-1', x: 3, y: 18, rotate: -2,
-    font: '"Permanent Marker", cursive', fontSize: '2.2rem', fontWeight: '400',
-    color: '#2a2520', opacity: 0.85, content: BRAND_NAME,
-    ...DEFAULTS },
-  { id: 'pt-2', x: 3, y: 22, rotate: 1,
-    font: '"Permanent Marker", cursive', fontSize: '2rem', fontWeight: '400',
-    color: '#4a4540', opacity: 0.75, content: 'FULL STACK',
-    ...DEFAULTS },
-  { id: 'pt-3', x: 3, y: 26, rotate: -1,
-    font: '"JetBrains Mono", monospace', fontSize: '1.4rem', fontWeight: '400',
-    color: '#5a8a5a', opacity: 0.7, content: 'const life = () => code()',
-    ...DEFAULTS },
+  // ── CLUSTER 1 (Plain Text) — HIDDEN ──
+  // { id: 'pt-1', x: 28, y: 18, rotate: -18, font: '"Permanent Marker", cursive', fontSize: '2.2rem', fontWeight: '400', color: '#2a2520', opacity: 0.85, content: BRAND_NAME, ...DEFAULTS },
+  // { id: 'pt-2', x: 28, y: 22, rotate: -22, font: '"Permanent Marker", cursive', fontSize: '2rem', fontWeight: '400', color: '#4a4540', opacity: 0.75, content: 'FULL STACK', ...DEFAULTS },
+  // { id: 'pt-3', x: 28, y: 26, rotate: -14, font: '"JetBrains Mono", monospace', fontSize: '1.4rem', fontWeight: '400', color: '#5a8a5a', opacity: 0.7, content: 'const life = () => code()', ...DEFAULTS },
 
-  // ── CLUSTER 2 — Thought (x: 10, 2 items stacked) ─────────
-  { id: 'th-1', x: 10, y: 18, rotate: -2,
-    font: '"Satisfy", cursive', fontSize: '1.8rem', fontWeight: '400',
-    color: '#4a4540', opacity: 0.78, content: 'I think in components',
-    ...DEFAULTS },
-  { id: 'th-2', x: 10, y: 22, rotate: 2,
-    font: '"Satisfy", cursive', fontSize: '1.8rem', fontWeight: '400',
-    color: '#4a4540', opacity: 0.78, content: 'dream in keyframes',
-    ...DEFAULTS },
+  // ── CLUSTER 2 (Thought) — HIDDEN ──
+  // { id: 'th-1', x: 40, y: 18, rotate: -20, font: '"Satisfy", cursive', fontSize: '1.8rem', fontWeight: '400', color: '#4a4540', opacity: 0.78, content: 'I think in components', ...DEFAULTS },
+  // { id: 'th-2', x: 40, y: 22, rotate: -16, font: '"Satisfy", cursive', fontSize: '1.8rem', fontWeight: '400', color: '#4a4540', opacity: 0.78, content: 'dream in keyframes', ...DEFAULTS },
 
-  // ── CLUSTER 3 — Reflow Paragraph (x: 18, 3 items stacked) ──
-  // Red obstacles can be dragged onto any of these to trigger reflow.
-  { id: 'rf-1', x: 18, y: 18, rotate: 0,
-    font: '"Patrick Hand", cursive', fontSize: '1.2rem', fontWeight: '400',
-    color: '#3a3530', opacity: 0.82,
-    content: 'Drop a red word here — lines bend around the obstacle.',
-    maxWidth: 200,
+  // ── CLUSTER 3 — Reflow Paragraphs (3, doubled-size, aligned with sections) ──
+  { id: 'rf-1', x: 38, y: 30.5, rotate: -6,
+    font: '"Patrick Hand", cursive', fontSize: '1.6rem', fontWeight: '400',
+    color: '#3a3530', opacity: 0.85,
+    content: 'When deadlines loom, the paragraph bends around the word. Drop the red obstacle on this text and watch the lines rewrap in real time as you drag. Every character finds a new home, respecting the boundaries imposed by the intruder. The layout here is alive and breathing; it treats every red word as a physical force on the page.',
+    maxWidth: 550,
     ...DEFAULTS },
-  { id: 'rf-2', x: 18, y: 22, rotate: 0,
-    font: '"Patrick Hand", cursive', fontSize: '1.2rem', fontWeight: '400',
-    color: '#3a3530', opacity: 0.82,
-    content: 'Every obstacle reshapes the paragraph. Deadlines act like gravity.',
-    maxWidth: 200,
+  { id: 'rf-2', x: 38, y: 42, rotate: -8,
+    font: '"Patrick Hand", cursive', fontSize: '1.6rem', fontWeight: '400',
+    color: '#3a3530', opacity: 0.85,
+    content: 'Every obstacle you add becomes a force. The text respects gravity, wrapping around whatever red word gets in its way at the moment you look. The page is not paper — it is a living medium that adapts to the objects placed upon it. Nothing here is static, and every movement triggers the engine to recompute line breaks.',
+    maxWidth: 550,
     ...DEFAULTS },
-  { id: 'rf-3', x: 18, y: 26, rotate: 0,
-    font: '"Patrick Hand", cursive', fontSize: '1.2rem', fontWeight: '400',
-    color: '#3a3530', opacity: 0.82,
-    content: 'Scope creep warps layout. Text has to respect the red words.',
-    maxWidth: 200,
+  { id: 'rf-3', x: 38, y: 61, rotate: -5,
+    font: '"Patrick Hand", cursive', fontSize: '1.6rem', fontWeight: '400',
+    color: '#3a3530', opacity: 0.85,
+    content: 'Scope creep warps the plan like a heavy stone warps paper. Paragraphs adapt to the dropped obstacle and reshape themselves line by line, rebalancing word weights as the obstacle moves. The layout is never finished — it is always responding to what you drag onto it, continuously, frame by frame.',
+    maxWidth: 550,
     ...DEFAULTS },
 ]

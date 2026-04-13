@@ -5,25 +5,24 @@ const DEFAULTS = {
   category: 'obstacle' as const,
   jitter: 'none' as const,
   obstacle: true,
-  rotate: 0,
   opacity: 0.9,
   color: '#c83030',
   pinned: false,
 }
 
-// CLUSTER 5 — Red Obstacles (x: 90, 3 items stacked tight)
-// Drag them onto the Reflow Paragraph cluster (x: 50-65) to see lines bend.
+// CLUSTER 5 — 3 Red Obstacles, aligned on same y as sections & reflow paras.
+// x: 35 (reflow paras start x: 38 → ~1% gap, very close).
 export const OBSTACLES: EntityDef[] = [
-  { id: 'obs-deadline', x: 90, y: 18,
-    font: '"Permanent Marker", cursive', fontSize: '2.6rem', fontWeight: '400',
-    content: 'deadline', obstacleW: 230, obstacleH: 50,
+  { id: 'obs-deadline', x: 35, y: 30.5, rotate: -12,
+    font: '"Permanent Marker", cursive', fontSize: '2.2rem', fontWeight: '400',
+    content: 'deadline', obstacleW: 200, obstacleH: 46,
     ...DEFAULTS },
-  { id: 'obs-asap', x: 90, y: 22,
-    font: '"Rock Salt", cursive', fontSize: '2.4rem', fontWeight: '400',
-    content: 'ASAP', obstacleW: 170, obstacleH: 48,
+  { id: 'obs-asap', x: 35, y: 42, rotate: -18,
+    font: '"Rock Salt", cursive', fontSize: '2rem', fontWeight: '400',
+    content: 'ASAP', obstacleW: 145, obstacleH: 44,
     ...DEFAULTS },
-  { id: 'obs-scope-creep', x: 90, y: 26,
-    font: '"Caveat", cursive', fontSize: '2.6rem', fontWeight: '700',
-    content: 'scope creep', obstacleW: 225, obstacleH: 45,
+  { id: 'obs-scope-creep', x: 35, y: 61, rotate: -14,
+    font: '"Caveat", cursive', fontSize: '2.2rem', fontWeight: '700',
+    content: 'scope creep', obstacleW: 190, obstacleH: 42,
     ...DEFAULTS },
 ]

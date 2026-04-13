@@ -11,6 +11,7 @@ export type PageDef = {
   fixed: boolean
   component: string
   borderless?: boolean  // true = looks like a regular entity, no visible box
+  rotate?: number       // degrees — visual rotation via CSS transform
 }
 
 function resolvePageCollisions(
@@ -89,6 +90,7 @@ export function PageWrapper({ page, x, y, zoom, pageRegions, onPositionChange, c
         width: page.width,
         height: page.height,
         cursor: page.fixed ? 'default' : 'grab',
+        transform: page.rotate ? `rotate(${page.rotate}deg)` : undefined,
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

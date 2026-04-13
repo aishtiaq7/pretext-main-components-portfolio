@@ -1,7 +1,7 @@
 import { SECTION_PHOTOS } from '../entities/sections'
 
-const GALLERY_W = 2400
-const GALLERY_H = 1800
+const GALLERY_W = 1300
+const GALLERY_H = 1440
 
 export function SectionPhotoGallery() {
   return (
