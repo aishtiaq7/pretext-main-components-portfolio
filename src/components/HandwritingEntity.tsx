@@ -38,7 +38,7 @@ export type CanvasObstacle = {
   y: number   // canvas %
   wPx: number // px
   hPx: number // px
-  shape?: 'ellipse' | 'rect'  // how ReflowText carves around it
+  shape?: 'ellipse' | 'rect' | 'capsule'  // how ReflowText carves around it
 }
 
 type Props = {

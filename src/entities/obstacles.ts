@@ -29,4 +29,21 @@ export const OBSTACLES: EntityDef[] = [
     font: '"Permanent Marker", cursive', fontSize: '1.7rem', fontWeight: '400',
     content: 'BUG!', obstacleW: 120, obstacleH: 38,
     ...DEFAULTS },
+
+  // Framer-motion draggable, big icon — acts as a reflow obstacle just like
+  // the red-word obstacles above. Rendered via MotionObstacle for polish.
+  { id: 'obs-rocket', x: 27, y: 19, rotate: 0,
+    font: '', fontSize: '', fontWeight: '400',
+    type: 'text',
+    category: 'obstacle',
+    jitter: 'none',
+    obstacle: true,
+    obstacleW: 160, obstacleH: 160,
+    imgSrc: '/doodles/rocket.svg',
+    imgW: 160, imgH: 160,
+    motionDraggable: true,
+    color: '',
+    opacity: 1,
+    pinned: false,
+  },
 ]

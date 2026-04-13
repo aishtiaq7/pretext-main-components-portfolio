@@ -15,8 +15,10 @@ export type ObstacleRect = {
   y: number
   w: number
   h: number
-  shape?: 'ellipse' | 'rect'  // default 'ellipse' (clock/red-word wrap).
-                              // 'rect' = straight-edge carve (use for paragraph-as-obstacle).
+  shape?: 'ellipse' | 'rect' | 'capsule'
+  // 'ellipse' (default)  — inscribed ellipse; good for round-ish shapes (clock, emoji).
+  // 'rect'               — straight-edge carve; used for paragraph-as-obstacle bodies.
+  // 'capsule'            — rect-middle + semicircle end-caps; matches pill-shaped text.
 }
 
 type Line = { x: number; y: number; text: string }
@@ -56,6 +58,50 @@ function ellipseInterval(
   if (minDy >= b) return null
   const maxDx = a * Math.sqrt(1 - (minDy * minDy) / (b * b))
   return { left: cx - maxDx, right: cx + maxDx }
+}
+
+// Capsule / pill shape — rectangle with semicircle end-caps. Matches the visual
+// of rounded text obstacles (wide & short, or tall & narrow) much better than
+// the inscribed-ellipse approximation. For each line band we return the widest
+// horizontal cross-section of the capsule that overlaps the band.
+function capsuleInterval(
+  obs: ObstacleRect,
+  bandTop: number, bandBottom: number,
+): Iv | null {
+  const L = obs.x - OBS_PAD, R = obs.x + obs.w + OBS_PAD
+  const T = obs.y - OBS_PAD, B = obs.y + obs.h + OBS_PAD
+  const cx = (L + R) / 2, cy = (T + B) / 2
+  const W = R - L, H = B - T
+
+  if (W >= H) {
+    // Horizontal capsule: cap radius = H/2, flat middle of length (W - H)
+    const r = H / 2
+    const straightHalfW = (W - H) / 2
+    // Widest cross-section occurs at the band Y closest to cy
+    const dy = cy >= bandTop && cy <= bandBottom
+      ? 0
+      : Math.min(Math.abs(cy - bandTop), Math.abs(cy - bandBottom))
+    if (dy >= r) return null
+    const capDx = Math.sqrt(r * r - dy * dy)
+    return { left: cx - straightHalfW - capDx, right: cx + straightHalfW + capDx }
+  }
+
+  // Vertical capsule: cap radius = W/2, flat middle of length (H - W)
+  const r = W / 2
+  const straightHalfH = (H - W) / 2
+  const spineTop = cy - straightHalfH, spineBottom = cy + straightHalfH
+
+  // If the band overlaps the middle rect, carve the full capsule width
+  if (bandBottom > spineTop && bandTop < spineBottom) {
+    return { left: cx - r, right: cx + r }
+  }
+  // Band is entirely in one of the cap regions — use cap-circle math
+  const capCenterY = bandBottom <= spineTop ? spineTop : spineBottom
+  const closestY = Math.max(bandTop, Math.min(bandBottom, capCenterY))
+  const dy = Math.abs(closestY - capCenterY)
+  if (dy >= r) return null
+  const capDx = Math.sqrt(r * r - dy * dy)
+  return { left: cx - capDx, right: cx + capDx }
 }
 
 // Rectangular interval — straight-edge carve, used when obstacle is a big
@@ -120,6 +166,8 @@ export function ReflowText({ text, maxWidth, fontFamily, fontSize, fontWeight, c
       for (const obs of obstacles) {
         const iv = obs.shape === 'rect'
           ? rectInterval(obs, bT, bB)
+          : obs.shape === 'capsule'
+          ? capsuleInterval(obs, bT, bB)
           : ellipseInterval(obs, bT, bB)
         if (iv) blocked.push(iv)
       }

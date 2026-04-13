@@ -7,6 +7,7 @@ import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
 import type { CanvasObstacle } from './components/HandwritingEntity'
+import { MotionObstacle } from './components/MotionObstacle'
 import { ScrollInputs } from './components/ScrollInputs'
 import type { MinimapShape } from './components/ScrollInputs'
 import { ThreeIntro } from './components/ThreeIntro'
@@ -173,7 +174,9 @@ export default function App() {
       .filter(e => e.obstacle)
       .map(e => {
         const pos = positions[e.id] || { x: e.x, y: e.y }
-        return { id: e.id, x: pos.x, y: pos.y, wPx: e.obstacleW || 0, hPx: e.obstacleH || 0 }
+        // Capsule carve (pill-shape) hugs rounded text obstacles far tighter
+        // than the inscribed ellipse does.
+        return { id: e.id, x: pos.x, y: pos.y, wPx: e.obstacleW || 0, hPx: e.obstacleH || 0, shape: 'capsule' as const }
       }),
     [positions],
   )
@@ -408,6 +411,18 @@ export default function App() {
           {/* ── Doodle entities (z-index 5) ── */}
           {entitiesWithPinState.map((entity) => {
             const pos = positions[entity.id] || { x: entity.x, y: entity.y }
+            if (entity.motionDraggable) {
+              return (
+                <MotionObstacle
+                  key={entity.id}
+                  entity={entity}
+                  x={pos.x}
+                  y={pos.y}
+                  zoom={zoom}
+                  onPositionChange={handleEntityPositionChange}
+                />
+              )
+            }
             return (
               <HandwritingEntity
                 key={entity.id}

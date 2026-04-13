@@ -97,6 +97,7 @@ export type EntityDef = {
   category: EntityCategory
   jitter?: JitterType     // animation type (default: 'none')
   pinned?: boolean        // if true, shows pin icon, not draggable
+  motionDraggable?: boolean  // if true, rendered via MotionObstacle (framer-motion polish)
 }
 
 export type FixedRegion = {
