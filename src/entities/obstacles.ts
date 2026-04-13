@@ -11,18 +11,19 @@ const DEFAULTS = {
   pinned: false,
 }
 
-// 3 movable words — positioned away from sections
+// CLUSTER 5 — Red Obstacles (x: 90, 3 items stacked tight)
+// Drag them onto the Reflow Paragraph cluster (x: 50-65) to see lines bend.
 export const OBSTACLES: EntityDef[] = [
-  { id: 'obs-deadline', x: 75, y: 15, rotate: 0,
-    font: '"Permanent Marker", cursive', fontSize: '3.2rem', fontWeight: '400',
-    content: 'deadline', obstacleW: 275, obstacleH: 58,
+  { id: 'obs-deadline', x: 90, y: 18,
+    font: '"Permanent Marker", cursive', fontSize: '2.6rem', fontWeight: '400',
+    content: 'deadline', obstacleW: 230, obstacleH: 50,
     ...DEFAULTS },
-  { id: 'obs-asap', x: 75, y: 45, rotate: 0,
-    font: '"Rock Salt", cursive', fontSize: '2.8rem', fontWeight: '400',
-    content: 'ASAP', obstacleW: 195, obstacleH: 55,
+  { id: 'obs-asap', x: 90, y: 22,
+    font: '"Rock Salt", cursive', fontSize: '2.4rem', fontWeight: '400',
+    content: 'ASAP', obstacleW: 170, obstacleH: 48,
     ...DEFAULTS },
-  { id: 'obs-scope-creep', x: 75, y: 75, rotate: 0,
-    font: '"Caveat", cursive', fontSize: '3.0rem', fontWeight: '700',
-    content: 'scope creep', obstacleW: 260, obstacleH: 52,
+  { id: 'obs-scope-creep', x: 90, y: 26,
+    font: '"Caveat", cursive', fontSize: '2.6rem', fontWeight: '700',
+    content: 'scope creep', obstacleW: 225, obstacleH: 45,
     ...DEFAULTS },
 ]

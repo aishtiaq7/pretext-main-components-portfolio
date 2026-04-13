@@ -18,10 +18,13 @@ function resolveCollisions(x: number, y: number, entityId: string, regions: Fixe
     const rh = r.h + COLLISION_MARGIN * 2
     if (x >= rx && x < rx + rw && y >= ry && y < ry + rh) {
       const dl = x - rx, dr = (rx + rw) - x, dt = y - ry, db = (ry + rh) - y
-      const min = Math.min(dl, dr, dt, db)
+      // Regions anchored to the top of the canvas (e.g. header-zone) must
+      // always push DOWN — pushing up would dump the entity off-canvas.
+      const isTopEdge = r.y <= 0
+      const min = isTopEdge ? Math.min(dl, dr, db) : Math.min(dl, dr, dt, db)
       if (min === dl) x = rx - 0.3
       else if (min === dr) x = rx + rw + 0.3
-      else if (min === dt) y = ry - 0.3
+      else if (!isTopEdge && min === dt) y = ry - 0.3
       else y = ry + rh + 0.3
     }
   }

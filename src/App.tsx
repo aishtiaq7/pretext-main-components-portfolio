@@ -20,6 +20,9 @@ import { WIDGET_W, WIDGET_H } from './entities/widgets'
 // PAGE DEFINITIONS — siblings of doodle entities on the canvas
 // ═══════════════════════════════════════════════════════════
 const PAGES: PageDef[] = [
+  // Invisible drag-blocker covering the header row (y: 0-14).
+  // Obstacles dragged up will bounce off its bottom edge, so they can't cover brand/tagline/emojis.
+  { id: 'header-zone', x: 0, y: 0, width: 8000, height: 1120, fixed: true, component: 'header-zone', borderless: true },
   { id: 'brand-page', x: 32, y: 10, width: 1100, height: 220, fixed: true, component: 'brand', borderless: true },
   { id: 'clock-page', x: 30, y: 16, width: 1500, height: 1100, fixed: true, component: 'clock' },
   { id: 'three-page', x: 72, y: 16, width: 420, height: 420, fixed: false, component: 'three', borderless: true },
@@ -280,6 +283,8 @@ export default function App() {
   // Render page content by component id
   const renderPage = (component: string) => {
     switch (component) {
+      case 'header-zone':
+        return null
       case 'brand':
         return (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
