@@ -76,6 +76,11 @@ export default function App() {
   const activeWidgetRef = useRef<string | null>(null)
   activeWidgetRef.current = activeWidget
 
+  // Drag-state hooks kept as no-ops — paragraphs now act as obstacles all the
+  // time, so wrapping persists after you drop a paragraph on another.
+  const handleDragStart = useCallback((_id: string) => {}, [])
+  const handleDragEnd = useCallback((_id: string) => {}, [])
+
   // Page positions (for draggable pages)
   const [pagePositions, setPagePositions] = useState<Record<string, { x: number; y: number }>>(() => {
     const pos: Record<string, { x: number; y: number }> = {}
@@ -130,7 +135,8 @@ export default function App() {
     return regions
   }, [pagePositions, positions, activeWidget])
 
-  // Compute obstacle rects from obstacle entities (for text reflow)
+  // Compute obstacle rects for text reflow — ONLY red obstacle entities
+  // (deadline, ASAP, …). Reflow paragraphs don't interact with each other.
   const obstacleRects: CanvasObstacle[] = useMemo(() =>
     ENTITIES
       .filter(e => e.obstacle)
@@ -386,6 +392,8 @@ export default function App() {
                 renderSection={entity.category === 'section' ? renderSection : undefined}
                 isWidgetActive={entity.category === 'widget' ? activeWidget === entity.id : undefined}
                 onWidgetActivate={entity.category === 'widget' ? handleWidgetActivate : undefined}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
               />
             )
           })}

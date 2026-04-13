@@ -15,6 +15,8 @@ export type ObstacleRect = {
   y: number
   w: number
   h: number
+  shape?: 'ellipse' | 'rect'  // default 'ellipse' (clock/red-word wrap).
+                              // 'rect' = straight-edge carve (use for paragraph-as-obstacle).
 }
 
 type Line = { x: number; y: number; text: string }
@@ -56,6 +58,19 @@ function ellipseInterval(
   return { left: cx - maxDx, right: cx + maxDx }
 }
 
+// Rectangular interval — straight-edge carve, used when obstacle is a big
+// rectangular block (e.g. another paragraph). Avoids the "bulge" artifact
+// that ellipseInterval creates for wide/tall rectangles.
+function rectInterval(
+  obs: ObstacleRect,
+  bandTop: number, bandBottom: number,
+): Iv | null {
+  const top = obs.y - OBS_PAD
+  const bottom = obs.y + obs.h + OBS_PAD
+  if (bandTop >= bottom || bandBottom <= top) return null
+  return { left: obs.x - OBS_PAD, right: obs.x + obs.w + OBS_PAD }
+}
+
 function remToPx(fontSize: string): number {
   const rem = fontSize.match(/([\d.]+)rem/)
   if (rem) return Math.round(parseFloat(rem[1]) * 16)
@@ -69,15 +84,18 @@ type Props = {
   maxWidth: number
   fontFamily: string   // e.g. '"Patrick Hand", cursive'
   fontSize: string     // e.g. '1.4rem'
+  fontWeight?: string  // e.g. '400' or '700' — must match the rendered weight
   color: string
   opacity: number
   obstacles: ObstacleRect[]
 }
 
-export function ReflowText({ text, maxWidth, fontFamily, fontSize, color, opacity, obstacles }: Props) {
+export function ReflowText({ text, maxWidth, fontFamily, fontSize, fontWeight, color, opacity, obstacles }: Props) {
   const sizePx = remToPx(fontSize)
   const lineHeight = Math.round(sizePx * 1.5)
-  const fontStr = `${sizePx}px ${fontFamily}`
+  // Include fontWeight in the measurement string so bold text isn't measured
+  // as regular — that mismatch was why bold paragraphs split char-by-char.
+  const fontStr = `${fontWeight || '400'} ${sizePx}px ${fontFamily}`
 
   const [prepared, setPrepared] = useState<PreparedTextWithSegments | null>(null)
   const prevFontStr = useRef(fontStr)
@@ -100,7 +118,9 @@ export function ReflowText({ text, maxWidth, fontFamily, fontSize, color, opacit
       const bT = lineTop, bB = lineTop + lineHeight
       const blocked: Iv[] = []
       for (const obs of obstacles) {
-        const iv = ellipseInterval(obs, bT, bB)
+        const iv = obs.shape === 'rect'
+          ? rectInterval(obs, bT, bB)
+          : ellipseInterval(obs, bT, bB)
         if (iv) blocked.push(iv)
       }
 

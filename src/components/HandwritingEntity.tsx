@@ -38,6 +38,7 @@ export type CanvasObstacle = {
   y: number   // canvas %
   wPx: number // px
   hPx: number // px
+  shape?: 'ellipse' | 'rect'  // how ReflowText carves around it
 }
 
 type Props = {
@@ -53,11 +54,13 @@ type Props = {
   renderSection?: (componentId: string) => React.ReactNode
   isWidgetActive?: boolean
   onWidgetActivate?: (id: string) => void
+  onDragStart?: (id: string) => void
+  onDragEnd?: (id: string) => void
 }
 
 export function HandwritingEntity({
   entity, x, y, zoom, fixedRegions, obstacles, onPositionChange, onPinToggle, onClick, renderSection,
-  isWidgetActive, onWidgetActivate,
+  isWidgetActive, onWidgetActivate, onDragStart, onDragEnd,
 }: Props) {
   const dragRef = useRef({ startX: 0, startY: 0, startElX: 0, startElY: 0, dragging: false })
 
@@ -84,6 +87,7 @@ export function HandwritingEntity({
     if (!isDraggable) return
     jitterRef.current?.setPointerCapture(e.pointerId)
     dragRef.current = { startX: e.clientX, startY: e.clientY, startElX: x, startElY: y, dragging: true }
+    onDragStart?.(entity.id)
   }
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -101,6 +105,7 @@ export function HandwritingEntity({
     jitterRef.current?.releasePointerCapture(e.pointerId)
     const totalMove = Math.hypot(e.clientX - dragRef.current.startX, e.clientY - dragRef.current.startY)
     dragRef.current.dragging = false
+    onDragEnd?.(entity.id)
     if (totalMove < 4) {
       if (isWidget && onWidgetActivate) {
         onWidgetActivate(entity.id)
@@ -112,16 +117,21 @@ export function HandwritingEntity({
     }
   }
 
-  // Convert canvas-space obstacles to local px for ReflowText
+  // Convert canvas-space obstacles to local px for ReflowText.
+  // Exclude self so a paragraph doesn't try to wrap around its own body
+  // (paragraphs are registered as obstacles for each other in App.tsx).
   const localObstacles: ObstacleRect[] = useMemo(() => {
     if (!entity.maxWidth || entity.obstacle) return []
-    return obstacles.map(o => ({
-      x: (o.x - x) * PCT_TO_PX,
-      y: (o.y - y) * PCT_TO_PX,
-      w: o.wPx,
-      h: o.hPx,
-    }))
-  }, [obstacles, x, y, entity.maxWidth, entity.obstacle])
+    return obstacles
+      .filter(o => o.id !== entity.id)
+      .map(o => ({
+        x: (o.x - x) * PCT_TO_PX,
+        y: (o.y - y) * PCT_TO_PX,
+        w: o.wPx,
+        h: o.hPx,
+        shape: o.shape,
+      }))
+  }, [obstacles, x, y, entity.maxWidth, entity.obstacle, entity.id])
 
   const hasReflow = !!entity.maxWidth && !entity.obstacle && !!entity.content
 
@@ -237,6 +247,7 @@ export function HandwritingEntity({
           maxWidth={entity.maxWidth!}
           fontFamily={entity.font}
           fontSize={entity.fontSize}
+          fontWeight={entity.fontWeight}
           color={entity.color}
           opacity={entity.opacity}
           obstacles={localObstacles}
