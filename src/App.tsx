@@ -140,16 +140,19 @@ export default function App() {
     return regions
   }, [pagePositions, positions, activeWidget])
 
-  // Extended collision list — pages-only. Pages bump into reflow paragraphs
-  // (same no-overlap semantics they already have with sections), while
-  // entities (red obstacles, paragraphs themselves) continue to use the
-  // smaller `pageRegions` so red words can still land on paragraphs and
-  // paragraphs can still freely overlap each other.
+  // Extended collision list — pages-only. Pages bump into:
+  //   • everything in `pageRegions` (other pages, sections, widgets)
+  //   • reflow paragraphs (so a dragged page can't cover a paragraph)
+  //   • red obstacles / motion obstacles (so a page can't swallow them either)
+  // Entities (red obstacles, paragraphs) continue to use the smaller
+  // `pageRegions`, so red obstacles can still land on paragraphs and
+  // paragraphs can still overlap each other freely.
   const pageCollisionRegions: FixedRegion[] = useMemo(() => {
     const regions: FixedRegion[] = [...pageRegions]
     for (const e of ENTITIES) {
+      const pos = positions[e.id] || { x: e.x, y: e.y }
+      // Reflow paragraphs
       if (e.maxWidth && e.content && !e.obstacle && e.category !== 'section') {
-        const pos = positions[e.id] || { x: e.x, y: e.y }
         const rem = e.fontSize.match(/([\d.]+)rem/)
         const px = e.fontSize.match(/([\d.]+)px/)
         const fontPx = rem ? parseFloat(rem[1]) * 16 : px ? parseFloat(px[1]) : 16
@@ -164,6 +167,16 @@ export default function App() {
           y: pos.y,
           w: (e.maxWidth / CANVAS) * 100,
           h: (lines * lineH / CANVAS) * 100,
+        })
+      }
+      // Obstacles (red words, motion obstacles like the rocket)
+      else if (e.obstacle) {
+        regions.push({
+          id: e.id,
+          x: pos.x,
+          y: pos.y,
+          w: ((e.obstacleW ?? 0) / CANVAS) * 100,
+          h: ((e.obstacleH ?? 0) / CANVAS) * 100,
         })
       }
     }
