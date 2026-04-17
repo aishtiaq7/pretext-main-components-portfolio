@@ -231,7 +231,7 @@ export function HandwritingEntity({
   return (
     <div
       ref={setRef}
-      className={`entity ${isPinned ? 'entity-pinned' : ''} ${entity.category === 'accent' ? 'entity-accent' : ''} ${jitterFrozen ? 'entity-frozen' : ''}`}
+      className={`entity ${isPinned ? 'entity-pinned' : ''} ${entity.category === 'accent' ? 'entity-accent' : ''} ${jitterFrozen ? 'entity-frozen' : ''} ${entity.blendMultiply ? 'entity-sketch' : ''}`}
       style={{
         left: `${x}%`,
         top: `${y}%`,
@@ -267,7 +267,7 @@ export function HandwritingEntity({
           alt={entity.content || ''}
           width={entity.imgW}
           height={entity.imgH}
-          style={{ pointerEvents: 'none', display: 'block' }}
+          style={{ pointerEvents: 'none', display: 'block', ...(entity.blendMultiply ? { mixBlendMode: 'multiply' } : {}) }}
           draggable={false}
         />
       ) : hasReflow ? (

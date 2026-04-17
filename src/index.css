@@ -707,6 +707,11 @@ kbd {
   z-index: 40;
 }
 
+.entity-sketch {
+  z-index: 1;
+  pointer-events: none;
+}
+
 .section-block {
   position: relative;
   background: rgba(245, 242, 235, 0.96);

@@ -92,6 +92,7 @@ export type EntityDef = {
   imgSrc?: string        // image path (SVG/PNG/GIF) — renders <img> instead of text
   imgW?: number          // display width in px
   imgH?: number          // display height in px
+  blendMultiply?: boolean // mix-blend-mode: multiply — blends white out for sketch JPGs
 
   // ── New fields ──
   category: EntityCategory
