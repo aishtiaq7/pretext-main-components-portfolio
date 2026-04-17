@@ -295,6 +295,13 @@ export default function App() {
 
   const animRef = useRef<number | null>(null)
 
+  // Smooth zoom spring — accumulates target from wheel events,
+  // rAF loop interpolates current zoom toward it with a spring.
+  const targetZoomRef = useRef<number>(1.0)
+  const zoomAnchorRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  const zoomVelRef = useRef<number>(0)
+  const zoomRafRef = useRef<number | null>(null)
+
   const handleEntityClick = useCallback((id: string) => {
     const pos = positions[id]
     if (!pos) return
@@ -326,6 +333,25 @@ export default function App() {
     animRef.current = requestAnimationFrame(animate)
   }, [positions])
 
+  // Spring animation toward targetZoomRef — called via rAF.
+  // Stiffness 0.08 + damping 0.75 gives ease-in-out feel with no overshoot.
+  const animateSmoothZoom = useCallback(() => {
+    const { zoom: current } = getViewport()
+    const target = targetZoomRef.current
+    const diff = target - current
+
+    zoomVelRef.current = zoomVelRef.current * 0.75 + diff * 0.08
+    setZoomAnchored(current + zoomVelRef.current, zoomAnchorRef.current.x, zoomAnchorRef.current.y)
+
+    if (Math.abs(diff) > 0.0005 || Math.abs(zoomVelRef.current) > 0.0001) {
+      zoomRafRef.current = requestAnimationFrame(animateSmoothZoom)
+    } else {
+      setZoomAnchored(target, zoomAnchorRef.current.x, zoomAnchorRef.current.y)
+      zoomVelRef.current = 0
+      zoomRafRef.current = null
+    }
+  }, [])
+
   // Wheel / trackpad gestures
   // ─────────────────────────────────────────────────────────
   // Convention (matches Figma / Miro / tldraw):
@@ -345,12 +371,17 @@ export default function App() {
       const anchorX = e.clientX - rect.left - rect.width / 2
       const anchorY = e.clientY - rect.top - rect.height / 2
 
-      // Pinch (ctrlKey auto-set by browser) or explicit modifier → zoom at cursor
+      // Pinch (ctrlKey auto-set by browser) or explicit modifier → smooth zoom at cursor
       if (e.ctrlKey || e.metaKey) {
         const { zoom: z } = getViewport()
-        // Multiplicative zoom feels linear perceptually
-        const factor = Math.exp(-e.deltaY * 0.01)
-        setZoomAnchored(z * factor, anchorX, anchorY)
+        // Accumulate target in log-space. 0.003 = ~3× slower than raw wheel ticks.
+        const baseZoom = zoomRafRef.current ? targetZoomRef.current : z
+        const factor = Math.exp(-e.deltaY * 0.003)
+        targetZoomRef.current = clamp(baseZoom * factor, 0.15, 3.0)
+        zoomAnchorRef.current = { x: anchorX, y: anchorY }
+        if (!zoomRafRef.current) {
+          zoomRafRef.current = requestAnimationFrame(animateSmoothZoom)
+        }
         return
       }
 
@@ -366,7 +397,10 @@ export default function App() {
       setPan(px - e.deltaX, py - e.deltaY)
     }
     viewport.addEventListener('wheel', handleWheel, { passive: false })
-    return () => viewport.removeEventListener('wheel', handleWheel)
+    return () => {
+      viewport.removeEventListener('wheel', handleWheel)
+      if (zoomRafRef.current) cancelAnimationFrame(zoomRafRef.current)
+    }
   }, [])
 
   // Viewport drag → pan canvas
