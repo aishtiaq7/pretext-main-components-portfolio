@@ -9,24 +9,35 @@ const PCT_TO_PX = CANVAS / 100  // 1% of canvas in px
 
 const COLLISION_MARGIN = 0.8
 
-function resolveCollisions(x: number, y: number, entityId: string, regions: FixedRegion[]): { x: number; y: number } {
+// AABB collision resolver. When ew/eh > 0 the entity is treated as a box
+// (top-left at x,y, size ew×eh in canvas %). When 0 it degrades to the
+// original point-in-rect check. This matters for reflow paragraphs whose
+// body extends well beyond their top-left corner.
+function resolveCollisions(
+  x: number, y: number,
+  entityId: string, regions: FixedRegion[],
+  ew = 0, eh = 0,
+): { x: number; y: number } {
   for (const r of regions) {
     if (r.id === entityId) continue
     const rx = r.x - COLLISION_MARGIN
     const ry = r.y - COLLISION_MARGIN
     const rw = r.w + COLLISION_MARGIN * 2
     const rh = r.h + COLLISION_MARGIN * 2
-    if (x >= rx && x < rx + rw && y >= ry && y < ry + rh) {
-      const dl = x - rx, dr = (rx + rw) - x, dt = y - ry, db = (ry + rh) - y
-      // Regions anchored to the top of the canvas (e.g. header-zone) must
-      // always push DOWN — pushing up would dump the entity off-canvas.
-      const isTopEdge = r.y <= 0
-      const min = isTopEdge ? Math.min(dl, dr, db) : Math.min(dl, dr, dt, db)
-      if (min === dl) x = rx - 0.3
-      else if (min === dr) x = rx + rw + 0.3
-      else if (!isTopEdge && min === dt) y = ry - 0.3
-      else y = ry + rh + 0.3
-    }
+    // AABB overlap: entity box [x, y, x+ew, y+eh] vs region box [rx, ry, rx+rw, ry+rh]
+    const overlaps = x < rx + rw && x + ew > rx && y < ry + rh && y + eh > ry
+    if (!overlaps) continue
+    // How far we'd need to push in each direction to clear the overlap
+    const dl = (x + ew) - rx          // push entity left
+    const dr = (rx + rw) - x          // push entity right
+    const dt = (y + eh) - ry          // push entity up
+    const db = (ry + rh) - y          // push entity down
+    const isTopEdge = r.y <= 0
+    const min = isTopEdge ? Math.min(dl, dr, db) : Math.min(dl, dr, dt, db)
+    if (min === dl) x = rx - ew - 0.3
+    else if (min === dr) x = rx + rw + 0.3
+    else if (!isTopEdge && min === dt) y = ry - eh - 0.3
+    else y = ry + rh + 0.3
   }
   return { x, y }
 }
@@ -90,13 +101,31 @@ export function HandwritingEntity({
     onDragStart?.(entity.id)
   }
 
+  // Estimated bounding box for reflow paragraphs (canvas %).
+  // Used for AABB collision so the paragraph's full body bounces off pages,
+  // not just its top-left corner.
+  const entityBox = useMemo(() => {
+    if (!entity.maxWidth || !entity.content || entity.obstacle) return { w: 0, h: 0 }
+    const rem = entity.fontSize.match(/([\d.]+)rem/)
+    const px = entity.fontSize.match(/([\d.]+)px/)
+    const fontPx = rem ? parseFloat(rem[1]) * 16 : px ? parseFloat(px[1]) : 16
+    const lineH = Math.round(fontPx * 1.5)
+    const isBold = entity.fontWeight === '700' || entity.fontWeight === 'bold'
+    const charsPerLine = Math.max(8, Math.floor(entity.maxWidth / (fontPx * (isBold ? 0.62 : 0.55))))
+    const lines = Math.max(1, Math.ceil(entity.content.length / charsPerLine))
+    return {
+      w: (entity.maxWidth / CANVAS) * 100,
+      h: (lines * lineH / CANVAS) * 100,
+    }
+  }, [entity.maxWidth, entity.content, entity.fontSize, entity.fontWeight, entity.obstacle])
+
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current.dragging) return
     const dx = (e.clientX - dragRef.current.startX) / zoom
     const dy = (e.clientY - dragRef.current.startY) / zoom
     let newX = dragRef.current.startElX + (dx / PCT_TO_PX)
     let newY = dragRef.current.startElY + (dy / PCT_TO_PX)
-    const resolved = resolveCollisions(newX, newY, entity.id, fixedRegions)
+    const resolved = resolveCollisions(newX, newY, entity.id, fixedRegions, entityBox.w, entityBox.h)
     onPositionChange(entity.id, resolved.x, resolved.y)
   }
 

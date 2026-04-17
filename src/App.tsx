@@ -220,9 +220,21 @@ export default function App() {
       .filter(e => e.obstacle)
       .map(e => {
         const pos = positions[e.id] || { x: e.x, y: e.y }
-        // Capsule carve (pill-shape) hugs rounded text obstacles far tighter
-        // than the inscribed ellipse does.
-        return { id: e.id, x: pos.x, y: pos.y, wPx: e.obstacleW || 0, hPx: e.obstacleH || 0, shape: 'capsule' as const }
+        const rawW = e.obstacleW || 0
+        const rawH = e.obstacleH || 0
+        // Rotation-adjusted axis-aligned bounding box.
+        // A 145×40 box rotated −12° becomes ~150×70 — the carve must cover
+        // the full rotated footprint so red text doesn't overlap paragraph text.
+        const rad = Math.abs((e.rotate || 0) * Math.PI / 180)
+        const cosR = Math.cos(rad)
+        const sinR = Math.sin(rad)
+        const adjW = Math.ceil(rawW * cosR + rawH * sinR)
+        const adjH = Math.ceil(rawW * sinR + rawH * cosR)
+        // Re-center: rotation is around the element's center, so the expanded
+        // AABB must shift left/up by half the size increase to stay centered.
+        const shiftX = ((adjW - rawW) / 2 / CANVAS) * 100
+        const shiftY = ((adjH - rawH) / 2 / CANVAS) * 100
+        return { id: e.id, x: pos.x - shiftX, y: pos.y - shiftY, wPx: adjW, hPx: adjH, shape: 'capsule' as const }
       }),
     [positions],
   )
@@ -329,8 +341,9 @@ export default function App() {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
       const rect = viewport.getBoundingClientRect()
-      const anchorX = e.clientX - rect.left
-      const anchorY = e.clientY - rect.top
+      // Anchor relative to viewport center — zoom-canvas origin sits at (50%, 50%)
+      const anchorX = e.clientX - rect.left - rect.width / 2
+      const anchorY = e.clientY - rect.top - rect.height / 2
 
       // Pinch (ctrlKey auto-set by browser) or explicit modifier → zoom at cursor
       if (e.ctrlKey || e.metaKey) {
