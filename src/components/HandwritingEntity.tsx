@@ -252,7 +252,7 @@ export function HandwritingEntity({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      {isPinned && entity.category !== 'watermark' && (
+      {isPinned && entity.category !== 'watermark' && entity.category !== 'image' && (
         <img
           src="/doodles/pin.svg"
           alt=""
