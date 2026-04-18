@@ -15,6 +15,9 @@ dist-ssr
 # Local git worktrees (not intended for commit)
 /worktree/
 
+# Ink Studio — standalone stroke-capture tool, not part of the portfolio build
+/ink-studio/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

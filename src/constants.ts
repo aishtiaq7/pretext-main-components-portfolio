@@ -12,7 +12,7 @@ export const PAN_LIMIT = 5000
 //   zoom is the initial scale (0.15–3.0).
 // ═══════════════════════════════════════════════════════════
 export const INITIAL_VIEW = {
-  focusX: 10,
-  focusY: 20,
+  focusX: 3,
+  focusY: 72,
   zoom: 1.0,
 }
