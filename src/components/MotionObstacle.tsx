@@ -148,7 +148,7 @@ export function MotionObstacle({ entity, x, y, zoom, onPositionChange }: Props) 
             display: 'inline-block',
             fontFamily: entity.font,
             fontSize: entity.fontSize,
-            fontWeight: entity.fontWeight as number | undefined,
+            fontWeight: entity.fontWeight,
             color: entity.color,
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
