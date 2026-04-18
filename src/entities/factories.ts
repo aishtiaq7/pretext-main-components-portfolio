@@ -169,6 +169,41 @@ export function image(input: ImageInput): EntityDef {
   }
 }
 
+// ── Handwriting (animated stroke-capture JSON — ink-studio export) ──
+//   Renders with `<HandwrittenEntry>`, which replays pen strokes from a
+//   JSON file (produced by the ink-studio tool). Behaves like an image:
+//   pinned by default, no collision, no reflow. Sized via width/height.
+type HandwritingInput = Positional & StyleOverrides & {
+  src: string        // path to the JSON (usually under /handwriting/)
+  width: number      // on-canvas pixel width
+  height: number
+  pinned?: boolean
+  /** Replay the writing animation on mount (default: false → static). */
+  autoplay?: boolean
+  /** Playback speed multiplier (default: 1). */
+  playbackSpeed?: number
+}
+
+export function handwriting(input: HandwritingInput): EntityDef {
+  const { src, width, height, pinned, ...rest } = input
+  return {
+    type: 'text',
+    category: 'image',
+    rotate: 0,
+    font: '',
+    fontSize: '',
+    fontWeight: '400',
+    color: '',
+    opacity: 1,
+    jitter: 'none',
+    pinned: pinned ?? true,
+    handwritingSrc: src,
+    imgW: width,
+    imgH: height,
+    ...rest,
+  }
+}
+
 // ── Obstacle (red handwritten word with text reflow) ────────
 type ObstacleInput = Positional & StyleOverrides & {
   content: string

@@ -5,6 +5,7 @@ import { ReflowText } from './ReflowText'
 import type { ObstacleRect } from './ReflowText'
 import { useJitter } from '../hooks/useJitter'
 import { getReflowBoxPct } from '../entities/sizes'
+import { HandwrittenEntry } from './HandwrittenEntry'
 
 const PCT_TO_PX = CANVAS / 100  // 1% of canvas in px
 
@@ -211,7 +212,15 @@ function DefaultView(props: SharedViewProps & {
         />
       )}
 
-      {entity.imgSrc ? (
+      {entity.handwritingSrc ? (
+        <HandwrittenEntry
+          src={entity.handwritingSrc}
+          width={entity.imgW}
+          height={entity.imgH}
+          autoplay={entity.autoplay}
+          speed={entity.playbackSpeed}
+        />
+      ) : entity.imgSrc ? (
         <img
           src={entity.imgSrc}
           alt={entity.content || ''}

@@ -1,6 +1,5 @@
 import type { PageDef } from '../components/PageWrapper'
 import { NotebookPage } from '../components/NotebookPage'
-import { HandwrittenEntry } from '../components/HandwrittenEntry'
 import { BrandHero } from './BrandHero'
 import { RabbitHoleCard } from './RabbitHoleCard'
 import { ThreeScene } from './ThreeScene'
@@ -54,13 +53,4 @@ export const PAGES: PageDef[] = [
     render: () => <RabbitHoleCard />,
   },
 
-  // Handwritten entry — stroke-capture JSON exported from ink-studio.
-  // Dimensions preserve the original capture aspect ratio (1813×1038 ≈ 1.75:1).
-  // Click to replay the animation.
-  {
-    id: 'handwritten-1',
-    x: 3, y: 72, width: 720, height: 412,
-    fixed: false, borderless: false, rotate: -1,
-    render: () => <HandwrittenEntry src="/handwriting/ink-2026-04-17-2017.json" />,
-  },
 ]

@@ -93,6 +93,11 @@ export type EntityDef = {
   imgW?: number          // display width in px
   imgH?: number          // display height in px
   blendMultiply?: boolean // mix-blend-mode: multiply — blends white out for sketch JPGs
+  handwritingSrc?: string // path to a stroke-capture JSON (ink-studio export)
+                          //   → renders <HandwrittenEntry> instead of <img>
+                          //   sized via imgW / imgH (same as image variant)
+  autoplay?: boolean      // handwriting: replay the writing animation on mount
+  playbackSpeed?: number  // handwriting: replay speed multiplier (default 1)
 
   // ── New fields ──
   category: EntityCategory

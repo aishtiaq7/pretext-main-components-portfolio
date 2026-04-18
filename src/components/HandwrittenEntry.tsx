@@ -53,15 +53,18 @@ type Drawing = {
 
 type Props = {
   src: string
-  /** If true (default), animate the drawing once it loads. */
+  /** On-canvas pixel size. Optional — defaults to fill parent. */
+  width?: number
+  height?: number
+  /** Animate the drawing on mount. Default false → renders statically. */
   autoplay?: boolean
   /** Playback speed multiplier — 2 = twice as fast. */
   speed?: number
 }
 
-export function HandwrittenEntry({ src, autoplay = true, speed = 1 }: Props) {
+export function HandwrittenEntry({ src, width, height, autoplay = false, speed = 1 }: Props) {
   const [drawing, setDrawing] = useState<Drawing | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState(1) // 0–1 (1 = fully drawn)
   const rafRef = useRef<number | null>(null)
 
@@ -105,18 +108,9 @@ export function HandwrittenEntry({ src, autoplay = true, speed = 1 }: Props) {
     // Re-trigger animation when progress is reset to 0 via replay click
   }, [drawing, progress === 0, speed]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const replay = () => setProgress(0)
-
-  if (error) {
-    return <div style={{ padding: 16, color: '#b91c1c', fontFamily: 'monospace', fontSize: 12 }}>
-      Failed to load {src}: {error}
-    </div>
-  }
-  if (!drawing) {
-    return <div style={{ padding: 16, color: '#6b6b66', fontFamily: 'monospace', fontSize: 12 }}>
-      loading…
-    </div>
-  }
+  // Render nothing while loading or on error — the entity just appears once
+  // the strokes are ready. No placeholder text.
+  if (!drawing) return null
 
   const firstStart = drawing.strokes[0]?.startedAt ?? 0
   const lastStroke = drawing.strokes[drawing.strokes.length - 1]
@@ -124,17 +118,19 @@ export function HandwrittenEntry({ src, autoplay = true, speed = 1 }: Props) {
   const total = Math.max(1, (lastStroke?.startedAt ?? firstStart) - firstStart + lastT)
   const elapsed = progress * total
 
+  const containerStyle: React.CSSProperties = {
+    width: width ?? '100%',
+    height: height ?? '100%',
+    pointerEvents: 'none',
+  }
+
   return (
-    <div
-      style={{ width: '100%', height: '100%', cursor: 'pointer' }}
-      onClick={replay}
-      title="click to replay"
-    >
+    <div style={containerStyle}>
       <svg
         viewBox={`0 0 ${drawing.width} ${drawing.height}`}
         width="100%"
         height="100%"
-        style={{ display: 'block', pointerEvents: 'none' }}
+        style={{ display: 'block' }}
       >
         {drawing.strokes.map((stroke, i) => {
           const offset = stroke.startedAt - firstStart
