@@ -1,6 +1,8 @@
 import type { EntityDef } from '../types'
+import { WIDGET_DEFAULT } from './sizes'
 
-export const WIDGET_W = 400
-export const WIDGET_H = 300
+// Back-compat exports — prefer importing from './sizes' in new code.
+export const WIDGET_W = WIDGET_DEFAULT.w
+export const WIDGET_H = WIDGET_DEFAULT.h
 
 export const WIDGETS: EntityDef[] = []

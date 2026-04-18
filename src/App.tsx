@@ -6,17 +6,22 @@ import { useViewportZoom, getViewport, setZoomAnchored, setPan } from './store/v
 import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
-import type { CanvasObstacle } from './components/HandwritingEntity'
 import { MotionObstacle } from './components/MotionObstacle'
 import { ScrollInputs } from './components/ScrollInputs'
-import type { MinimapShape } from './components/ScrollInputs'
 import { ThreeIntro } from './components/ThreeIntro'
 import { NotebookPage } from './components/NotebookPage'
 import { PageWrapper } from './components/PageWrapper'
 import type { PageDef } from './components/PageWrapper'
-import { SectionPhotoGallery, GALLERY_W, GALLERY_H } from './components/SectionPhotoGallery'
-import { SectionAbout, ABOUT_W, ABOUT_H } from './components/SectionAbout'
-import { WIDGET_W, WIDGET_H } from './entities/widgets'
+import { SectionPhotoGallery } from './components/SectionPhotoGallery'
+import { SectionAbout } from './components/SectionAbout'
+import type { MinimapShape } from './components/ScrollInputs'
+import { getWidgetSize, pxToPct } from './entities/sizes'
+import {
+  collectPageRegions,
+  collectExtendedColliders,
+  collectMinimapShapes,
+  collectObstacleRects,
+} from './entities/registry'
 
 // ═══════════════════════════════════════════════════════════
 // PAGE DEFINITIONS — siblings of doodle entities on the canvas
@@ -36,21 +41,9 @@ const PAGES: PageDef[] = [
   { id: 'text-page', x: 45, y: 25, width: 480, height: 340, fixed: false, component: 'text', borderless: false, rotate: -4 },
 ]
 
-// Section entity dimensions (used for collision regions)
-// All photo-gallery sections share GALLERY_W/H, all about-block share ABOUT_W/H
-const SECTION_SIZES: Record<string, { w: number; h: number }> = {
-  'section-photos':   { w: GALLERY_W, h: GALLERY_H },
-  'section-photos-2': { w: GALLERY_W, h: GALLERY_H },
-  'section-photos-3': { w: GALLERY_W, h: GALLERY_H },
-  'section-about':    { w: ABOUT_W, h: ABOUT_H },
-  'section-about-2':  { w: ABOUT_W, h: ABOUT_H },
-  'section-about-3':  { w: ABOUT_W, h: ABOUT_H },
-}
-
-// Widget entity dimensions (used for collision regions + pushing)
-const WIDGET_SIZES: Record<string, { w: number; h: number }> = {
-  'widget-placeholder': { w: WIDGET_W, h: WIDGET_H },
-}
+// Entity sizing (section, widget, reflow) lives in `src/entities/sizes.ts`.
+// App.tsx no longer hard-codes per-id dimension tables — the registry
+// derives everything from the entity definition.
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val))
@@ -93,50 +86,17 @@ export default function App() {
     return pos
   })
 
-  // Compute page regions — used by both entity collision and page-to-page collision
+  // Page frames — pages + anything the registry says is a page-region
+  // (sections, active widget). Entities bump into these.
   const pageRegions: FixedRegion[] = useMemo(() => {
     const regions: FixedRegion[] = PAGES.map(p => ({
       id: p.id,
       x: pagePositions[p.id]?.x ?? p.x,
       y: pagePositions[p.id]?.y ?? p.y,
-      w: (p.width / CANVAS) * 100,
-      h: (p.height / CANVAS) * 100,
+      w: pxToPct(p.width),
+      h: pxToPct(p.height),
     }))
-
-    // Add section entities as collision regions too
-    for (const e of ENTITIES) {
-      if (e.category === 'section') {
-        const size = SECTION_SIZES[e.id]
-        if (size) {
-          const pos = positions[e.id] || { x: e.x, y: e.y }
-          regions.push({
-            id: e.id,
-            x: pos.x,
-            y: pos.y,
-            w: (size.w / CANVAS) * 100,
-            h: (size.h / CANVAS) * 100,
-          })
-        }
-      }
-    }
-
-    // Add active widget as collision region so entities avoid it
-    if (activeWidget) {
-      const size = WIDGET_SIZES[activeWidget]
-      if (size) {
-        const pos = positions[activeWidget]
-        if (pos) {
-          regions.push({
-            id: activeWidget,
-            x: pos.x,
-            y: pos.y,
-            w: (size.w / CANVAS) * 100,
-            h: (size.h / CANVAS) * 100,
-          })
-        }
-      }
-    }
-
+    regions.push(...collectPageRegions(ENTITIES, positions, activeWidget))
     return regions
   }, [pagePositions, positions, activeWidget])
 
@@ -144,98 +104,27 @@ export default function App() {
   //   • everything in `pageRegions` (other pages, sections, widgets)
   //   • reflow paragraphs (so a dragged page can't cover a paragraph)
   //   • red obstacles / motion obstacles (so a page can't swallow them either)
-  // Entities (red obstacles, paragraphs) continue to use the smaller
-  // `pageRegions`, so red obstacles can still land on paragraphs and
-  // paragraphs can still overlap each other freely.
-  const pageCollisionRegions: FixedRegion[] = useMemo(() => {
-    const regions: FixedRegion[] = [...pageRegions]
-    for (const e of ENTITIES) {
-      const pos = positions[e.id] || { x: e.x, y: e.y }
-      // Reflow paragraphs
-      if (e.maxWidth && e.content && !e.obstacle && e.category !== 'section') {
-        const rem = e.fontSize.match(/([\d.]+)rem/)
-        const px = e.fontSize.match(/([\d.]+)px/)
-        const fontPx = rem ? parseFloat(rem[1]) * 16 : px ? parseFloat(px[1]) : 16
-        const lineH = Math.round(fontPx * 1.5)
-        const isBold = (e.fontWeight === '700' || e.fontWeight === 'bold')
-        const charFactor = isBold ? 0.62 : 0.55
-        const charsPerLine = Math.max(8, Math.floor(e.maxWidth / (fontPx * charFactor)))
-        const lines = Math.max(1, Math.ceil((e.content?.length || 0) / charsPerLine))
-        regions.push({
-          id: e.id,
-          x: pos.x,
-          y: pos.y,
-          w: (e.maxWidth / CANVAS) * 100,
-          h: (lines * lineH / CANVAS) * 100,
-        })
-      }
-      // Obstacles (red words, motion obstacles like the rocket)
-      else if (e.obstacle) {
-        regions.push({
-          id: e.id,
-          x: pos.x,
-          y: pos.y,
-          w: ((e.obstacleW ?? 0) / CANVAS) * 100,
-          h: ((e.obstacleH ?? 0) / CANVAS) * 100,
-        })
-      }
-    }
-    return regions
-  }, [pageRegions, positions])
+  const pageCollisionRegions: FixedRegion[] = useMemo(
+    () => [...pageRegions, ...collectExtendedColliders(ENTITIES, positions, activeWidget)],
+    [pageRegions, positions, activeWidget],
+  )
 
-  // Compute minimap shapes — realtime abstraction of the canvas.
-  // Only includes meaningful entities (pages, sections, widgets, obstacles);
-  // skips doodles/accents/watermarks which are too small (<2px) to render.
-  const minimapShapes: MinimapShape[] = useMemo(() => {
-    const shapes: MinimapShape[] = []
-
-    // Pages (skip the invisible header-zone drag-blocker)
-    for (const p of PAGES) {
-      if (p.id === 'header-zone') continue
-      const pos = pagePositions[p.id] ?? { x: p.x, y: p.y }
-      shapes.push({ id: p.id, type: 'page', x: pos.x, y: pos.y, w: p.width, h: p.height })
-    }
-
-    // Sections, widgets, obstacles from the entity list
-    for (const e of ENTITIES) {
-      const pos = positions[e.id] ?? { x: e.x, y: e.y }
-      if (e.category === 'section') {
-        const size = SECTION_SIZES[e.id]
-        if (size) shapes.push({ id: e.id, type: 'section', x: pos.x, y: pos.y, w: size.w, h: size.h })
-      } else if (e.category === 'widget') {
-        const size = WIDGET_SIZES[e.id]
-        if (size) shapes.push({ id: e.id, type: 'widget', x: pos.x, y: pos.y, w: size.w, h: size.h })
-      } else if (e.obstacle) {
-        shapes.push({ id: e.id, type: 'obstacle', x: pos.x, y: pos.y, w: e.obstacleW ?? 80, h: e.obstacleH ?? 40 })
-      }
-    }
-
+  // Minimap: pages (in declared order, skipping the invisible drag-blocker)
+  // followed by entity shapes the registry tagged with a minimapType.
+  const minimapShapes = useMemo<MinimapShape[]>(() => {
+    const shapes: MinimapShape[] = PAGES
+      .filter(p => p.id !== 'header-zone')
+      .map(p => {
+        const pos = pagePositions[p.id] ?? { x: p.x, y: p.y }
+        return { id: p.id, type: 'page', x: pos.x, y: pos.y, w: p.width, h: p.height }
+      })
+    shapes.push(...collectMinimapShapes(ENTITIES, positions))
     return shapes
   }, [pagePositions, positions])
 
-  // Compute obstacle rects for text reflow — ONLY red obstacle entities
-  // (deadline, ASAP, …). Reflow paragraphs don't interact with each other.
-  const obstacleRects: CanvasObstacle[] = useMemo(() =>
-    ENTITIES
-      .filter(e => e.obstacle)
-      .map(e => {
-        const pos = positions[e.id] || { x: e.x, y: e.y }
-        const rawW = e.obstacleW || 0
-        const rawH = e.obstacleH || 0
-        // Rotation-adjusted axis-aligned bounding box.
-        // A 145×40 box rotated −12° becomes ~150×70 — the carve must cover
-        // the full rotated footprint so red text doesn't overlap paragraph text.
-        const rad = Math.abs((e.rotate || 0) * Math.PI / 180)
-        const cosR = Math.cos(rad)
-        const sinR = Math.sin(rad)
-        const adjW = Math.ceil(rawW * cosR + rawH * sinR)
-        const adjH = Math.ceil(rawW * sinR + rawH * cosR)
-        // Re-center: rotation is around the element's center, so the expanded
-        // AABB must shift left/up by half the size increase to stay centered.
-        const shiftX = ((adjW - rawW) / 2 / CANVAS) * 100
-        const shiftY = ((adjH - rawH) / 2 / CANVAS) * 100
-        return { id: e.id, x: pos.x - shiftX, y: pos.y - shiftY, wPx: adjW, hPx: adjH, shape: 'capsule' as const }
-      }),
+  // Obstacle rects for text reflow (rotation-adjusted AABB, capsule-shaped carve).
+  const obstacleRects = useMemo(
+    () => collectObstacleRects(ENTITIES, positions),
     [positions],
   )
 
@@ -251,11 +140,13 @@ export default function App() {
     setPositions(prev => {
       const next = { ...prev, [id]: { x, y } }
 
-      // If this is the active widget, push overlapping entities out of the way
-      const widgetSize = WIDGET_SIZES[id]
-      if (widgetSize && activeWidgetRef.current === id) {
-        const wW = (widgetSize.w / CANVAS) * 100
-        const wH = (widgetSize.h / CANVAS) * 100
+      // If this is the active widget, push overlapping entities out of the way.
+      // Size comes from the registry via the entity definition, not a hardcoded map.
+      const widgetEntity = ENTITIES.find(e => e.id === id && e.category === 'widget')
+      if (widgetEntity && activeWidgetRef.current === id) {
+        const widgetSize = getWidgetSize(widgetEntity)
+        const wW = pxToPct(widgetSize.w)
+        const wH = pxToPct(widgetSize.h)
         const margin = 0.3 // canvas %
 
         for (const e of ENTITIES) {

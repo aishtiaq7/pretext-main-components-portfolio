@@ -99,6 +99,13 @@ export type EntityDef = {
   jitter?: JitterType     // animation type (default: 'none')
   pinned?: boolean        // if true, shows pin icon, not draggable
   motionDraggable?: boolean  // if true, rendered via MotionObstacle (framer-motion polish)
+
+  // ── Per-instance visual overrides (optional) ──
+  // Let individual entities diverge from their factory defaults without
+  // introducing new category-level flags. Append to the root element's
+  // className / merge into its inline style.
+  className?: string
+  style?: React.CSSProperties
 }
 
 export type FixedRegion = {

@@ -1,7 +1,7 @@
 import { SECTION_PHOTOS } from '../entities/sections'
+import { SECTION_SIZES } from '../entities/sizes'
 
-const GALLERY_W = 1300
-const GALLERY_H = 1440
+const { w: GALLERY_W, h: GALLERY_H } = SECTION_SIZES['photo-gallery']
 
 export function SectionPhotoGallery() {
   return (

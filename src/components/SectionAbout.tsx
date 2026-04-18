@@ -1,5 +1,6 @@
-const ABOUT_W = 1100
-const ABOUT_H = 850
+import { SECTION_SIZES } from '../entities/sizes'
+
+const { w: ABOUT_W, h: ABOUT_H } = SECTION_SIZES['about-block']
 
 const ABOUT_PARAGRAPHS = [
   `I build things for the web. Not just features — I build the systems around features. The pipelines that deliver them, the tests that catch them when they break, the documentation that helps the next person understand what I was thinking at 2 AM.`,
