@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { ENTITIES, BRAND_NAME, ALICE_QUOTE } from './entities'
+import { ENTITIES } from './entities'
 import type { FixedRegion } from './types'
 import { CANVAS, PAN_LIMIT } from './constants'
 import { useViewportZoom, getViewport, setZoomAnchored, setPan } from './store/viewport'
@@ -8,13 +8,11 @@ import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
 import { MotionObstacle } from './components/MotionObstacle'
 import { ScrollInputs } from './components/ScrollInputs'
-import { ThreeIntro } from './components/ThreeIntro'
-import { NotebookPage } from './components/NotebookPage'
 import { PageWrapper } from './components/PageWrapper'
-import type { PageDef } from './components/PageWrapper'
 import { SectionPhotoGallery } from './components/SectionPhotoGallery'
 import { SectionAbout } from './components/SectionAbout'
 import type { MinimapShape } from './components/ScrollInputs'
+import { PAGES } from './pages'
 import { getWidgetSize, pxToPct } from './entities/sizes'
 import {
   collectPageRegions,
@@ -23,27 +21,9 @@ import {
   collectObstacleRects,
 } from './entities/registry'
 
-// ═══════════════════════════════════════════════════════════
-// PAGE DEFINITIONS — siblings of doodle entities on the canvas
-// ═══════════════════════════════════════════════════════════
-const PAGES: PageDef[] = [
-  // Invisible drag-blocker covering the header row (y: 0-14).
-  // Obstacles dragged up will bounce off its bottom edge, so they can't cover brand/tagline/emojis.
-  // Thin visible bar now (was 1120px). Still full-width so it blocks obstacles dragged upward.
-  { id: 'header-zone', x: 0, y: 0, width: 8000, height: 400, fixed: true, component: 'header-zone', borderless: true },
-  { id: 'brand-page', x: 3, y: 10, width: 1100, height: 220, fixed: true, component: 'brand', borderless: false },
-  { id: 'clock-page', x: 3, y: 16, width: 1500, height: 1100, fixed: true, component: 'clock' },
-  // Tightened: cube directly below notebook, rabbit hole below cube (left column, x:5)
-  { id: 'three-page', x: 5, y: 30.5, width: 420, height: 420, fixed: false, component: 'three', borderless: true, rotate: 8 },
-  // Rabbit Hole — draggable card. borderless:false → gets the 2px black frame,
-  // transparent bg lets paragraph text show through. Collides with paragraphs
-  // (via pageCollisionRegions) so it never overlaps them.
-  { id: 'text-page', x: 45, y: 25, width: 480, height: 340, fixed: false, component: 'text', borderless: false, rotate: -4 },
-]
-
-// Entity sizing (section, widget, reflow) lives in `src/entities/sizes.ts`.
-// App.tsx no longer hard-codes per-id dimension tables — the registry
-// derives everything from the entity definition.
+// Page definitions live in `src/pages/index.tsx` — each page carries its own
+// render function so this file stays focused on canvas behavior.
+// Entity sizing lives in `src/entities/sizes.ts`.
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val))
@@ -295,12 +275,26 @@ export default function App() {
   }, [])
 
   // Viewport drag → pan canvas
-  const handleViewportPointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('zoom-canvas')) return
+  const startViewportPan = useCallback((e: React.PointerEvent) => {
     const { panX: px, panY: py } = getViewport()
     canvasDragRef.current = { startX: e.clientX, startY: e.clientY, startPanX: px, startPanY: py, active: true }
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }, [])
+
+  // Capture-phase handler: Cmd/Ctrl + drag always pans, even when the pointer
+  // lands on an entity or page. Runs before any child bubble handler; we
+  // stopPropagation so entity/page drag logic never sees the event.
+  const handleViewportPointerDownCapture = useCallback((e: React.PointerEvent) => {
+    if (!(e.metaKey || e.ctrlKey)) return
+    startViewportPan(e)
+    e.stopPropagation()
+    e.preventDefault()
+  }, [startViewportPan])
+
+  const handleViewportPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('zoom-canvas')) return
+    startViewportPan(e)
+  }, [startViewportPan])
   const handleViewportPointerMove = useCallback((e: React.PointerEvent) => {
     const d = canvasDragRef.current; if (!d?.active) return
     setPan(
@@ -326,58 +320,8 @@ export default function App() {
     }
   }, [])
 
-  // Render page content by component id
-  const renderPage = (component: string) => {
-    switch (component) {
-      case 'header-zone':
-        return null
-      case 'brand':
-        return (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
-            <span style={{
-              fontFamily: '"Permanent Marker", cursive',
-              fontSize: '7.5rem',
-              fontWeight: 400,
-              color: '#3a3530',
-              opacity: 0.92,
-              transform: 'rotate(-2deg)',
-              whiteSpace: 'nowrap',
-            }}>
-              {BRAND_NAME}
-            </span>
-          </div>
-        )
-      case 'clock':
-        return <NotebookPage width={1500} height={1100} />
-      case 'three':
-        return (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 380, height: 380, pointerEvents: 'none' }}>
-              <ThreeIntro />
-            </div>
-          </div>
-        )
-      case 'text':
-        return (
-          <div style={{ width: '100%', height: '100%', padding: 24 }}>
-            <h2 style={{
-              font: '700 1.8rem "Indie Flower", cursive',
-              color: '#1a1714',
-              marginBottom: 12,
-              textShadow: '0 1px 0 rgba(232, 228, 217, 0.8)',
-            }}>Down the Rabbit Hole</h2>
-            <p style={{
-              font: '1.15rem "Kalam", cursive',
-              lineHeight: 1.55,
-              color: '#2a2520',
-              textShadow: '0 1px 0 rgba(232, 228, 217, 0.8)',
-            }}>{ALICE_QUOTE}</p>
-          </div>
-        )
-      default:
-        return null
-    }
-  }
+  // Page content is provided by each PageDef's own `render` function —
+  // see `src/pages/index.tsx`. No switch needed here.
 
   // Merge runtime pinned state into entities for rendering
   const entitiesWithPinState = useMemo(() =>
@@ -396,6 +340,7 @@ export default function App() {
       <div
         ref={viewportRef}
         className="zoom-viewport"
+        onPointerDownCapture={handleViewportPointerDownCapture}
         onPointerDown={handleViewportPointerDown}
         onPointerMove={handleViewportPointerMove}
         onPointerUp={handleViewportPointerUp}
@@ -451,7 +396,7 @@ export default function App() {
                 pageRegions={pageCollisionRegions}
                 onPositionChange={handlePagePositionChange}
               >
-                {renderPage(page.component)}
+                {page.render?.()}
               </PageWrapper>
             )
           })}

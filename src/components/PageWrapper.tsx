@@ -9,7 +9,12 @@ export type PageDef = {
   width: number   // px on canvas
   height: number  // px on canvas
   fixed: boolean
-  component: string
+  /**
+   * Returns the JSX to render inside the page wrapper. Omit for an invisible
+   * drag-blocker page (e.g. the header-zone). Keeping this on the PageDef
+   * means every page config lives in one place — no external switch.
+   */
+  render?: () => React.ReactNode
   borderless?: boolean  // true = looks like a regular entity, no visible box
   rotate?: number       // degrees — visual rotation via CSS transform
 }

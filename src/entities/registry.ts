@@ -2,7 +2,7 @@ import type { EntityDef, FixedRegion } from '../types'
 import type { CanvasObstacle } from '../components/HandwritingEntity'
 import type { MinimapShape } from '../components/ScrollInputs'
 import { CANVAS } from '../constants'
-import { getSectionSize, getWidgetSize, getReflowBoxPct, pxToPct } from './sizes'
+import { resolveSectionSize, getWidgetSize, getReflowBoxPct, pxToPct } from './sizes'
 
 // ═══════════════════════════════════════════════════════════
 // Entity registry — the single dispatch table that turns an
@@ -45,7 +45,7 @@ export function getEntityMetrics(entity: EntityDef, isActiveWidget: boolean): En
 
   switch (role) {
     case 'section': {
-      const size = getSectionSize(entity.componentId)
+      const size = resolveSectionSize(entity)
       return {
         role,
         size: size ? { w: pxToPct(size.w), h: pxToPct(size.h) } : null,

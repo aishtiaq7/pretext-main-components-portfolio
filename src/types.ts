@@ -106,6 +106,11 @@ export type EntityDef = {
   // className / merge into its inline style.
   className?: string
   style?: React.CSSProperties
+
+  // Per-instance pixel-size override (sections & widgets).
+  // When omitted, the default from `src/entities/sizes.ts` is used.
+  width?: number
+  height?: number
 }
 
 export type FixedRegion = {

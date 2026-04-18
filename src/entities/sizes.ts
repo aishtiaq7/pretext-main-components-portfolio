@@ -28,6 +28,19 @@ export function getSectionSize(componentId: string | undefined): PxSize | null {
   return SECTION_SIZES[componentId] ?? null
 }
 
+/**
+ * Resolve a section's rendered size. Per-instance `width` / `height` on the
+ * entity win; otherwise the shared default from `SECTION_SIZES` is used.
+ */
+export function resolveSectionSize(entity: EntityDef): PxSize | null {
+  const base = getSectionSize(entity.componentId)
+  if (!base) return null
+  return {
+    w: entity.width ?? base.w,
+    h: entity.height ?? base.h,
+  }
+}
+
 // ── Widget sizes ──
 // Default widget dimensions; per-instance overrides land on the entity
 // itself via obstacleW/H so a single widget can opt into a different size.
