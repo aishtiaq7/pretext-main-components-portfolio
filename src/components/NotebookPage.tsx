@@ -5,7 +5,7 @@ import type { LayoutCursor, PreparedTextWithSegments } from '@chenglou/pretext'
 // ═══════════════════════════════════════════════════════════
 // Content
 // ═══════════════════════════════════════════════════════════
-const HEADLINE_TEXT = 'RESPECT THE CLOCK'
+const HEADLINE_TEXT = `Awshaf's Digital Notebook`
 
 const BODY_TEXT = `There is a conversation that happens in every project, at every company, in every Slack channel where deadlines live. Someone says "this should be quick" about something that is not quick. Someone else says "can you just" before describing three weeks of work. And the clock keeps ticking, indifferent to the gap between what was asked and what it actually takes.
 

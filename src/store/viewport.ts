@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { CANVAS, PAN_LIMIT } from '../constants'
+import { CANVAS, PAN_LIMIT, INITIAL_VIEW } from '../constants'
 
 // ═══════════════════════════════════════════════════════════
 // Viewport store — single source of truth for zoom + pan
@@ -18,7 +18,24 @@ function clamp(val: number, min: number, max: number) {
 
 // ── Internal state + subscription ────────────────────────
 
-let state: ViewportState = { zoom: 1.0, panX: 0, panY: 0 }
+/**
+ * Pan offset that places a given canvas-% point under the viewport center,
+ * at the given zoom. Math: canvas center (50%, 50%) lands at the viewport
+ * center when pan = 0, so to focus on (fx%, fy%) we shift by the delta.
+ * PCT_TO_PX = 80 (8000 / 100).
+ */
+function focusToPan(focusX: number, focusY: number, zoom: number) {
+  const PCT_TO_PX = CANVAS / 100
+  return {
+    panX: clamp((50 - focusX) * PCT_TO_PX * zoom, -PAN_LIMIT, PAN_LIMIT),
+    panY: clamp((50 - focusY) * PCT_TO_PX * zoom, -PAN_LIMIT, PAN_LIMIT),
+  }
+}
+
+let state: ViewportState = {
+  zoom: INITIAL_VIEW.zoom,
+  ...focusToPan(INITIAL_VIEW.focusX, INITIAL_VIEW.focusY, INITIAL_VIEW.zoom),
+}
 const listeners = new Set<() => void>()
 
 function emit() {
@@ -102,6 +119,19 @@ export function setPanY(y: number) {
   const py = clamp(y, -PAN_LIMIT, PAN_LIMIT)
   if (py === state.panY) return
   state = { ...state, panY: py }
+  emit()
+}
+
+/**
+ * Jump the viewport so the given canvas-% point lands under the viewport
+ * center. Optional `zoom` changes the zoom too; otherwise current zoom is kept.
+ * Use this from buttons / object clicks later on.
+ */
+export function focusOn(focusX: number, focusY: number, zoom?: number) {
+  const z = clamp(zoom ?? state.zoom, MIN_ZOOM, MAX_ZOOM)
+  const { panX, panY } = focusToPan(focusX, focusY, z)
+  if (z === state.zoom && panX === state.panX && panY === state.panY) return
+  state = { zoom: z, panX, panY }
   emit()
 }
 

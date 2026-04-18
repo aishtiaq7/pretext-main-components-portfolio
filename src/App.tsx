@@ -340,7 +340,7 @@ export default function App() {
               fontWeight: 400,
               color: '#3a3530',
               opacity: 0.92,
-              transform: 'rotate(-5deg)',
+              transform: 'rotate(-2deg)',
               whiteSpace: 'nowrap',
             }}>
               {BRAND_NAME}

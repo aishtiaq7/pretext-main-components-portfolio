@@ -5,7 +5,7 @@ import type { LayoutCursor, PreparedTextWithSegments } from '@chenglou/pretext'
 const BODY_FONT = '18px "Iowan Old Style", "Palatino Linotype", "Apple SD Gothic Neo", "Noto Serif KR", "Book Antiqua", Palatino, serif'
 const BODY_LINE_HEIGHT = 30
 const HEADLINE_FONT_FAMILY = '"Iowan Old Style", "Palatino Linotype", "Apple SD Gothic Neo", "Noto Serif KR", "Book Antiqua", Palatino, serif'
-const HEADLINE_TEXT = 'RESPECT THE CLOCK'
+const HEADLINE_TEXT = `Awshaf's Digital Notebook`
 const GUTTER = 48
 const COL_GAP = 40
 const DROP_CAP_LINES = 3

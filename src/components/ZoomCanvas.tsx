@@ -21,9 +21,9 @@ export function ZoomCanvas({ children }: Props) {
       }}
     >
       <div className="notebook-margin-line" />
-      <div className="notebook-hole" style={{ left: '12%', top: 20 }} />
-      <div className="notebook-hole" style={{ left: '50%', top: 20 }} />
-      <div className="notebook-hole" style={{ left: '88%', top: 20 }} />
+      <div className="notebook-hole" style={{ left: '0%', top: 20 }} />
+      <div className="notebook-hole" style={{ left: '0%', top: 900 }} />
+      <div className="notebook-hole" style={{ left: '0%', top: 1800 }} />
       {children}
     </div>
   )
