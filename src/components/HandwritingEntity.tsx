@@ -284,9 +284,15 @@ export function HandwritingEntity({
   }, [entity])
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('[data-pin-btn]')) return
-    e.stopPropagation()
+    // Pin button toggles on click — swallow so neither drag nor pan fires.
+    if ((e.target as HTMLElement).closest('[data-pin-btn]')) {
+      e.stopPropagation()
+      return
+    }
+    // Non-draggable entities: let the event bubble up to the viewport so it
+    // can start a pan. Only claim the event when we're actually going to drag.
     if (!isDraggable) return
+    e.stopPropagation()
     jitterRef.current?.setPointerCapture(e.pointerId)
     dragRef.current = { startX: e.clientX, startY: e.clientY, startElX: x, startElY: y, dragging: true }
     onDragStart?.(entity.id)

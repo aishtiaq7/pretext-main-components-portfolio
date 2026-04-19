@@ -291,8 +291,10 @@ export default function App() {
     e.preventDefault()
   }, [startViewportPan])
 
+  // Always start a pan — draggable entities / pages call stopPropagation
+  // on their own pointerdown, so we only see events from empty canvas space
+  // or from pinned / fixed elements (which should pan through).
   const handleViewportPointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains('zoom-canvas')) return
     startViewportPan(e)
   }, [startViewportPan])
   const handleViewportPointerMove = useCallback((e: React.PointerEvent) => {

@@ -59,11 +59,17 @@ export function PageWrapper({ page, x, y, zoom, pageRegions, onPositionChange, c
 
   const handlePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement
-    if (target.closest('[data-interactive]')) return
-
-    e.stopPropagation()
+    // Interactive child (link, button inside a page) — swallow so nothing
+    // upstream reacts, but let the child's own handler run.
+    if (target.closest('[data-interactive]')) {
+      e.stopPropagation()
+      return
+    }
+    // Fixed (non-draggable) pages: let the event bubble up to the viewport
+    // so clicking on a page still pans the canvas.
     if (page.fixed) return
 
+    e.stopPropagation()
     ref.current?.setPointerCapture(e.pointerId)
     dragRef.current = { startX: e.clientX, startY: e.clientY, startElX: x, startElY: y, dragging: true }
   }
