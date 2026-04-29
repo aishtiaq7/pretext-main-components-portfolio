@@ -38,10 +38,42 @@ export const OBSTACLES: EntityDef[] = [
     opacity: 1,
   }),
 
-  // Lightbulb with live x/y readout — drag to see position update in real time
+  // Lightbulbs with live x/y readout — placed at the 4 corners of the
+  // 8000×8000 canvas (0–100%) so you can read the canvas-% bounds.
+  // Lightbulb is 140px ≈ 1.75%; corner values account for that.
   {
     ...imageObstacle({
-      id: 'obs-tracker', x: 35, y: 19,
+      id: 'obs-tracker-tl', x: 0, y: 0,
+      imgSrc: '/doodles/lightbulb.svg',
+      imgW: 140, imgH: 140,
+      obstacleW: 140, obstacleH: 140,
+      opacity: 1,
+    }),
+    showPosition: true,
+  },
+  {
+    ...imageObstacle({
+      id: 'obs-tracker-tr', x: 98.25, y: 0,
+      imgSrc: '/doodles/lightbulb.svg',
+      imgW: 140, imgH: 140,
+      obstacleW: 140, obstacleH: 140,
+      opacity: 1,
+    }),
+    showPosition: true,
+  },
+  {
+    ...imageObstacle({
+      id: 'obs-tracker-bl', x: 0, y: 98.25,
+      imgSrc: '/doodles/lightbulb.svg',
+      imgW: 140, imgH: 140,
+      obstacleW: 140, obstacleH: 140,
+      opacity: 1,
+    }),
+    showPosition: true,
+  },
+  {
+    ...imageObstacle({
+      id: 'obs-tracker-br', x: 98.25, y: 98.25,
       imgSrc: '/doodles/lightbulb.svg',
       imgW: 140, imgH: 140,
       obstacleW: 140, obstacleH: 140,
