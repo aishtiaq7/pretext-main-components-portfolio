@@ -104,6 +104,7 @@ export type EntityDef = {
   jitter?: JitterType     // animation type (default: 'none')
   pinned?: boolean        // if true, shows pin icon, not draggable
   motionDraggable?: boolean  // if true, rendered via MotionObstacle (framer-motion polish)
+  showPosition?: boolean     // MotionObstacle only — overlay live x/y readout on the entity
 
   // ── Per-instance visual overrides (optional) ──
   // Let individual entities diverge from their factory defaults without

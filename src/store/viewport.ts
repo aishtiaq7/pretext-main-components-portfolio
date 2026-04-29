@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { CANVAS, PAN_LIMIT, INITIAL_VIEW } from '../constants'
+import { CANVAS, INITIAL_VIEW } from '../constants'
 
 // ═══════════════════════════════════════════════════════════
 // Viewport store — single source of truth for zoom + pan
@@ -12,8 +12,40 @@ export type ViewportState = { zoom: number; panX: number; panY: number }
 const MIN_ZOOM = 0.15
 const MAX_ZOOM = 3.0
 
+// Rubber-band: how much of the overshoot is allowed past the edge during drag.
+// Result asymptotes to RUBBER_MAX so users can feel the edge without hard-stopping.
+const RUBBER_FACTOR = 0.55
+const RUBBER_MAX = 240
+
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val))
+}
+
+/**
+ * Zoom-aware pan limits. At zoom z the canvas occupies CANVAS*z px; pan can
+ * shift it until its edge reaches the viewport edge. If the canvas is smaller
+ * than the viewport (very zoomed out) we lock pan to 0 so it stays centered.
+ */
+export function getPanLimit(zoom: number) {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1920
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 1080
+  return {
+    x: Math.max(0, (CANVAS * zoom - vw) / 2),
+    y: Math.max(0, (CANVAS * zoom - vh) / 2),
+  }
+}
+
+/** Map a raw pan value to a rubber-banded one when it exceeds [-limit, limit]. */
+function rubberBand(value: number, limit: number) {
+  if (value > limit) {
+    const over = value - limit
+    return limit + (over * RUBBER_MAX) / (over + RUBBER_MAX / RUBBER_FACTOR)
+  }
+  if (value < -limit) {
+    const over = -limit - value
+    return -limit - (over * RUBBER_MAX) / (over + RUBBER_MAX / RUBBER_FACTOR)
+  }
+  return value
 }
 
 // ── Internal state + subscription ────────────────────────
@@ -26,9 +58,10 @@ function clamp(val: number, min: number, max: number) {
  */
 function focusToPan(focusX: number, focusY: number, zoom: number) {
   const PCT_TO_PX = CANVAS / 100
+  const lim = getPanLimit(zoom)
   return {
-    panX: clamp((50 - focusX) * PCT_TO_PX * zoom, -PAN_LIMIT, PAN_LIMIT),
-    panY: clamp((50 - focusY) * PCT_TO_PX * zoom, -PAN_LIMIT, PAN_LIMIT),
+    panX: clamp((50 - focusX) * PCT_TO_PX * zoom, -lim.x, lim.x),
+    panY: clamp((50 - focusY) * PCT_TO_PX * zoom, -lim.y, lim.y),
   }
 }
 
@@ -37,6 +70,18 @@ let state: ViewportState = {
   ...focusToPan(INITIAL_VIEW.focusX, INITIAL_VIEW.focusY, INITIAL_VIEW.zoom),
 }
 const listeners = new Set<() => void>()
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    const lim = getPanLimit(state.zoom)
+    const px = clamp(state.panX, -lim.x, lim.x)
+    const py = clamp(state.panY, -lim.y, lim.y)
+    if (px !== state.panX || py !== state.panY) {
+      state = { ...state, panX: px, panY: py }
+      emit()
+    }
+  })
+}
 
 function emit() {
   for (const fn of listeners) fn()
@@ -63,10 +108,11 @@ export function setZoom(raw: number) {
   const z = clamp(raw, MIN_ZOOM, MAX_ZOOM)
   if (z === state.zoom) return
   const ratio = z / state.zoom
+  const lim = getPanLimit(z)
   state = {
     zoom: z,
-    panX: clamp(state.panX * ratio, -PAN_LIMIT, PAN_LIMIT),
-    panY: clamp(state.panY * ratio, -PAN_LIMIT, PAN_LIMIT),
+    panX: clamp(state.panX * ratio, -lim.x, lim.x),
+    panY: clamp(state.panY * ratio, -lim.y, lim.y),
   }
   emit()
 }
@@ -89,26 +135,65 @@ export function setZoomAnchored(rawZoom: number, anchorX: number, anchorY: numbe
   // Solve for new pan so the same cx,cy lands at anchorX,anchorY under zNext.
   const panX = anchorX + (half - cx) * zNext
   const panY = anchorY + (half - cy) * zNext
+  const lim = getPanLimit(zNext)
   state = {
     zoom: zNext,
-    panX: clamp(panX, -PAN_LIMIT, PAN_LIMIT),
-    panY: clamp(panY, -PAN_LIMIT, PAN_LIMIT),
+    panX: clamp(panX, -lim.x, lim.x),
+    panY: clamp(panY, -lim.y, lim.y),
   }
   emit()
 }
 
-/** Set both pan axes at once. */
+/** Set both pan axes at once. Hard-clamped to current zoom's edge limits. */
 export function setPan(x: number, y: number) {
-  const px = clamp(x, -PAN_LIMIT, PAN_LIMIT)
-  const py = clamp(y, -PAN_LIMIT, PAN_LIMIT)
+  const lim = getPanLimit(state.zoom)
+  const px = clamp(x, -lim.x, lim.x)
+  const py = clamp(y, -lim.y, lim.y)
   if (px === state.panX && py === state.panY) return
   state = { ...state, panX: px, panY: py }
   emit()
 }
 
+/**
+ * Pan with rubber-band falloff past the edge. Use during active drags so the
+ * canvas can travel slightly beyond the limit; pair with settlePan() on release.
+ */
+export function setPanRubber(x: number, y: number) {
+  const lim = getPanLimit(state.zoom)
+  const px = rubberBand(x, lim.x)
+  const py = rubberBand(y, lim.y)
+  if (px === state.panX && py === state.panY) return
+  state = { ...state, panX: px, panY: py }
+  emit()
+}
+
+/** Animate pan back to the clamped target if currently past the edge. */
+export function settlePan() {
+  const lim = getPanLimit(state.zoom)
+  const targetX = clamp(state.panX, -lim.x, lim.x)
+  const targetY = clamp(state.panY, -lim.y, lim.y)
+  if (targetX === state.panX && targetY === state.panY) return
+  const startX = state.panX
+  const startY = state.panY
+  const dx = targetX - startX
+  const dy = targetY - startY
+  const start = performance.now()
+  const dur = 260
+  const step = (t: number) => {
+    const p = Math.min(1, (t - start) / dur)
+    // ease-out cubic
+    const e = 1 - Math.pow(1 - p, 3)
+    state = { ...state, panX: startX + dx * e, panY: startY + dy * e }
+    emit()
+    if (p < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
+
 /** Set panX only. */
 export function setPanX(x: number) {
-  const px = clamp(x, -PAN_LIMIT, PAN_LIMIT)
+  const lim = getPanLimit(state.zoom)
+  const px = clamp(x, -lim.x, lim.x)
   if (px === state.panX) return
   state = { ...state, panX: px }
   emit()
@@ -116,7 +201,8 @@ export function setPanX(x: number) {
 
 /** Set panY only. */
 export function setPanY(y: number) {
-  const py = clamp(y, -PAN_LIMIT, PAN_LIMIT)
+  const lim = getPanLimit(state.zoom)
+  const py = clamp(y, -lim.y, lim.y)
   if (py === state.panY) return
   state = { ...state, panY: py }
   emit()

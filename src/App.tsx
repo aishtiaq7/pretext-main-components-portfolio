@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { ENTITIES } from './entities'
 import type { FixedRegion } from './types'
 import { CANVAS, PAN_LIMIT } from './constants'
-import { useViewportZoom, getViewport, setZoomAnchored, setPan } from './store/viewport'
+import { useViewportZoom, getViewport, setZoomAnchored, setPan, setPanRubber, settlePan } from './store/viewport'
 import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
@@ -299,7 +299,7 @@ export default function App() {
   }, [startViewportPan])
   const handleViewportPointerMove = useCallback((e: React.PointerEvent) => {
     const d = canvasDragRef.current; if (!d?.active) return
-    setPan(
+    setPanRubber(
       d.startPanX + (e.clientX - d.startX),
       d.startPanY + (e.clientY - d.startY),
     )
@@ -308,6 +308,7 @@ export default function App() {
     if (!canvasDragRef.current?.active) return
     ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
     canvasDragRef.current = null
+    settlePan()
   }, [])
 
   // Render section content by component id

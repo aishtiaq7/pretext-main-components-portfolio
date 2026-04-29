@@ -37,4 +37,16 @@ export const OBSTACLES: EntityDef[] = [
     obstacleW: 160, obstacleH: 160,
     opacity: 1,
   }),
+
+  // Lightbulb with live x/y readout — drag to see position update in real time
+  {
+    ...imageObstacle({
+      id: 'obs-tracker', x: 35, y: 19,
+      imgSrc: '/doodles/lightbulb.svg',
+      imgW: 140, imgH: 140,
+      obstacleW: 140, obstacleH: 140,
+      opacity: 1,
+    }),
+    showPosition: true,
+  },
 ]

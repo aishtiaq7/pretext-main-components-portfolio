@@ -133,6 +133,28 @@ export function MotionObstacle({ entity, x, y, zoom, onPositionChange }: Props) 
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
+      {entity.showPosition && (
+        <div
+          style={{
+            position: 'absolute',
+            top: -28,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#111',
+            color: '#e8e4d9',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.78rem',
+            padding: '3px 8px',
+            borderRadius: 4,
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+          }}
+        >
+          x: {x.toFixed(2)}  y: {y.toFixed(2)}
+        </div>
+      )}
       {entity.imgSrc ? (
         <img
           src={entity.imgSrc}
