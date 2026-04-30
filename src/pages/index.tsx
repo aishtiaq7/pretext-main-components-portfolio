@@ -23,7 +23,7 @@ export const PAGES: PageDef[] = [
   // Handwritten brand name — oversized hero above the notebook.
   {
     id: 'brand-page',
-    x: 3, y: 10, width: 1100, height: 220,
+    x: 16.46, y: 8.12, width: 1100, height: 220,
     fixed: true, borderless: false,
     render: () => <BrandHero />,
   },
@@ -31,7 +31,7 @@ export const PAGES: PageDef[] = [
   // Notebook page with clock + reflow text demo. Fixed at the top-left.
   {
     id: 'clock-page',
-    x: 3, y: 16, width: 1500, height: 1100,
+    x: 15.28, y: 13.71, width: 1500, height: 1100,
     fixed: true,
     render: () => <NotebookPage width={1500} height={1100} />,
   },
@@ -39,7 +39,7 @@ export const PAGES: PageDef[] = [
   // 3D golden cube — draggable, borderless so the scene bleeds into the canvas.
   {
     id: 'three-page',
-    x: 5, y: 30.5, width: 420, height: 420,
+    x: 7.5, y: 30.5, width: 420, height: 420,
     fixed: false, borderless: true, rotate: 8,
     render: () => <ThreeScene />,
   },
@@ -48,7 +48,7 @@ export const PAGES: PageDef[] = [
   // paragraphs (via pageCollisionRegions) so it never overlaps them.
   {
     id: 'text-page',
-    x: 45, y: 25, width: 480, height: 340,
+    x: 47.5, y: 25, width: 480, height: 340,
     fixed: false, borderless: false, rotate: -4,
     render: () => <RabbitHoleCard />,
   },

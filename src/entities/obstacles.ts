@@ -10,40 +10,39 @@ import { obstacle, imageObstacle } from './factories'
 // ═══════════════════════════════════════════════════════════
 export const OBSTACLES: EntityDef[] = [
   obstacle({
-    id: 'obs-ship', x: 23, y: 17, rotate: -8,
+    id: 'obs-ship', x: 25.5, y: 17, rotate: -8,
     content: 'SHIP IT', obstacleW: 155, obstacleH: 42,
   }),
   obstacle({
-    id: 'obs-deploy', x: 23, y: 20, rotate: -12,
+    id: 'obs-deploy', x: 25.5, y: 20, rotate: -12,
     font: '"Rock Salt", cursive', fontSize: '1.7rem',
     content: 'DEPLOY', obstacleW: 145, obstacleH: 40,
   }),
   obstacle({
-    id: 'obs-refactor', x: 23, y: 23, rotate: -6,
+    id: 'obs-refactor', x: 25.5, y: 23, rotate: -6,
     font: '"Caveat", cursive', fontSize: '1.9rem', fontWeight: '700',
     content: 'REFACTOR', obstacleW: 170, obstacleH: 38,
   }),
   obstacle({
-    id: 'obs-hotfix', x: 23, y: 26, rotate: -14,
+    id: 'obs-hotfix', x: 25.5, y: 26, rotate: -14,
     fontSize: '1.8rem',
     content: 'HOTFIX', obstacleW: 140, obstacleH: 38,
   }),
 
   // Image-based motion obstacle (rocket SVG)
   imageObstacle({
-    id: 'obs-rocket', x: 27, y: 19,
+    id: 'obs-rocket', x: 29.5, y: 19,
     imgSrc: '/doodles/rocket.svg',
     imgW: 160, imgH: 160,
     obstacleW: 160, obstacleH: 160,
     opacity: 1,
   }),
 
-  // Lightbulbs with live x/y readout — placed at the 4 corners of the
-  // 8000×8000 canvas (0–100%) so you can read the canvas-% bounds.
-  // Lightbulb is 140px ≈ 1.75%; corner values account for that.
+  // Lightbulbs with live x/y readout — clustered around the rocket (27, 19)
+  // so you can drag them anywhere and watch the live canvas-% coords.
   {
     ...imageObstacle({
-      id: 'obs-tracker-tl', x: 0, y: 0,
+      id: 'obs-tracker-tl', x: 27.5, y: 17,
       imgSrc: '/doodles/lightbulb.svg',
       imgW: 140, imgH: 140,
       obstacleW: 140, obstacleH: 140,
@@ -53,7 +52,7 @@ export const OBSTACLES: EntityDef[] = [
   },
   {
     ...imageObstacle({
-      id: 'obs-tracker-tr', x: 98.25, y: 0,
+      id: 'obs-tracker-tr', x: 32, y: 17,
       imgSrc: '/doodles/lightbulb.svg',
       imgW: 140, imgH: 140,
       obstacleW: 140, obstacleH: 140,
@@ -63,7 +62,7 @@ export const OBSTACLES: EntityDef[] = [
   },
   {
     ...imageObstacle({
-      id: 'obs-tracker-bl', x: 0, y: 98.25,
+      id: 'obs-tracker-bl', x: 27.5, y: 21.5,
       imgSrc: '/doodles/lightbulb.svg',
       imgW: 140, imgH: 140,
       obstacleW: 140, obstacleH: 140,
@@ -73,7 +72,7 @@ export const OBSTACLES: EntityDef[] = [
   },
   {
     ...imageObstacle({
-      id: 'obs-tracker-br', x: 98.25, y: 98.25,
+      id: 'obs-tracker-br', x: 32, y: 21.5,
       imgSrc: '/doodles/lightbulb.svg',
       imgW: 140, imgH: 140,
       obstacleW: 140, obstacleH: 140,
