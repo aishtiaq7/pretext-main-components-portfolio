@@ -27,7 +27,7 @@
 
 /* ── Variables ─────────────────────────────────────────── */
 :root {
-  --canvas-bg: #e8e4d9;
+  --canvas-bg: #d6d4d2;
   --canvas-bg-warm: #ebe7dc;
   --header-bg: #111;
   --header-text: #f0ece3;
@@ -99,17 +99,17 @@ body {
   inset: 0;
   z-index: 0;
   background-color: var(--canvas-bg);
-  background-image:
+  /* background-image:
     repeating-linear-gradient(
       to bottom,
       transparent,
       transparent 31px,
-      rgba(180, 175, 165, 0.35) 31px,
-      rgba(180, 175, 165, 0.35) 32px
-    );
+      rgba(180, 175, 165, 0.15) 31px,
+      rgba(180, 175, 165, 0.15) 32px
+    ); */
 }
 
-/* Subtle edge vignette */
+Subtle edge vignette
 .page-bg::after {
   content: '';
   position: absolute;
@@ -203,6 +203,17 @@ body {
   top: 50%;
   transform-origin: 0 0;
   will-change: transform;
+
+  /* ── Background tile — tweak these to fit ─────────────── */
+  /* --bg-tile-w: tile width in px (or %) */
+  /* --bg-tile-h: tile height in px (or %) — keep equal to width for square.png to preserve aspect ratio */
+  --bg-tile-w: 8000px;
+  --bg-tile-h: 3000px;
+  background-image: url('/photos/verylast.png');
+  background-size: var(--bg-tile-w) var(--bg-tile-h);
+  background-repeat: repeat-y;
+  background-position: top right;
+  background-color: #e8e4d9;
 }
 
 /* ── Notebook decorations on canvas ────────────────────── */

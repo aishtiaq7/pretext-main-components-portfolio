@@ -20,7 +20,6 @@ export function ZoomCanvas({ children }: Props) {
         transform: `translate(${tx}px, ${ty}px) scale(${zoom})`,
       }}
     >
-      <div className="notebook-margin-line" />
       <div className="notebook-hole" style={{ left: '0%', top: 20 }} />
       <div className="notebook-hole" style={{ left: '0%', top: 900 }} />
       <div className="notebook-hole" style={{ left: '0%', top: 1800 }} />
