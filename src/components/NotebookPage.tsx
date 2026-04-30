@@ -389,7 +389,6 @@ export function NotebookPage({ width = 1400, height = 1000 }: Props) {
 
   return (
     <div
-      data-interactive
       className="notebook-page"
       style={{ width, height }}
     >
@@ -402,7 +401,7 @@ export function NotebookPage({ width = 1400, height = 1000 }: Props) {
         onPointerCancel={handlePointerUp}
       >
         <div ref={dropCapRef} className="np-drop-cap" />
-        <canvas ref={canvasRef} className="np-clock" />
+        <canvas ref={canvasRef} className="np-clock" data-interactive />
       </div>
     </div>
   )
