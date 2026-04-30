@@ -190,8 +190,14 @@ export function ReflowText({ text, maxWidth, fontFamily, fontSize, fontWeight, c
     return result
   }, [prepared, maxWidth, lineHeight, obstacles])
 
+  // Wrapper must grow to contain all absolutely-positioned lines, otherwise
+  // .entity's `contain: paint` clips everything past the first line.
+  const blockHeight = lines.length
+    ? lines[lines.length - 1].y + lineHeight
+    : lineHeight
+
   return (
-    <div style={{ position: 'relative', width: maxWidth, minHeight: lineHeight }}>
+    <div style={{ position: 'relative', width: maxWidth, height: blockHeight }}>
       {lines.map((line, i) => (
         <div
           key={i}

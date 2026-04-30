@@ -31,7 +31,7 @@ export const OBSTACLES: EntityDef[] = [
 
   // Image-based motion obstacle (rocket SVG)
   imageObstacle({
-    id: 'obs-rocket', x: 65, y: 16,
+    id: 'obs-rocket', x: 45, y: 29,
     imgSrc: '/doodles/rocket.svg',
     imgW: 160, imgH: 160,
     obstacleW: 160, obstacleH: 160,

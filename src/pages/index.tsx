@@ -23,7 +23,7 @@ export const PAGES: PageDef[] = [
   // Handwritten brand name — oversized hero above the notebook.
   {
     id: 'brand-page',
-    x: 16.46, y: 8.12, width: 1100, height: 220,
+    x: 49, y: 27, width: 1100, height: 220,
     fixed: true, borderless: false,
     render: () => <BrandHero />,
   },

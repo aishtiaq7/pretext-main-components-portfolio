@@ -332,6 +332,15 @@ body {
   text-align: center;
 }
 
+.scroll-zoom-readout {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(200, 195, 185, 0.7);
+  text-align: center;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
 /* Scroll sliders */
 .scroll-slider {
   -webkit-appearance: none;

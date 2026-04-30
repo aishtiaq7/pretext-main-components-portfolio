@@ -221,6 +221,7 @@ export function ScrollInputs({ shapes }: Props) {
           aria-label="Zoom"
         />
       </div>
+      <div className="scroll-zoom-readout">{zoom.toFixed(2)}×</div>
     </div>
   )
 }
