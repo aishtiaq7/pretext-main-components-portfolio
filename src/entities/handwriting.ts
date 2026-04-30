@@ -11,7 +11,7 @@ import { handwriting } from './factories'
 export const HANDWRITINGS: EntityDef[] = [
   handwriting({
     id: 'hw-1',
-    x: 3, y: 72,
+    x: 5, y: 60,
     width: 720, height: 412,
     rotate: -1,
     src: '/handwriting/ink-2026-04-17-2017.json',
@@ -19,7 +19,7 @@ export const HANDWRITINGS: EntityDef[] = [
   }),
   handwriting({
     id: 'hw-2',
-    x: 3, y: 78,
+    x: 5, y: 72,
     width: 720, height: 412,
     rotate: 1,
     src: '/handwriting/ink-2026-04-17-2037.json',

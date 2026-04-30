@@ -39,7 +39,7 @@ export const PAGES: PageDef[] = [
   // 3D golden cube — draggable, borderless so the scene bleeds into the canvas.
   {
     id: 'three-page',
-    x: 7.5, y: 30.5, width: 420, height: 420,
+    x: 75, y: 7, width: 420, height: 420,
     fixed: false, borderless: true, rotate: 8,
     render: () => <ThreeScene />,
   },
@@ -48,7 +48,7 @@ export const PAGES: PageDef[] = [
   // paragraphs (via pageCollisionRegions) so it never overlaps them.
   {
     id: 'text-page',
-    x: 47.5, y: 25, width: 480, height: 340,
+    x: 73, y: 30, width: 480, height: 340,
     fixed: false, borderless: false, rotate: -4,
     render: () => <RabbitHoleCard />,
   },
