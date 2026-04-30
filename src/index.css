@@ -109,7 +109,7 @@ body {
     ); */
 }
 
-Subtle edge vignette
+/* Subtle edge vignette */
 .page-bg::after {
   content: '';
   position: absolute;
@@ -231,8 +231,8 @@ Subtle edge vignette
 
 .notebook-hole {
   position: absolute;
-  width: 48px;
-  height: 48px;
+  width: 135px;
+  height: 135px;
   border-radius: 50%;
   background: rgba(200, 195, 185, 0.4);
   border: 2px solid rgba(180, 175, 165, 0.35);
