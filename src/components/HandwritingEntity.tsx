@@ -5,6 +5,7 @@ import { ReflowText } from './ReflowText'
 import type { ObstacleRect } from './ReflowText'
 import { useJitter } from '../hooks/useJitter'
 import { getReflowBoxPct } from '../entities/sizes'
+import { getViewport } from '../store/viewport'
 import { HandwrittenEntry } from './HandwrittenEntry'
 
 const PCT_TO_PX = CANVAS / 100  // 1% of canvas in px
@@ -58,7 +59,6 @@ type Props = {
   entity: EntityDef
   x: number
   y: number
-  zoom: number
   fixedRegions: FixedRegion[]
   obstacles: CanvasObstacle[]
   onPositionChange: (id: string, x: number, y: number) => void
@@ -252,7 +252,7 @@ function DefaultView(props: SharedViewProps & {
 // to render based on entity category.
 
 export function HandwritingEntity({
-  entity, x, y, zoom, fixedRegions, obstacles, onPositionChange, onPinToggle, onClick, renderSection,
+  entity, x, y, fixedRegions, obstacles, onPositionChange, onPinToggle, onClick, renderSection,
   isWidgetActive, onWidgetActivate, onDragStart, onDragEnd,
 }: Props) {
   const dragRef = useRef({ startX: 0, startY: 0, startElX: 0, startElY: 0, dragging: false })
@@ -300,8 +300,9 @@ export function HandwritingEntity({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current.dragging) return
-    const dx = (e.clientX - dragRef.current.startX) / zoom
-    const dy = (e.clientY - dragRef.current.startY) / zoom
+    const z = getViewport().zoom
+    const dx = (e.clientX - dragRef.current.startX) / z
+    const dy = (e.clientY - dragRef.current.startY) / z
     const newX = dragRef.current.startElX + (dx / PCT_TO_PX)
     const newY = dragRef.current.startElY + (dy / PCT_TO_PX)
     const resolved = resolveCollisions(newX, newY, entity.id, fixedRegions, entityBox.w, entityBox.h)

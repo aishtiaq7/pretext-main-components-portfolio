@@ -202,7 +202,11 @@ body {
   left: 50%;
   top: 50%;
   transform-origin: 0 0;
+  /* GPU layer hints — keep the canvas on its own composited layer so zoom/pan
+     are pure compositor work, not paint+raster. The inline transform set by
+     ZoomCanvas uses translate3d() which forces a compositor layer. */
   will-change: transform;
+  backface-visibility: hidden;
 
   /* ── Background tile — tweak these to fit ─────────────── */
   /* --bg-tile-w: tile width in px (or %) */
@@ -252,7 +256,8 @@ body {
   -webkit-user-select: none;
   touch-action: none;
   z-index: 5;
-  transition: filter 0.2s;
+  transition: filter 0.15s;
+  contain: layout paint;
 }
 
 .entity:active {
@@ -267,7 +272,7 @@ body {
 /* Sections are bordered boxes — brightness filter looks glitchy on them */
 .entity.entity-section:hover {
   filter: none;
-  z-index: 40;
+  z-index: 60;
 }
 
 
@@ -471,6 +476,7 @@ body {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  contain: layout paint;
 }
 
 .page-wrapper:active {
@@ -715,7 +721,7 @@ kbd {
    SECTION ENTITIES — large notebook-style block containers
    ═══════════════════════════════════════════════════════════ */
 .entity-section {
-  z-index: 40;
+  z-index: 60;
 }
 
 .entity-sketch {

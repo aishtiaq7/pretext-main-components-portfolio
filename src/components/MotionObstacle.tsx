@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import type { EntityDef } from '../types'
 import { CANVAS } from '../constants'
+import { getViewport } from '../store/viewport'
 
 const PCT_TO_PX = CANVAS / 100
 
@@ -14,7 +15,6 @@ type Props = {
   entity: EntityDef
   x: number     // canvas %
   y: number     // canvas %
-  zoom: number
   onPositionChange: (id: string, x: number, y: number) => void
 }
 
@@ -25,7 +25,7 @@ type Props = {
 // Visual polish: spring entrance, hover scale, tap shrink, smooth inertia
 // decay on release. Position flows through App state so ReflowText wraps
 // around it in realtime.
-export function MotionObstacle({ entity, x, y, zoom, onPositionChange }: Props) {
+export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
   const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
   const velocityRef = useRef({
     vx: 0, vy: 0,
@@ -65,20 +65,21 @@ export function MotionObstacle({ entity, x, y, zoom, onPositionChange }: Props) 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragRef.current) return
 
+    const z = getViewport().zoom
     const now = performance.now()
     const dt = Math.max(1, now - velocityRef.current.lastT)
-    const instVx = (e.clientX - velocityRef.current.lastClientX) / (PCT_TO_PX * zoom) / dt
-    const instVy = (e.clientY - velocityRef.current.lastClientY) / (PCT_TO_PX * zoom) / dt
+    const instVx = (e.clientX - velocityRef.current.lastClientX) / (PCT_TO_PX * z) / dt
+    const instVy = (e.clientY - velocityRef.current.lastClientY) / (PCT_TO_PX * z) / dt
     velocityRef.current.vx = velocityRef.current.vx * (1 - VELOCITY_SMOOTHING) + instVx * VELOCITY_SMOOTHING
     velocityRef.current.vy = velocityRef.current.vy * (1 - VELOCITY_SMOOTHING) + instVy * VELOCITY_SMOOTHING
     velocityRef.current.lastClientX = e.clientX
     velocityRef.current.lastClientY = e.clientY
     velocityRef.current.lastT = now
 
-    const dxPct = (e.clientX - dragRef.current.sx) / (PCT_TO_PX * zoom)
-    const dyPct = (e.clientY - dragRef.current.sy) / (PCT_TO_PX * zoom)
+    const dxPct = (e.clientX - dragRef.current.sx) / (PCT_TO_PX * z)
+    const dyPct = (e.clientY - dragRef.current.sy) / (PCT_TO_PX * z)
     onPositionChange(entity.id, dragRef.current.ox + dxPct, dragRef.current.oy + dyPct)
-  }, [entity.id, zoom, onPositionChange])
+  }, [entity.id, onPositionChange])
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragRef.current) return
@@ -122,6 +123,9 @@ export function MotionObstacle({ entity, x, y, zoom, onPositionChange }: Props) 
         cursor: 'grab',
         touchAction: 'none',
         willChange: 'transform',
+        // .entity sets `contain: layout paint`, which clips the readout badge
+        // since it's positioned above the entity's box (top: -32).
+        ...(entity.showPosition ? { contain: 'none', overflow: 'visible' } : null),
       }}
       initial={{ scale: 0, rotate: -180, opacity: 0 }}
       animate={{ scale: 1, rotate: entity.rotate ?? 0, opacity: entity.opacity ?? 1 }}
@@ -137,7 +141,7 @@ export function MotionObstacle({ entity, x, y, zoom, onPositionChange }: Props) 
         <div
           style={{
             position: 'absolute',
-            top: -28,
+            top: -32,
             left: '50%',
             transform: 'translateX(-50%)',
             background: '#111',
@@ -150,6 +154,7 @@ export function MotionObstacle({ entity, x, y, zoom, onPositionChange }: Props) 
             pointerEvents: 'none',
             userSelect: 'none',
             boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+            zIndex: 9999,
           }}
         >
           x: {x.toFixed(2)}  y: {y.toFixed(2)}

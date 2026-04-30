@@ -2,9 +2,13 @@ import { useSyncExternalStore } from 'react'
 import { CANVAS, INITIAL_VIEW } from '../constants'
 
 // ═══════════════════════════════════════════════════════════
-// Viewport store — single source of truth for zoom + pan
-// Mutations are synchronous & atomic. setZoom auto-adjusts
-// pan so the viewport center stays on the same canvas point.
+// Viewport store — single source of truth for zoom + pan.
+//
+// State updates are synchronous and emit to subscribers. The
+// store also runs the zoom-spring rAF loop internally so
+// callers just say "go to this zoom" and the spring handles
+// the rest. The spring runs in log-space (perceptually even)
+// and is time-based (frame-rate independent).
 // ═══════════════════════════════════════════════════════════
 
 export type ViewportState = { zoom: number; panX: number; panY: number }
@@ -16,6 +20,12 @@ const MAX_ZOOM = 3.0
 // Result asymptotes to RUBBER_MAX so users can feel the edge without hard-stopping.
 const RUBBER_FACTOR = 0.55
 const RUBBER_MAX = 240
+
+// Zoom spring tuning. Critically-damped feel, no overshoot.
+//   - SPRING_OMEGA: angular frequency (rad/s). Higher = snappier.
+//   - SPRING_EPS:   stop threshold in log-zoom units.
+const SPRING_OMEGA = 14
+const SPRING_EPS = 0.0008
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val))
@@ -92,6 +102,15 @@ function subscribe(listener: () => void) {
   return () => { listeners.delete(listener) }
 }
 
+/**
+ * Direct subscription used by ZoomCanvas to imperatively apply the
+ * transform every frame without going through React. Returns an
+ * unsubscribe function.
+ */
+export function subscribeViewport(listener: () => void) {
+  return subscribe(listener)
+}
+
 // ── Snapshots for useSyncExternalStore ───────────────────
 
 function getSnapshot(): ViewportState { return state }
@@ -101,10 +120,41 @@ function getZoomSnapshot(): number { return state.zoom }
 
 export function getViewport(): ViewportState { return state }
 
+// ── Internal mutation helper ─────────────────────────────
+
+/**
+ * Apply a new zoom while keeping the canvas point under (anchorX, anchorY)
+ * stationary. anchorX/Y are in viewport-local pixels (0,0 = viewport center,
+ * which is also the zoom-canvas origin). When called with anchor (0,0) it
+ * behaves like a centered zoom.
+ */
+function applyZoomAnchored(zNext: number, anchorX: number, anchorY: number) {
+  const z = clamp(zNext, MIN_ZOOM, MAX_ZOOM)
+  if (z === state.zoom) return
+  const half = CANVAS / 2
+  const zPrev = state.zoom
+  // Canvas-local coord under the anchor before zoom:
+  //   cx = (anchorX - tx) / z   where tx = -half*z + panX
+  //   => cx = (anchorX - panX)/z + half
+  const cx = (anchorX - state.panX) / zPrev + half
+  const cy = (anchorY - state.panY) / zPrev + half
+  // Solve for new pan so the same cx,cy lands at anchorX,anchorY under zNext.
+  const panX = anchorX + (half - cx) * z
+  const panY = anchorY + (half - cy) * z
+  const lim = getPanLimit(z)
+  state = {
+    zoom: z,
+    panX: clamp(panX, -lim.x, lim.x),
+    panY: clamp(panY, -lim.y, lim.y),
+  }
+  emit()
+}
+
 // ── Mutations ────────────────────────────────────────────
 
 /** Set zoom, scaling pan so the viewport center stays fixed. */
 export function setZoom(raw: number) {
+  cancelZoomSpring()
   const z = clamp(raw, MIN_ZOOM, MAX_ZOOM)
   if (z === state.zoom) return
   const ratio = z / state.zoom
@@ -118,30 +168,12 @@ export function setZoom(raw: number) {
 }
 
 /**
- * Zoom anchored at a viewport-relative point (e.g. cursor position).
- * The canvas point currently under (anchorX, anchorY) stays under the cursor
- * after the zoom change — matches pinch-to-zoom UX in Figma / Miro / tldraw.
+ * Set zoom anchored at a viewport-relative point (immediate, no spring).
+ * Used internally by the spring loop.
  */
 export function setZoomAnchored(rawZoom: number, anchorX: number, anchorY: number) {
-  const zNext = clamp(rawZoom, MIN_ZOOM, MAX_ZOOM)
-  if (zNext === state.zoom) return
-  const half = CANVAS / 2
-  const zPrev = state.zoom
-  // Canvas-local coord under the anchor before zoom:
-  //   cx = (anchorX - tx) / z   where tx = -half*z + panX
-  //   => cx = (anchorX - panX)/z + half
-  const cx = (anchorX - state.panX) / zPrev + half
-  const cy = (anchorY - state.panY) / zPrev + half
-  // Solve for new pan so the same cx,cy lands at anchorX,anchorY under zNext.
-  const panX = anchorX + (half - cx) * zNext
-  const panY = anchorY + (half - cy) * zNext
-  const lim = getPanLimit(zNext)
-  state = {
-    zoom: zNext,
-    panX: clamp(panX, -lim.x, lim.x),
-    panY: clamp(panY, -lim.y, lim.y),
-  }
-  emit()
+  cancelZoomSpring()
+  applyZoomAnchored(rawZoom, anchorX, anchorY)
 }
 
 /** Set both pan axes at once. Hard-clamped to current zoom's edge limits. */
@@ -211,14 +243,78 @@ export function setPanY(y: number) {
 /**
  * Jump the viewport so the given canvas-% point lands under the viewport
  * center. Optional `zoom` changes the zoom too; otherwise current zoom is kept.
- * Use this from buttons / object clicks later on.
  */
 export function focusOn(focusX: number, focusY: number, zoom?: number) {
+  cancelZoomSpring()
   const z = clamp(zoom ?? state.zoom, MIN_ZOOM, MAX_ZOOM)
   const { panX, panY } = focusToPan(focusX, focusY, z)
   if (z === state.zoom && panX === state.panX && panY === state.panY) return
   state = { zoom: z, panX, panY }
   emit()
+}
+
+// ── Zoom spring ──────────────────────────────────────────
+// requestZoomTo(target, anchorX, anchorY) updates the target zoom and starts
+// (or keeps running) a critically-damped spring in log-space toward it.
+// Anchor is in viewport-local pixels relative to the viewport center.
+
+let springTarget = state.zoom
+let springLogVel = 0  // velocity in log-zoom units / second
+let springAnchor: { x: number; y: number } = { x: 0, y: 0 }
+let springRaf: number | null = null
+let springLastT = 0
+
+function springStep(now: number) {
+  const dt = Math.min(0.05, (now - springLastT) / 1000)  // clamp to 50ms (10fps floor)
+  springLastT = now
+
+  const current = state.zoom
+  const logCur = Math.log(current)
+  const logTar = Math.log(springTarget)
+  const diff = logTar - logCur
+
+  // Critically-damped spring: a = omega^2 * diff - 2*omega * v
+  const accel = SPRING_OMEGA * SPRING_OMEGA * diff - 2 * SPRING_OMEGA * springLogVel
+  springLogVel += accel * dt
+  const nextLog = logCur + springLogVel * dt
+
+  applyZoomAnchored(Math.exp(nextLog), springAnchor.x, springAnchor.y)
+
+  if (Math.abs(diff) > SPRING_EPS || Math.abs(springLogVel) > SPRING_EPS * SPRING_OMEGA) {
+    springRaf = requestAnimationFrame(springStep)
+  } else {
+    applyZoomAnchored(springTarget, springAnchor.x, springAnchor.y)
+    springLogVel = 0
+    springRaf = null
+  }
+}
+
+function cancelZoomSpring() {
+  if (springRaf !== null) {
+    cancelAnimationFrame(springRaf)
+    springRaf = null
+  }
+  springLogVel = 0
+  springTarget = state.zoom
+}
+
+/**
+ * Smoothly animate zoom toward `target`, anchored at viewport-local
+ * (anchorX, anchorY). Repeated calls update the target without resetting
+ * the spring's velocity, so high-rate wheel events stay smooth.
+ */
+export function requestZoomTo(target: number, anchorX: number, anchorY: number) {
+  springTarget = clamp(target, MIN_ZOOM, MAX_ZOOM)
+  springAnchor = { x: anchorX, y: anchorY }
+  if (springRaf === null) {
+    springLastT = performance.now()
+    springRaf = requestAnimationFrame(springStep)
+  }
+}
+
+/** Current spring target (or live zoom if no spring is running). */
+export function getZoomTarget(): number {
+  return springRaf !== null ? springTarget : state.zoom
 }
 
 // ── Hooks ────────────────────────────────────────────────

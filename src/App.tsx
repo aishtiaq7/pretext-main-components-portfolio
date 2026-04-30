@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { ENTITIES } from './entities'
 import type { FixedRegion } from './types'
 import { CANVAS, PAN_LIMIT } from './constants'
-import { useViewportZoom, getViewport, setZoomAnchored, setPan, setPanRubber, settlePan } from './store/viewport'
+import { getViewport, requestZoomTo, getZoomTarget, setPan, setPanRubber, settlePan } from './store/viewport'
 import { TopHeader } from './components/TopHeader'
 import { ZoomCanvas } from './components/ZoomCanvas'
 import { HandwritingEntity } from './components/HandwritingEntity'
@@ -30,8 +30,8 @@ function clamp(val: number, min: number, max: number) {
 }
 
 export default function App() {
-  // Only re-renders App when zoom changes (not on pan)
-  const zoom = useViewportZoom()
+  // Viewport transform is applied imperatively by ZoomCanvas, so App does not
+  // subscribe to zoom/pan. Drag handlers read getViewport() at the use site.
 
   // Entity positions (doodles + obstacles + accents + watermarks + images + sections)
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>(() => {
@@ -166,13 +166,6 @@ export default function App() {
 
   const animRef = useRef<number | null>(null)
 
-  // Smooth zoom spring — accumulates target from wheel events,
-  // rAF loop interpolates current zoom toward it with a spring.
-  const targetZoomRef = useRef<number>(1.0)
-  const zoomAnchorRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
-  const zoomVelRef = useRef<number>(0)
-  const zoomRafRef = useRef<number | null>(null)
-
   const handleEntityClick = useCallback((id: string) => {
     const pos = positions[id]
     if (!pos) return
@@ -204,25 +197,6 @@ export default function App() {
     animRef.current = requestAnimationFrame(animate)
   }, [positions])
 
-  // Spring animation toward targetZoomRef — called via rAF.
-  // Stiffness 0.08 + damping 0.75 gives ease-in-out feel with no overshoot.
-  const animateSmoothZoom = useCallback(() => {
-    const { zoom: current } = getViewport()
-    const target = targetZoomRef.current
-    const diff = target - current
-
-    zoomVelRef.current = zoomVelRef.current * 0.75 + diff * 0.08
-    setZoomAnchored(current + zoomVelRef.current, zoomAnchorRef.current.x, zoomAnchorRef.current.y)
-
-    if (Math.abs(diff) > 0.0005 || Math.abs(zoomVelRef.current) > 0.0001) {
-      zoomRafRef.current = requestAnimationFrame(animateSmoothZoom)
-    } else {
-      setZoomAnchored(target, zoomAnchorRef.current.x, zoomAnchorRef.current.y)
-      zoomVelRef.current = 0
-      zoomRafRef.current = null
-    }
-  }, [])
-
   // Wheel / trackpad gestures
   // ─────────────────────────────────────────────────────────
   // Convention (matches Figma / Miro / tldraw):
@@ -232,9 +206,41 @@ export default function App() {
   //   • Cmd / Ctrl + wheel                    → cursor-anchored zoom
   //   • Shift + wheel (mouse users)           → horizontal pan
   //   • Plain mouse wheel                     → vertical pan
+  //
+  // High-rate trackpad pinches (≥120Hz) and bursty wheel events are coalesced
+  // per animation frame — we accumulate deltaY and the latest anchor, then
+  // hand a single target to the store's spring once per frame.
   useEffect(() => {
     const viewport = viewportRef.current
     if (!viewport) return
+
+    let zoomDeltaAccum = 0
+    let zoomAnchor = { x: 0, y: 0 }
+    let panDxAccum = 0
+    let panDyAccum = 0
+    let flushRaf: number | null = null
+
+    const flush = () => {
+      flushRaf = null
+      if (zoomDeltaAccum !== 0) {
+        // Accumulate in log-space against the current spring target so repeated
+        // pinches keep stretching the goal without snapping back.
+        const factor = Math.exp(-zoomDeltaAccum * 0.003)
+        const next = getZoomTarget() * factor
+        requestZoomTo(next, zoomAnchor.x, zoomAnchor.y)
+        zoomDeltaAccum = 0
+      }
+      if (panDxAccum !== 0 || panDyAccum !== 0) {
+        const { panX, panY } = getViewport()
+        setPan(panX - panDxAccum, panY - panDyAccum)
+        panDxAccum = 0
+        panDyAccum = 0
+      }
+    }
+    const schedule = () => {
+      if (flushRaf === null) flushRaf = requestAnimationFrame(flush)
+    }
+
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
       const rect = viewport.getBoundingClientRect()
@@ -242,35 +248,29 @@ export default function App() {
       const anchorX = e.clientX - rect.left - rect.width / 2
       const anchorY = e.clientY - rect.top - rect.height / 2
 
-      // Pinch (ctrlKey auto-set by browser) or explicit modifier → smooth zoom at cursor
       if (e.ctrlKey || e.metaKey) {
-        const { zoom: z } = getViewport()
-        // Accumulate target in log-space. 0.003 = ~3× slower than raw wheel ticks.
-        const baseZoom = zoomRafRef.current ? targetZoomRef.current : z
-        const factor = Math.exp(-e.deltaY * 0.003)
-        targetZoomRef.current = clamp(baseZoom * factor, 0.15, 3.0)
-        zoomAnchorRef.current = { x: anchorX, y: anchorY }
-        if (!zoomRafRef.current) {
-          zoomRafRef.current = requestAnimationFrame(animateSmoothZoom)
-        }
+        // Pinch or modifier+wheel → zoom. Use the latest anchor; for bursty
+        // pinch events that's where the user's fingers are right now.
+        zoomDeltaAccum += e.deltaY
+        zoomAnchor = { x: anchorX, y: anchorY }
+        schedule()
         return
       }
 
-      // Shift + wheel → horizontal pan (mouse-wheel convenience)
       if (e.shiftKey) {
-        const { panX: px, panY: py } = getViewport()
-        setPan(px - e.deltaY, py)
+        panDxAccum += e.deltaY
+        schedule()
         return
       }
 
-      // Default: pan using both axes (trackpad swipe or mouse wheel)
-      const { panX: px, panY: py } = getViewport()
-      setPan(px - e.deltaX, py - e.deltaY)
+      panDxAccum += e.deltaX
+      panDyAccum += e.deltaY
+      schedule()
     }
     viewport.addEventListener('wheel', handleWheel, { passive: false })
     return () => {
       viewport.removeEventListener('wheel', handleWheel)
-      if (zoomRafRef.current) cancelAnimationFrame(zoomRafRef.current)
+      if (flushRaf !== null) cancelAnimationFrame(flushRaf)
     }
   }, [])
 
@@ -360,7 +360,6 @@ export default function App() {
                   entity={entity}
                   x={pos.x}
                   y={pos.y}
-                  zoom={zoom}
                   onPositionChange={handleEntityPositionChange}
                 />
               )
@@ -371,7 +370,6 @@ export default function App() {
                 entity={entity}
                 x={pos.x}
                 y={pos.y}
-                zoom={zoom}
                 fixedRegions={pageRegions}
                 obstacles={obstacleRects}
                 onPositionChange={handleEntityPositionChange}
@@ -395,7 +393,6 @@ export default function App() {
                 page={page}
                 x={pos.x}
                 y={pos.y}
-                zoom={zoom}
                 pageRegions={pageCollisionRegions}
                 onPositionChange={handlePagePositionChange}
               >

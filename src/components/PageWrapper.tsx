@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import type { FixedRegion } from '../types'
 import { CANVAS } from '../constants'
+import { getViewport } from '../store/viewport'
 
 export type PageDef = {
   id: string
@@ -47,13 +48,12 @@ type Props = {
   page: PageDef
   x: number
   y: number
-  zoom: number
   pageRegions: FixedRegion[]
   onPositionChange: (id: string, x: number, y: number) => void
   children: React.ReactNode
 }
 
-export function PageWrapper({ page, x, y, zoom, pageRegions, onPositionChange, children }: Props) {
+export function PageWrapper({ page, x, y, pageRegions, onPositionChange, children }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const dragRef = useRef({ startX: 0, startY: 0, startElX: 0, startElY: 0, dragging: false })
 
@@ -76,8 +76,9 @@ export function PageWrapper({ page, x, y, zoom, pageRegions, onPositionChange, c
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current.dragging) return
-    const dx = (e.clientX - dragRef.current.startX) / zoom
-    const dy = (e.clientY - dragRef.current.startY) / zoom
+    const z = getViewport().zoom
+    const dx = (e.clientX - dragRef.current.startX) / z
+    const dy = (e.clientY - dragRef.current.startY) / z
     const pctPerPx = CANVAS / 100
     let newX = dragRef.current.startElX + (dx / pctPerPx)
     let newY = dragRef.current.startElY + (dy / pctPerPx)
