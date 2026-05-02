@@ -13,7 +13,7 @@ import { CANVAS, INITIAL_VIEW } from '../constants'
 
 export type ViewportState = { zoom: number; panX: number; panY: number }
 
-const MIN_ZOOM = 0.25
+const MIN_ZOOM = 0.3
 const MAX_ZOOM = 3.0
 
 // Rubber-band: how much of the overshoot is allowed past the edge during drag.
