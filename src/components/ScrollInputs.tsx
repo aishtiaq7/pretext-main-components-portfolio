@@ -213,7 +213,7 @@ export function ScrollInputs({ shapes }: Props) {
         <input
           type="range"
           className="scroll-slider scroll-slider-z"
-          min={0.15}
+          min={0.25}
           max={3}
           step={0.01}
           value={zoom}
