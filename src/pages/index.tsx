@@ -1,6 +1,7 @@
 import type { PageDef } from '../components/PageWrapper'
 import { NotebookPage } from '../components/NotebookPage'
 import { BrandHero } from './BrandHero'
+import { SubTagline } from './SubTagline'
 import { RabbitHoleCard } from './RabbitHoleCard'
 import { ThreeScene } from './ThreeScene'
 
@@ -26,6 +27,15 @@ export const PAGES: PageDef[] = [
     x: 49, y: 27, width: 1100, height: 220,
     fixed: true, borderless: false,
     render: () => <BrandHero />,
+  },
+
+  // Sub-tagline — quieter sibling of the brand hero. Fixed, borderless,
+  // smaller font, stacked across 3-4 lines.
+  {
+    id: 'subtagline-page',
+    x: 58, y: 30, width: 700, height: 240,
+    fixed: true, borderless: true,
+    render: () => <SubTagline />,
   },
 
   // Notebook page with clock + reflow text demo. Fixed at the top-left.
