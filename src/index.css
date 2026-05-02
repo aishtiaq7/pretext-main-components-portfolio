@@ -705,18 +705,6 @@ kbd {
   cursor: default !important;
 }
 
-/* Pin indicator — small pushpin in top-left */
-.pin-indicator {
-  position: absolute;
-  top: -10px;
-  left: -6px;
-  width: 14px;
-  height: 18px;
-  opacity: 0.5;
-  pointer-events: none;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
-}
-
 /* Accent entities — animated, click to freeze */
 .entity-accent {
   will-change: transform;
@@ -802,53 +790,9 @@ kbd {
   color: rgba(90, 85, 75, 0.45);
 }
 
-/* Generic section wrapper — lets paperclips overhang the page edge */
+/* Generic section wrapper — lets decorations like the paperclip overhang the page edge */
 .section-wrap {
   position: relative;
-}
-
-/* About page styled as a sticky note */
-.section-block-about {
-  background: linear-gradient(
-    180deg,
-    #fef07a 0%,
-    #fdec6e 8%,
-    #fdee72 100%
-  );
-  border-color: rgba(180, 150, 50, 0.35);
-}
-
-/* Sticky-note about block — replace the dashed draggable border with a solid muted edge */
-.entity-section.entity-draggable .section-block-about {
-  border: 2px solid rgba(180, 150, 50, 0.35);
-  box-shadow:
-    8px 12px 36px rgba(0, 0, 0, 0.22),
-    3px 4px 12px rgba(0, 0, 0, 0.12),
-    0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-/* Soften ruled lines on the yellow sticky note */
-.section-block-about .section-ruled-bg {
-  opacity: 0.5;
-}
-
-/* Paperclip — hooked over top-right edge of section page. */
-.section-paperclip {
-  position: absolute;
-  top: -18px;
-  right: 64px;
-  width: 58px;
-  height: auto;
-  z-index: 3;
-  pointer-events: none;
-  transform: rotate(6deg);
-  transform-origin: top center;
-}
-
-/* Slim variant for the more elongated paperclip art (true_paper_clip.png) */
-.section-paperclip-slim {
-  width: 34px;
-  top: -15px;
 }
 
 /* Corner note */
@@ -954,56 +898,6 @@ kbd {
 .section-polaroid-inset .polaroid-img-wrap {
   width: 360px;
   height: 280px;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   PIN BUTTON — toggle pinned state on sections
-   ═══════════════════════════════════════════════════════════ */
-.pin-btn {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 100;
-  width: 32px;
-  height: 38px;
-  padding: 4px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0.5;
-  transition: opacity 0.2s, transform 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pin-btn:hover {
-  opacity: 1;
-  transform: scale(1.15);
-}
-
-.pin-btn-active {
-  opacity: 0.7;
-}
-
-.pin-btn-active .pin-icon {
-  filter: none;
-}
-
-.pin-btn-inactive {
-  opacity: 0.3;
-}
-
-.pin-btn-inactive .pin-icon {
-  transform: rotate(30deg);
-  filter: grayscale(0.5);
-}
-
-.pin-icon {
-  width: 20px;
-  height: 28px;
-  pointer-events: none;
-  transition: transform 0.2s;
 }
 
 /* ═══════════════════════════════════════════════════════════

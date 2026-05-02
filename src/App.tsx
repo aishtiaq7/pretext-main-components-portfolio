@@ -40,8 +40,8 @@ export default function App() {
     return pos
   })
 
-  // Pinned state — initialized from entity definitions, toggleable at runtime
-  const [pinnedState, setPinnedState] = useState<Record<string, boolean>>(() => {
+  // Pinned state — initialized from entity definitions
+  const [pinnedState] = useState<Record<string, boolean>>(() => {
     const state: Record<string, boolean> = {}
     for (const e of ENTITIES) {
       if (e.pinned !== undefined) state[e.id] = e.pinned
@@ -154,10 +154,6 @@ export default function App() {
 
   const handlePagePositionChange = useCallback((id: string, x: number, y: number) => {
     setPagePositions(prev => ({ ...prev, [id]: { x, y } }))
-  }, [])
-
-  const handlePinToggle = useCallback((id: string) => {
-    setPinnedState(prev => ({ ...prev, [id]: !prev[id] }))
   }, [])
 
   const handleWidgetActivate = useCallback((id: string) => {
@@ -373,7 +369,6 @@ export default function App() {
                 fixedRegions={pageRegions}
                 obstacles={obstacleRects}
                 onPositionChange={handleEntityPositionChange}
-                onPinToggle={entity.category === 'section' ? handlePinToggle : undefined}
                 onClick={() => handleEntityClick(entity.id)}
                 renderSection={entity.category === 'section' ? renderSection : undefined}
                 isWidgetActive={entity.category === 'widget' ? activeWidget === entity.id : undefined}

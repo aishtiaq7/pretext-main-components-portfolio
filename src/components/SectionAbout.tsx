@@ -1,7 +1,19 @@
+import type { CSSProperties } from 'react'
 import { SECTION_SIZES } from '../entities/sizes'
 import { SectionPaperclip } from './SectionPaperclip'
 
 const { w: ABOUT_W, h: ABOUT_H } = SECTION_SIZES['about-block']
+
+// Sticky-note styling — inline so the about block can diverge from the
+// generic .section-block category styles without per-instance CSS.
+const STICKY_NOTE_STYLE: CSSProperties = {
+  width: '100%',
+  height: '100%',
+  background: 'linear-gradient(180deg, #fef07a 0%, #fdec6e 8%, #fdee72 100%)',
+  border: '2px solid rgba(180, 150, 50, 0.35)',
+}
+
+const RULED_BG_STYLE: CSSProperties = { opacity: 0.5 }
 
 const ABOUT_PARAGRAPHS = [
   `I build things for the web. Not just features — I build the systems around features. The pipelines that deliver them, the tests that catch them when they break, the documentation that helps the next person understand what I was thinking at 2 AM.`,
@@ -15,9 +27,9 @@ export function SectionAbout() {
     <div className="section-wrap" style={{ width: ABOUT_W, height: ABOUT_H }}>
       <SectionPaperclip />
 
-      <div className="section-block section-block-about" style={{ width: '100%', height: '100%' }}>
-        {/* Notebook ruled lines */}
-        <div className="section-ruled-bg" />
+      <div className="section-block" style={STICKY_NOTE_STYLE}>
+        {/* Notebook ruled lines — softened on the yellow sticky note */}
+        <div className="section-ruled-bg" style={RULED_BG_STYLE} />
 
         {/* Header */}
         <div className="section-header">

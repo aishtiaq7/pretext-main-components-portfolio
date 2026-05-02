@@ -62,7 +62,6 @@ type Props = {
   fixedRegions: FixedRegion[]
   obstacles: CanvasObstacle[]
   onPositionChange: (id: string, x: number, y: number) => void
-  onPinToggle?: (id: string) => void
   onClick?: () => void
   renderSection?: (componentId: string) => React.ReactNode
   isWidgetActive?: boolean
@@ -90,10 +89,9 @@ type SharedViewProps = {
 
 function SectionView(props: SharedViewProps & {
   isPinned: boolean
-  onPinToggle?: (id: string) => void
   renderSection: (componentId: string) => React.ReactNode
 }) {
-  const { entity, x, y, setRef, isDraggable, isPinned, onPinToggle, renderSection,
+  const { entity, x, y, setRef, isDraggable, isPinned, renderSection,
           onPointerDown, onPointerMove, onPointerUp } = props
   return (
     <div
@@ -111,16 +109,6 @@ function SectionView(props: SharedViewProps & {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      {onPinToggle && (
-        <button
-          data-pin-btn
-          className={`pin-btn ${isPinned ? 'pin-btn-active' : 'pin-btn-inactive'}`}
-          onClick={(e) => { e.stopPropagation(); onPinToggle(entity.id) }}
-          title={isPinned ? 'Unpin (make draggable)' : 'Pin in place'}
-        >
-          <img src="/doodles/pin.svg" alt="pin" className="pin-icon" draggable={false} />
-        </button>
-      )}
       {entity.componentId && renderSection(entity.componentId)}
     </div>
   )
@@ -203,15 +191,6 @@ function DefaultView(props: SharedViewProps & {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      {isPinned && entity.category !== 'watermark' && entity.category !== 'image' && (
-        <img
-          src="/doodles/pin.svg"
-          alt=""
-          className="pin-indicator"
-          draggable={false}
-        />
-      )}
-
       {entity.handwritingSrc ? (
         <HandwrittenEntry
           src={entity.handwritingSrc}
@@ -252,7 +231,7 @@ function DefaultView(props: SharedViewProps & {
 // to render based on entity category.
 
 export function HandwritingEntity({
-  entity, x, y, fixedRegions, obstacles, onPositionChange, onPinToggle, onClick, renderSection,
+  entity, x, y, fixedRegions, obstacles, onPositionChange, onClick, renderSection,
   isWidgetActive, onWidgetActivate, onDragStart, onDragEnd,
 }: Props) {
   const dragRef = useRef({ startX: 0, startY: 0, startElX: 0, startElY: 0, dragging: false })
@@ -284,11 +263,6 @@ export function HandwritingEntity({
   }, [entity])
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Pin button toggles on click — swallow so neither drag nor pan fires.
-    if ((e.target as HTMLElement).closest('[data-pin-btn]')) {
-      e.stopPropagation()
-      return
-    }
     // Non-draggable entities: let the event bubble up to the viewport so it
     // can start a pan. Only claim the event when we're actually going to drag.
     if (!isDraggable) return
@@ -351,7 +325,7 @@ export function HandwritingEntity({
   }
 
   if (isSection && entity.componentId && renderSection) {
-    return <SectionView {...shared} isPinned={isPinned} onPinToggle={onPinToggle} renderSection={renderSection} />
+    return <SectionView {...shared} isPinned={isPinned} renderSection={renderSection} />
   }
 
   if (isWidget) {
