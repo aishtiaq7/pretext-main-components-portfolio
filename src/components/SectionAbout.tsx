@@ -1,4 +1,5 @@
 import { SECTION_SIZES } from '../entities/sizes'
+import { SectionPaperclip } from './SectionPaperclip'
 
 const { w: ABOUT_W, h: ABOUT_H } = SECTION_SIZES['about-block']
 
@@ -11,46 +12,50 @@ const ABOUT_PARAGRAPHS = [
 
 export function SectionAbout() {
   return (
-    <div className="section-block" style={{ width: ABOUT_W, height: ABOUT_H }}>
-      {/* Notebook ruled lines */}
-      <div className="section-ruled-bg" />
+    <div className="section-wrap" style={{ width: ABOUT_W, height: ABOUT_H }}>
+      <SectionPaperclip />
 
-      {/* Header */}
-      <div className="section-header">
-        <span className="section-title">About</span>
-        <span className="section-subtitle">// who writes this code</span>
-      </div>
+      <div className="section-block section-block-about" style={{ width: '100%', height: '100%' }}>
+        {/* Notebook ruled lines */}
+        <div className="section-ruled-bg" />
 
-      {/* Content area with photo inset */}
-      <div className="section-about-content">
-        <div className="section-about-text">
-          {ABOUT_PARAGRAPHS.map((p, i) => (
-            <p key={i} className="section-about-paragraph">
-              {p}
-            </p>
-          ))}
+        {/* Header */}
+        <div className="section-header">
+          <span className="section-title">About</span>
+          <span className="section-subtitle">// who writes this code</span>
         </div>
 
-        {/* Inset photo */}
-        <div className="section-about-photo-wrap">
-          <div className="section-polaroid section-polaroid-inset" style={{ transform: 'rotate(2deg)' }}>
-            <div className="polaroid-img-wrap">
-              <img
-                src="/photos/this.png"
-                alt="Portrait"
-                className="polaroid-img"
-                draggable={false}
-              />
+        {/* Content area with photo inset */}
+        <div className="section-about-content">
+          <div className="section-about-text">
+            {ABOUT_PARAGRAPHS.map((p, i) => (
+              <p key={i} className="section-about-paragraph">
+                {p}
+              </p>
+            ))}
+          </div>
+
+          {/* Inset photo */}
+          <div className="section-about-photo-wrap">
+            <div className="section-polaroid section-polaroid-inset" style={{ transform: 'rotate(2deg)' }}>
+              <div className="polaroid-img-wrap">
+                <img
+                  src="/photos/this.png"
+                  alt="Portrait"
+                  className="polaroid-img"
+                  draggable={false}
+                />
+              </div>
+              <span className="polaroid-caption">Vancouver, BC</span>
             </div>
-            <span className="polaroid-caption">Vancouver, BC</span>
           </div>
         </div>
-      </div>
 
-      {/* Corner decoration */}
-      <span className="section-corner-note">
-        &mdash; last updated April 2026
-      </span>
+        {/* Corner decoration */}
+        <span className="section-corner-note">
+          &mdash; last updated April 2026
+        </span>
+      </div>
     </div>
   )
 }

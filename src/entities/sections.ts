@@ -15,6 +15,6 @@ export const SECTION_PHOTOS = [
 // gallery) only requires another section({ componentId: … }).
 // ═══════════════════════════════════════════════════════════
 export const SECTIONS: EntityDef[] = [
-  section({ id: 'section-about',  x: 21.68, y: 27, rotate: -0.5, componentId: 'about-block' }),
+  section({ id: 'section-about',  x: 19, y: 30, rotate: -0.5, componentId: 'about-block' }),
   section({ id: 'section-photos', x: 30,    y: 45, rotate:  -4, componentId: 'photo-gallery' }),
 ]
