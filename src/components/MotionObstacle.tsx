@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import type { EntityDef } from '../types'
 import { CANVAS } from '../constants'
 import { getViewport } from '../store/viewport'
+import { isMultiTouchActive } from '../store/gestures'
 
 const PCT_TO_PX = CANVAS / 100
 
@@ -50,6 +51,7 @@ export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
   }
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (isMultiTouchActive()) return
     e.stopPropagation()
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     stopInertia()
@@ -64,6 +66,11 @@ export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragRef.current) return
+    if (isMultiTouchActive()) {
+      ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+      dragRef.current = null
+      return
+    }
 
     const z = getViewport().zoom
     const now = performance.now()

@@ -11,6 +11,7 @@ import {
   settlePan,
   setZoomAndPan,
 } from "./store/viewport";
+import { setMultiTouchActive } from "./store/gestures";
 import { TopHeader } from "./components/TopHeader";
 import { ZoomCanvas } from "./components/ZoomCanvas";
 import { HandwritingEntity } from "./components/HandwritingEntity";
@@ -341,7 +342,10 @@ export default function App() {
 
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length < 2) return;
-      // Second finger interrupts any in-progress single-finger viewport pan.
+      // Second finger interrupts any in-progress single-finger viewport pan,
+      // and signals to draggable components (pages, entities) that they must
+      // yield this gesture to the canvas pinch handler.
+      setMultiTouchActive(true);
       if (canvasDragRef.current?.active) {
         canvasDragRef.current.active = false;
       }
@@ -379,6 +383,9 @@ export default function App() {
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        setMultiTouchActive(false);
+      }
       if (!pinch) return;
       if (e.touches.length < 2) {
         pinch = null;

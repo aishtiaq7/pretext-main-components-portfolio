@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { prepareWithSegments, layoutWithLines, layoutNextLine, walkLineRanges } from '@chenglou/pretext'
 import type { LayoutCursor, PreparedTextWithSegments } from '@chenglou/pretext'
+import { isMultiTouchActive } from '../store/gestures'
 
 // ═══════════════════════════════════════════════════════════
 // Content
@@ -356,6 +357,7 @@ export function NotebookPage({ width = 1400, height = 1000 }: Props) {
 
   // ── Zoom-aware pointer handlers ───────────────────────
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (isMultiTouchActive()) return
     const stage = stageRef.current
     if (!stage) return
     const rect = stage.getBoundingClientRect()
@@ -376,6 +378,11 @@ export function NotebookPage({ width = 1400, height = 1000 }: Props) {
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const d = dragRef.current
     if (!d) return
+    if (isMultiTouchActive()) {
+      ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+      dragRef.current = null
+      return
+    }
     const r = clockRef.current.r
     clockRef.current.x = Math.max(r, Math.min(width - r, d.cx + (e.clientX - d.sx) / d.scale))
     clockRef.current.y = Math.max(r, Math.min(height - r, d.cy + (e.clientY - d.sy) / d.scale))

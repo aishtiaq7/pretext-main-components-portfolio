@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import type { FixedRegion } from '../types'
 import { CANVAS } from '../constants'
 import { getViewport } from '../store/viewport'
+import { isMultiTouchActive } from '../store/gestures'
 
 export type PageDef = {
   id: string
@@ -68,6 +69,8 @@ export function PageWrapper({ page, x, y, pageRegions, onPositionChange, childre
     // Fixed (non-draggable) pages: let the event bubble up to the viewport
     // so clicking on a page still pans the canvas.
     if (page.fixed) return
+    // Two fingers already down on mobile → yield to the canvas pinch gesture.
+    if (isMultiTouchActive()) return
 
     e.stopPropagation()
     ref.current?.setPointerCapture(e.pointerId)
@@ -76,6 +79,12 @@ export function PageWrapper({ page, x, y, pageRegions, onPositionChange, childre
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current.dragging) return
+    // Second finger arrived mid-drag → abandon the drag so the pinch wins.
+    if (isMultiTouchActive()) {
+      dragRef.current.dragging = false
+      ref.current?.releasePointerCapture(e.pointerId)
+      return
+    }
     const z = getViewport().zoom
     const dx = (e.clientX - dragRef.current.startX) / z
     const dy = (e.clientY - dragRef.current.startY) / z

@@ -6,6 +6,7 @@ import type { ObstacleRect } from './ReflowText'
 import { useJitter } from '../hooks/useJitter'
 import { getReflowBoxPct } from '../entities/sizes'
 import { getViewport } from '../store/viewport'
+import { isMultiTouchActive } from '../store/gestures'
 import { HandwrittenEntry } from './HandwrittenEntry'
 
 const PCT_TO_PX = CANVAS / 100  // 1% of canvas in px
@@ -266,6 +267,7 @@ export function HandwritingEntity({
     // Non-draggable entities: let the event bubble up to the viewport so it
     // can start a pan. Only claim the event when we're actually going to drag.
     if (!isDraggable) return
+    if (isMultiTouchActive()) return
     e.stopPropagation()
     jitterRef.current?.setPointerCapture(e.pointerId)
     dragRef.current = { startX: e.clientX, startY: e.clientY, startElX: x, startElY: y, dragging: true }
@@ -274,6 +276,12 @@ export function HandwritingEntity({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current.dragging) return
+    if (isMultiTouchActive()) {
+      jitterRef.current?.releasePointerCapture(e.pointerId)
+      dragRef.current.dragging = false
+      onDragEnd?.(entity.id)
+      return
+    }
     const z = getViewport().zoom
     const dx = (e.clientX - dragRef.current.startX) / z
     const dy = (e.clientY - dragRef.current.startY) / z
