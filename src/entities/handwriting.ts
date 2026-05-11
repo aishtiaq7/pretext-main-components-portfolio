@@ -25,4 +25,11 @@ export const HANDWRITINGS: EntityDef[] = [
     src: '/handwriting/ink-2026-04-17-2037.json',
     autoplay: true,
   }),
+  handwriting({
+    id: 'hw-welcome',
+    x: 42, y: 34,
+    width: 600, height: 530,
+    src: '/handwriting/welcome-ink.json',
+    autoplay: true,
+  }),
 ]
