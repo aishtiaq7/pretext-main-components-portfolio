@@ -152,6 +152,22 @@ function applyZoomAnchored(zNext: number, anchorX: number, anchorY: number) {
 
 // ── Mutations ────────────────────────────────────────────
 
+/**
+ * Set zoom and pan in a single atomic update. Used by the pinch-gesture
+ * handler, which computes both values together and would otherwise have to
+ * emit twice (zoom then pan) and fight the spring's anchor math.
+ */
+export function setZoomAndPan(rawZoom: number, panX: number, panY: number) {
+  cancelZoomSpring()
+  const z = clamp(rawZoom, MIN_ZOOM, MAX_ZOOM)
+  const lim = getPanLimit(z)
+  const px = clamp(panX, -lim.x, lim.x)
+  const py = clamp(panY, -lim.y, lim.y)
+  if (z === state.zoom && px === state.panX && py === state.panY) return
+  state = { zoom: z, panX: px, panY: py }
+  emit()
+}
+
 /** Set zoom, scaling pan so the viewport center stays fixed. */
 export function setZoom(raw: number) {
   cancelZoomSpring()
