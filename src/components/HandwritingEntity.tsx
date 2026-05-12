@@ -1,4 +1,4 @@
-import { useRef, useMemo, useCallback } from 'react'
+import { useRef, useMemo, useCallback, useEffect, useState } from 'react'
 import type { EntityDef, FixedRegion } from '../types'
 import { CANVAS } from '../constants'
 import { ReflowText } from './ReflowText'
@@ -7,7 +7,8 @@ import { useJitter } from '../hooks/useJitter'
 import { getReflowBoxPct } from '../entities/sizes'
 import { getViewport } from '../store/viewport'
 import { isMultiTouchActive } from '../store/gestures'
-import { HandwrittenEntry } from './HandwrittenEntry'
+import { HandwrittenEntry, type HandwritingHandle } from './HandwrittenEntry'
+import { triggers } from '../store/triggers'
 
 const PCT_TO_PX = CANVAS / 100  // 1% of canvas in px
 
@@ -154,9 +155,11 @@ function DefaultView(props: SharedViewProps & {
   jitterFrozen: boolean
   hasReflow: boolean
   localObstacles: ObstacleRect[]
+  handwritingRef?: React.Ref<HandwritingHandle>
+  hidden?: boolean
 }) {
   const { entity, x, y, setRef, isDraggable, isPinned, jitterFrozen, hasReflow, localObstacles,
-          onPointerDown, onPointerMove, onPointerUp } = props
+          handwritingRef, hidden, onPointerDown, onPointerMove, onPointerUp } = props
 
   const classes = [
     'entity',
@@ -185,6 +188,10 @@ function DefaultView(props: SharedViewProps & {
         whiteSpace: (!hasReflow && entity.maxWidth) ? 'normal' : (hasReflow ? undefined : 'nowrap'),
         wordWrap: (!hasReflow && entity.maxWidth) ? 'break-word' : undefined,
         cursor: isDraggable ? 'grab' : 'default',
+        // Manual-reveal entities stay laid out (no shift) but invisible
+        // and non-interactive until the master timeline reveals them.
+        visibility: hidden ? 'hidden' : undefined,
+        pointerEvents: hidden ? 'none' : undefined,
         ...entity.style,
       }}
       onPointerDown={onPointerDown}
@@ -194,6 +201,7 @@ function DefaultView(props: SharedViewProps & {
     >
       {entity.handwritingSrc ? (
         <HandwrittenEntry
+          ref={handwritingRef}
           src={entity.handwritingSrc}
           width={entity.imgW}
           height={entity.imgH}
@@ -236,6 +244,29 @@ export function HandwritingEntity({
   isWidgetActive, onWidgetActivate, onDragStart, onDragEnd,
 }: Props) {
   const dragRef = useRef({ startX: 0, startY: 0, startElX: 0, startElY: 0, dragging: false })
+
+  // ── Master-timeline integration ──
+  // Only handwriting entities with a triggerId participate. The handle wraps
+  // the inner HandwrittenEntry ref + local "hidden" state, then registers
+  // with the trigger registry so MotionController can call .play() etc.
+  const hwRef = useRef<HandwritingHandle | null>(null)
+  const [hidden, setHidden] = useState<boolean>(entity.revealMode === 'manual')
+
+  useEffect(() => {
+    if (!entity.triggerId) return
+    const id = entity.triggerId
+    triggers.register(id, {
+      reveal: () => setHidden(false),
+      play: () => {
+        setHidden(false)
+        hwRef.current?.play()
+      },
+      pause: () => hwRef.current?.pause(),
+      resume: () => hwRef.current?.resume(),
+      reset: () => hwRef.current?.reset(),
+    })
+    return () => triggers.unregister(id)
+  }, [entity.triggerId])
 
   const isPinned = !!entity.pinned
   const isSection = entity.category === 'section'
@@ -347,6 +378,8 @@ export function HandwritingEntity({
       jitterFrozen={jitterFrozen}
       hasReflow={hasReflow}
       localObstacles={localObstacles}
+      handwritingRef={entity.handwritingSrc ? hwRef : undefined}
+      hidden={hidden}
     />
   )
 }

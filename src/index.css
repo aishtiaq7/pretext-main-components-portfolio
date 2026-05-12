@@ -317,6 +317,45 @@ body {
   background: var(--grip-color);
 }
 
+/* Timeline controls (master play/pause/mute) */
+.timeline-controls {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.tl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(220, 215, 205, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tl-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.tl-btn:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.tl-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* Track containers */
 .scroll-track {
   display: flex;

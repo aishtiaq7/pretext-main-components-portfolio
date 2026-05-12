@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { getStroke } from 'perfect-freehand'
 
 // ═══════════════════════════════════════════════════════════
@@ -6,7 +6,17 @@ import { getStroke } from 'perfect-freehand'
 // from `ink-studio`. Paths render with perfect-freehand so
 // pressure/tilt produce the ink body; absolute timestamps
 // reproduce the original writing rhythm (pauses included).
-// Click the entry to replay the animation.
+//
+// Imperative handle (via ref):
+//   play()   — restart the writing animation from progress 0
+//   pause()  — freeze at current progress
+//   resume() — continue from paused progress
+//   reset()  — jump to final frame (progress 1)
+//
+// When `autoplay` is true the animation starts as soon as the
+// JSON loads. When false the entry renders the *fully drawn*
+// final state by default — pair with `revealMode: 'manual'`
+// on the parent entity to keep it hidden until play() fires.
 // ═══════════════════════════════════════════════════════════
 
 type EasingName =
@@ -51,6 +61,13 @@ type Drawing = {
   strokes: StoredStroke[]
 }
 
+export type HandwritingHandle = {
+  play: () => void
+  pause: () => void
+  resume: () => void
+  reset: () => void
+}
+
 type Props = {
   src: string
   /** On-canvas pixel size. Optional — defaults to fill parent. */
@@ -62,11 +79,25 @@ type Props = {
   speed?: number
 }
 
-export function HandwrittenEntry({ src, width, height, autoplay = false, speed = 1 }: Props) {
+export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function HandwrittenEntry(
+  { src, width, height, autoplay = false, speed = 1 },
+  ref,
+) {
   const [drawing, setDrawing] = useState<Drawing | null>(null)
-  const [, setError] = useState<string | null>(null)
-  const [progress, setProgress] = useState(1) // 0–1 (1 = fully drawn)
+  // progress starts at 1 (static end state) unless autoplay. The play()
+  // imperative handle resets to 0 and runs the rAF loop manually below —
+  // no React effect dependency hopping required.
+  const [progress, setProgress] = useState(autoplay ? 0 : 1)
+
+  // Live animation state — kept in refs so callers can drive the loop
+  // imperatively without triggering re-renders per frame.
   const rafRef = useRef<number | null>(null)
+  const startRef = useRef<number>(0)            // performance.now() when current run began
+  const pausedProgressRef = useRef<number | null>(null)
+  const totalRef = useRef<number>(1)            // computed once drawing loads
+  const drawingRef = useRef<Drawing | null>(null)
+  const speedRef = useRef<number>(speed)
+  useEffect(() => { speedRef.current = speed }, [speed])
 
   // Load JSON
   useEffect(() => {
@@ -78,38 +109,83 @@ export function HandwrittenEntry({ src, width, height, autoplay = false, speed =
       })
       .then((json: Drawing) => {
         if (cancelled) return
+        drawingRef.current = json
+        const firstStart = json.strokes[0]?.startedAt ?? 0
+        const lastStroke = json.strokes[json.strokes.length - 1]
+        const lastT = lastStroke?.points[lastStroke.points.length - 1]?.t ?? 0
+        totalRef.current = Math.max(
+          1,
+          ((lastStroke?.startedAt ?? firstStart) - firstStart + lastT) / speedRef.current,
+        )
         setDrawing(json)
-        if (autoplay) setProgress(0)
       })
-      .catch((e) => !cancelled && setError(String(e)))
+      .catch(() => { /* swallow — entry just won't render */ })
     return () => { cancelled = true }
-  }, [src, autoplay])
+  }, [src])
 
-  // Animation loop
-  useEffect(() => {
-    if (!drawing || progress >= 1) return
-    const firstStart = drawing.strokes[0]?.startedAt ?? 0
-    const lastStroke = drawing.strokes[drawing.strokes.length - 1]
-    const lastT = lastStroke?.points[lastStroke.points.length - 1]?.t ?? 0
-    const total = Math.max(
-      1,
-      ((lastStroke?.startedAt ?? firstStart) - firstStart + lastT) / speed,
-    )
-    const start = performance.now()
+  const stopRaf = useCallback(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+  }, [])
+
+  const runLoop = useCallback((fromProgress: number) => {
+    stopRaf()
+    if (!drawingRef.current) return
+    startRef.current = performance.now() - fromProgress * totalRef.current
     const step = (now: number) => {
-      const p = Math.min(1, (now - start) / total)
+      const p = Math.min(1, (now - startRef.current) / totalRef.current)
       setProgress(p)
-      if (p < 1) rafRef.current = requestAnimationFrame(step)
+      if (p < 1) {
+        rafRef.current = requestAnimationFrame(step)
+      } else {
+        rafRef.current = null
+      }
     }
     rafRef.current = requestAnimationFrame(step)
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-    // Re-trigger animation when progress is reset to 0 via replay click
-  }, [drawing, progress === 0, speed]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stopRaf])
 
-  // Render nothing while loading or on error — the entity just appears once
-  // the strokes are ready. No placeholder text.
+  const play = useCallback(() => {
+    pausedProgressRef.current = null
+    setProgress(0)
+    runLoop(0)
+  }, [runLoop])
+
+  const pause = useCallback(() => {
+    if (rafRef.current === null) return
+    const elapsed = performance.now() - startRef.current
+    const p = Math.min(1, Math.max(0, elapsed / totalRef.current))
+    pausedProgressRef.current = p
+    stopRaf()
+  }, [stopRaf])
+
+  const resume = useCallback(() => {
+    const p = pausedProgressRef.current
+    if (p === null || p >= 1) return
+    pausedProgressRef.current = null
+    runLoop(p)
+  }, [runLoop])
+
+  const reset = useCallback(() => {
+    stopRaf()
+    pausedProgressRef.current = null
+    setProgress(1)
+  }, [stopRaf])
+
+  useImperativeHandle(ref, () => ({ play, pause, resume, reset }), [play, pause, resume, reset])
+
+  // Autoplay: kick the loop once the JSON has loaded.
+  const autoplayedRef = useRef(false)
+  useEffect(() => {
+    if (!drawing || !autoplay || autoplayedRef.current) return
+    autoplayedRef.current = true
+    runLoop(0)
+  }, [drawing, autoplay, runLoop])
+
+  // Cleanup
+  useEffect(() => () => stopRaf(), [stopRaf])
+
   if (!drawing) return null
 
   const firstStart = drawing.strokes[0]?.startedAt ?? 0
@@ -160,7 +236,7 @@ export function HandwrittenEntry({ src, width, height, autoplay = false, speed =
       </svg>
     </div>
   )
-}
+})
 
 function getSvgPathFromStroke(stroke: number[][]): string {
   if (!stroke.length) return ''

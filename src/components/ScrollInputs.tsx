@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { CANVAS, PAN_LIMIT } from '../constants'
 import { useViewport, setZoom, setPan, setPanX, setPanY, getViewport } from '../store/viewport'
+import { TimelineControls } from './TimelineControls'
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val))
@@ -137,6 +138,9 @@ export function ScrollInputs({ shapes }: Props) {
         <span className="grip-bar" />
         <span className="grip-bar" />
       </div>
+
+      {/* Master timeline controls (play/pause/mute) */}
+      <TimelineControls />
 
       {/* Middle row: Y slider + Minimap */}
       <div className="scroll-mid-row">

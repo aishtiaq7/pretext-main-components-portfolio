@@ -99,6 +99,14 @@ export type EntityDef = {
   autoplay?: boolean      // handwriting: replay the writing animation on mount
   playbackSpeed?: number  // handwriting: replay speed multiplier (default 1)
 
+  // ── Master-timeline integration (handwriting + future entity types) ──
+  // `triggerId` registers the entity with the global trigger registry so the
+  // master timeline / scene scripts can call play/pause/reset on it. Pair with
+  // `revealMode: 'manual'` to keep the entity hidden (visibility:hidden) until
+  // its `reveal()` or `play()` is called. Default reveal mode is 'auto'.
+  triggerId?: string
+  revealMode?: 'auto' | 'manual'
+
   // ── New fields ──
   category: EntityCategory
   jitter?: JitterType     // animation type (default: 'none')

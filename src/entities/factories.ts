@@ -182,6 +182,10 @@ type HandwritingInput = Positional & StyleOverrides & {
   autoplay?: boolean
   /** Playback speed multiplier (default: 1). */
   playbackSpeed?: number
+  /** Register with the trigger registry so the master timeline can drive it. */
+  triggerId?: string
+  /** 'manual' keeps the entity hidden (visibility:hidden) until reveal/play. */
+  revealMode?: 'auto' | 'manual'
 }
 
 export function handwriting(input: HandwritingInput): EntityDef {
