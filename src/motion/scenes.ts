@@ -26,8 +26,8 @@ export type Scene = {
   holdDuration?: number
 }
 
-const SCRIBE_SFX = '/handwriting/pencil-scribe-10s.mp3'
-const CHALK_SFX = '/handwriting/chalk-7s.mp3'
+const SCRIBE_SFX = '/sounds/pencil-scribe-10s.mp3'
+const CHALK_SFX = '/sounds/chalk-7s.mp3'
 
 /**
  * Derive a focus point from the entity's top-left + size so the entity
@@ -50,6 +50,7 @@ function focusForEntity(triggerId: string, zoom: number): Focus | undefined {
 // buffer). Adjust whenever a JSON is swapped in or out.
 //   second.json     — 8.40s   →  hold 8.5s
 //   second-new.json — 7.58s   →  hold 7.7s
+//   3rd-scene.json  — 7.85s   →  hold 8.0s
 
 export const SCENES: Scene[] = [
   {
@@ -67,5 +68,13 @@ export const SCENES: Scene[] = [
     sfx: CHALK_SFX,
     panDuration: 1.2,
     holdDuration: 7.7,
+  },
+  {
+    id: 'scene-3',
+    triggerId: 'welcome-3',
+    focus: focusForEntity('welcome-3', 0.69),
+    sfx: SCRIBE_SFX,
+    panDuration: 1.2,
+    holdDuration: 8.0,
   },
 ]

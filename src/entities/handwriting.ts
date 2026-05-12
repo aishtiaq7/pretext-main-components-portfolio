@@ -43,4 +43,13 @@ export const HANDWRITINGS: EntityDef[] = [
     triggerId: 'welcome-2',
     revealMode: 'manual',
   }),
+  handwriting({
+    id: 'hw-welcome-3',
+    x: 30, y: 60,
+    width: 600, height: 530,
+    src: '/handwriting/3rd-scene.json',
+    autoplay: false,
+    triggerId: 'welcome-3',
+    revealMode: 'manual',
+  }),
 ]
