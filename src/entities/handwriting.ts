@@ -27,7 +27,7 @@ export const HANDWRITINGS: EntityDef[] = [
   }),
   handwriting({
     id: 'hw-welcome',
-    x: 42, y: 34,
+    x: 69, y: 69,
     width: 600, height: 530,
     src: '/handwriting/second.json',
     autoplay: false,
@@ -36,7 +36,7 @@ export const HANDWRITINGS: EntityDef[] = [
   }),
   handwriting({
     id: 'hw-welcome-2',
-    x: 70, y: 50,
+    x: 74, y: 72,
     width: 600, height: 530,
     src: '/handwriting/second-new.json',
     autoplay: false,
@@ -45,7 +45,7 @@ export const HANDWRITINGS: EntityDef[] = [
   }),
   handwriting({
     id: 'hw-welcome-3',
-    x: 30, y: 60,
+    x: 81, y: 66,
     width: 600, height: 530,
     src: '/handwriting/3rd-scene.json',
     autoplay: false,
