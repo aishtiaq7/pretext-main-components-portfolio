@@ -52,6 +52,27 @@ export const audio = {
     this.setMuted(!muted)
   },
 
+  /**
+   * "Prime" a track on iOS/Android by playing+pausing it while a user
+   * gesture is still active. Must be called from inside the synchronous
+   * call stack of a click/tap. After priming, subsequent .play() calls
+   * succeed from any async context (timeline callbacks, rAF, etc.).
+   */
+  prime(src: string) {
+    const el = getOrLoad(src)
+    const p = el.play()
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        el.pause()
+        el.currentTime = 0
+        if (!unlocked) {
+          unlocked = true
+          emit()
+        }
+      }).catch(() => { /* element will be primed later via real play() */ })
+    }
+  },
+
   /** Play a track from the start. No-op when muted. */
   play(src: string) {
     if (muted) return

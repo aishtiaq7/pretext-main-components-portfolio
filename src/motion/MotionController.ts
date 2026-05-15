@@ -34,6 +34,10 @@ function viewportToFocus() {
 
 class MotionController {
   private master: gsap.core.Timeline | null = null
+  // Mobile audio fix: each <audio> element must have its first .play()
+  // invoked inside a user-gesture call stack to unlock for the session.
+  // We prime every distinct SFX once, on the first Play click.
+  private primed = false
 
   private build(): gsap.core.Timeline {
     // Shared proxy object the pan tween mutates; onUpdate writes the values
@@ -92,6 +96,20 @@ class MotionController {
   play() {
     const tl = this.ensure()
     if (tl.progress() === 1) return
+
+    // Prime every SFX track on the very first Play click. Must run BEFORE
+    // any async work so we're still inside the click's gesture stack.
+    if (!this.primed) {
+      this.primed = true
+      const seen = new Set<string>()
+      for (const s of SCENES) {
+        if (s.sfx && !seen.has(s.sfx)) {
+          seen.add(s.sfx)
+          audio.prime(s.sfx)
+        }
+      }
+    }
+
     const wasPaused = tl.paused() && tl.time() > 0
     tl.play()
     if (wasPaused) {
