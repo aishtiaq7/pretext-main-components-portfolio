@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "createdAt": "2026-05-15T12:00:00.000Z",
+  "width": 800,
+  "height": 600,
+  "strokes": [
+    {
+      "points": [
+        { "x": 100, "y": 100, "p": 0.5, "t": 0, "tiltX": 0, "tiltY": 0 },
+        { "x": 150, "y": 120, "p": 0.6, "t": 50, "tiltX": 5, "tiltY": -3 },
+        { "x": 200, "y": 140, "p": 0.7, "t": 100 }
+      ],
+      "options": {
+        "size": 12,
+        "thinning": 0.5,
+        "smoothing": 0.5,
+        "streamline": 0.5,
+        "easing": "linear",
+        "taperStart": 0,
+        "taperEnd": 0,
+        "capStart": true,
+        "capEnd": true
+      },
+      "color": "#000000",
+      "outlineColor": "#000000",
+      "outlineWidth": 0,
+      "startedAt": 0
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { getStroke } from 'perfect-freehand'
+import type { Drawing, EasingName } from '../../ink-studio/src/types'
 
 // ═══════════════════════════════════════════════════════════
 // HandwrittenEntry — plays back stroke-capture JSON exported
@@ -17,12 +18,10 @@ import { getStroke } from 'perfect-freehand'
 // JSON loads. When false the entry renders the *fully drawn*
 // final state by default — pair with `revealMode: 'manual'`
 // on the parent entity to keep it hidden until play() fires.
+//
+// JSON-format types are imported from `ink-studio/src/types`
+// — single source of truth shared with the writer.
 // ═══════════════════════════════════════════════════════════
-
-type EasingName =
-  | 'linear' | 'easeIn' | 'easeOut' | 'easeInOut'
-  | 'easeInQuad' | 'easeOutQuad' | 'easeInOutQuad'
-  | 'easeInCubic' | 'easeOutCubic' | 'easeInOutCubic'
 
 const EASINGS: Record<EasingName, (t: number) => number> = {
   linear: (t) => t,
@@ -36,29 +35,6 @@ const EASINGS: Record<EasingName, (t: number) => number> = {
   easeOutCubic: (t) => --t * t * t + 1,
   easeInOutCubic: (t) =>
     t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
-}
-
-type Point = { x: number; y: number; p: number; t: number }
-type StrokeOptions = {
-  size: number; thinning: number; smoothing: number; streamline: number;
-  easing: EasingName
-  taperStart: number; taperEnd: number
-  capStart: boolean; capEnd: boolean
-}
-type StoredStroke = {
-  points: Point[]
-  options: StrokeOptions
-  color: string
-  outlineColor: string
-  outlineWidth: number
-  startedAt: number
-}
-type Drawing = {
-  version: 1
-  createdAt: string
-  width: number
-  height: number
-  strokes: StoredStroke[]
 }
 
 export type HandwritingHandle = {
@@ -194,9 +170,14 @@ export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function Ha
   const total = Math.max(1, (lastStroke?.startedAt ?? firstStart) - firstStart + lastT)
   const elapsed = progress * total
 
+  // When the caller supplies only `width`, derive height from the JSON's
+  // intrinsic aspect ratio so the slot matches the drawing exactly — no
+  // letterboxing, no per-file tuning when a new recording gets dropped in.
+  const autoFit = width !== undefined && height === undefined
   const containerStyle: React.CSSProperties = {
     width: width ?? '100%',
-    height: height ?? '100%',
+    height: height ?? (autoFit ? undefined : '100%'),
+    aspectRatio: autoFit ? `${drawing.width} / ${drawing.height}` : undefined,
     pointerEvents: 'none',
   }
 

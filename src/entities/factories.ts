@@ -176,7 +176,12 @@ export function image(input: ImageInput): EntityDef {
 type HandwritingInput = Positional & StyleOverrides & {
   src: string        // path to the JSON (usually under /handwriting/)
   width: number      // on-canvas pixel width
-  height: number
+  // Optional. Omit to let the slot's height auto-derive from the JSON's
+  // intrinsic aspect ratio at render time — preferred so the slot always
+  // matches the drawing without per-file tuning. Set explicitly only when
+  // you need precise scene focus framing (the master timeline reads imgH
+  // to center the camera on the entity).
+  height?: number
   pinned?: boolean
   /** Replay the writing animation on mount (default: false → static). */
   autoplay?: boolean

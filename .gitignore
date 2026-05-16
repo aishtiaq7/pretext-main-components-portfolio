@@ -16,7 +16,7 @@ dist-ssr
 /worktree/
 
 # Ink Studio — standalone stroke-capture tool, not part of the portfolio build
-/ink-studio/
+# /ink-studio/
 
 # Editor directories and files
 .vscode/*

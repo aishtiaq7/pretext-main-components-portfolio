@@ -38,7 +38,11 @@ function focusForEntity(triggerId: string, zoom: number): Focus | undefined {
   const e = ENTITIES.find((x) => x.triggerId === triggerId)
   if (!e) return undefined
   const w = e.imgW ?? 0
-  const h = e.imgH ?? 0
+  // Auto-fit handwriting entities omit imgH (the slot height is derived from
+  // the JSON's aspect ratio at render time). For focus centering we fall back
+  // to width as a square estimate — close enough for most slots. If a scene
+  // needs exact framing, pass `focus: { x, y, zoom }` explicitly below.
+  const h = e.imgH ?? w
   return {
     x: e.x + (w / CANVAS) * 50,
     y: e.y + (h / CANVAS) * 50,
@@ -48,9 +52,9 @@ function focusForEntity(triggerId: string, zoom: number): Focus | undefined {
 
 // Hold durations match each handwriting recording's length (plus a small
 // buffer). Adjust whenever a JSON is swapped in or out.
-//   second.json     — 8.40s   →  hold 8.5s
-//   second-new.json — 7.58s   →  hold 7.7s
-//   3rd-scene.json  — 7.85s   →  hold 8.0s
+//   welcome-and-notebook.json — 16.96s  →  hold 17.1s
+//   second-new.json           —  7.58s  →  hold  7.7s
+//   3rd-scene.json            —  7.85s  →  hold  8.0s
 
 export const SCENES: Scene[] = [
   {
@@ -59,7 +63,7 @@ export const SCENES: Scene[] = [
     focus: focusForEntity('welcome-1', 0.69),
     sfx: SCRIBE_SFX,
     panDuration: 1.2,
-    holdDuration: 8.5,
+    holdDuration: 17.1,
   },
   {
     id: 'scene-2',
