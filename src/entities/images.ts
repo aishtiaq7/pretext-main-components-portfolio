@@ -12,9 +12,4 @@ export const IMAGES: EntityDef[] = [
     imgSrc: '/handScribbles/sketch-5-transparent.png',
     imgW: 500, imgH: 400,
   }),
-  image({
-    id: 'button-1', x: 50, y: 58,
-    imgSrc: '/button-1.svg',
-    imgW: 1800, imgH: 1425,
-  }),
 ]

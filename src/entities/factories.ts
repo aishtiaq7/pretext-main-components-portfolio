@@ -293,6 +293,42 @@ export function section(input: SectionInput): EntityDef {
   }
 }
 
+// ── Button (interactive SVG/raster button with state machine) ──
+//   Hover → optional pressSrc + scale. Click → fires `onClickAction`
+//   (resolved in App.tsx's buttonActions map) and locks into a one-shot
+//   post-click state. All visual states are optional asset swaps; when
+//   absent the button uses transform-only feedback (scale / filter).
+type ButtonInput = Positional & StyleOverrides & {
+  imgSrc: string
+  imgW: number
+  imgH: number
+  hoverSrc?: string
+  pressSrc?: string
+  postClickSrc?: string
+  hoverScale?: number
+  pressScale?: number
+  hoverFilter?: string
+  hoverSound?: string
+  clickSound?: string
+  onClickAction?: string
+}
+
+export function button(input: ButtonInput): EntityDef {
+  return {
+    type: 'text',
+    category: 'button',
+    rotate: 0,
+    font: '',
+    fontSize: '',
+    fontWeight: '400',
+    color: '',
+    opacity: 1,
+    jitter: 'none',
+    pinned: true,
+    ...input,
+  }
+}
+
 // ── Widget (large click-to-activate block) ──────────────────
 type WidgetInput = Positional & StyleOverrides & {
   content: string

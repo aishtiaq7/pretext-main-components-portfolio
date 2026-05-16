@@ -73,6 +73,11 @@ function validateStroke(s: unknown, path: string, err: Err) {
   if (typeof s.outlineColor !== 'string') err(`${path}.outlineColor`, 'expected string')
   if (typeof s.outlineWidth !== 'number') err(`${path}.outlineWidth`, 'expected number')
   if (typeof s.startedAt !== 'number') err(`${path}.startedAt`, 'expected number')
+  if (s.opacity !== undefined) {
+    if (typeof s.opacity !== 'number' || s.opacity < 0 || s.opacity > 1) {
+      err(`${path}.opacity`, 'expected number between 0 and 1')
+    }
+  }
 }
 
 function validatePoint(p: unknown, path: string, err: Err) {

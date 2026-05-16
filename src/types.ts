@@ -63,6 +63,7 @@ export type EntityCategory =
   | 'image'       // SVG doodle images — subtle drift
   | 'section'     // block sections — pinnable, overflow hidden, photo galleries
   | 'widget'      // large draggable blocks — click to activate, pushes entities
+  | 'button'      // interactive SVG/raster button — hover/press/post-click states, click action
 
 export type JitterType =
   | 'none'        // no animation
@@ -125,6 +126,21 @@ export type EntityDef = {
   // When omitted, the default from `src/entities/sizes.ts` is used.
   width?: number
   height?: number
+
+  // ── Button-specific fields (category === 'button') ──
+  // Visual states. imgSrc / imgW / imgH (above) carry the idle visual.
+  // The *Src fields are optional asset swaps — when omitted the button
+  // falls back to transform-only feedback (scale / filter).
+  hoverSrc?: string
+  pressSrc?: string
+  postClickSrc?: string
+  hoverScale?: number          // default 1.05
+  pressScale?: number          // default 0.95
+  hoverFilter?: string         // optional CSS filter on hover (e.g. 'brightness(1.1)')
+  hoverSound?: string          // file path
+  clickSound?: string
+  /** Action key resolved via App.tsx's buttonActions map. */
+  onClickAction?: string
 }
 
 export type FixedRegion = {

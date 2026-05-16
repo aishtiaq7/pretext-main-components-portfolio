@@ -27,6 +27,7 @@ Read the user's intent top-to-bottom and pick the first match:
 | Is a huge faint background label (CODE, BUILD, SHIP) | 💧 **Watermark** |
 | Is a sketched SVG doodle icon with drift/wobble animation | 🖼️ **Image** |
 | Is a large draggable placeholder with click-to-activate | 🧩 **Widget** |
+| Is a clickable SVG/raster button that fires an action (e.g. master timeline play) | 🟢 **Button** |
 
 If none fit, **ask** the user whether to define a new type.
 
@@ -212,6 +213,43 @@ If none fit, **ask** the user whether to define a new type.
 | **Examples** | widget-placeholder (currently removed, constants still exist) |
 
 **When to create a Widget:** User says "add a big interactive block that pushes things when clicked."
+
+---
+
+### 🟢 Button
+
+| Aspect | Value |
+|---|---|
+| **Defined in** | `src/entities/buttons.ts` |
+| **Category** | `'button'` |
+| **Rendered by** | `<InteractiveButton>` (routed in `App.tsx`, bypasses `HandwritingEntity`) |
+| **Draggable?** | ❌ pinned by design — buttons are clicked, not dragged |
+| **Causes reflow** | ❌ no |
+| **State machine** | `idle → hover → press → postClick` (one-shot — postClick locks) |
+| **Required fields** | `imgSrc`, `imgW`, `imgH` |
+| **Optional asset swaps** | `hoverSrc`, `pressSrc`, `postClickSrc` (per-state SVG/PNG) |
+| **Optional transform feedback** | `hoverScale` (default 1.05), `pressScale` (default 0.95), `hoverFilter` |
+| **Optional audio** | `hoverSound`, `clickSound` (file paths — primed inside gesture stack) |
+| **Click side effect** | `onClickAction: string` — resolved via `buttonActions` map in `App.tsx` |
+| **Built-in actions** | `'master-play'` → `motion.play()`, `'master-pause'` → `motion.pause()` |
+| **Examples** | `button-1` (triggers master timeline) |
+
+**When to create a Button:** User says "add a button that does X." If X isn't already wired in `buttonActions`, add a new key there alongside the entity entry.
+
+**Adding a new action:** Edit `buttonActions` in `App.tsx`:
+```ts
+const buttonActions: Record<string, () => void> = {
+  'master-play': () => motionController.play(),
+  'master-pause': () => motionController.pause(),
+  'your-new-action': () => /* ... */,
+}
+```
+Then set `onClickAction: 'your-new-action'` on the button entity.
+
+**Visual states — how they combine:**
+- If `hoverSrc`/`pressSrc`/`postClickSrc` is provided, the `<img>` swaps for that state.
+- Otherwise the same `imgSrc` stays and the button uses transform-only feedback (`hoverScale`/`pressScale`) + optional `hoverFilter` CSS.
+- You can mix and match per state — e.g. provide `pressSrc` only, leave hover as a transform.
 
 ---
 

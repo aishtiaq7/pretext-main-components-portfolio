@@ -48,3 +48,21 @@ export function tsFilename(prefix: string, ext: string): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${prefix}-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`
 }
+
+// mm:ss display for the recording / playback clock
+export function formatClockMs(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000))
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+// Global keyboard shortcuts should not fire while the user is typing into
+// a form control. Buttons are intentionally not excluded — most actions
+// are triggered by clicking a button, leaving focus there, and we don't
+// want the next Space press to re-activate the same button.
+export function shouldIgnoreShortcut(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target.isContentEditable
+}

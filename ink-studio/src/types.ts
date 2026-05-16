@@ -43,6 +43,8 @@ export type StoredStroke = {
   color: string         // fill (the ink body)
   outlineColor: string  // stroke around the body (only visible when outlineWidth > 0)
   outlineWidth: number
+  opacity?: number      // 0–1, applies to both fill and outline. Optional for
+                        // backwards compat — readers default to 1 when absent.
   startedAt: number     // absolute epoch ms, for restoring cross-stroke timing
 }
 

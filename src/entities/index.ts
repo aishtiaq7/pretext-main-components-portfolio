@@ -7,17 +7,18 @@ import { IMAGES } from './images'
 import { HANDWRITINGS } from './handwriting'
 import { SECTIONS } from './sections'
 import { WIDGETS } from './widgets'
+import { BUTTONS } from './buttons'
 
 // Re-export content strings used by App.tsx
 export { BRAND_NAME, ALICE_QUOTE } from './doodles'
 export { SECTION_PHOTOS } from './sections'
 
 // Re-export individual arrays for direct access
-export { DOODLES, OBSTACLES, ACCENTS, WATERMARKS, IMAGES, HANDWRITINGS, SECTIONS, WIDGETS }
+export { DOODLES, OBSTACLES, ACCENTS, WATERMARKS, IMAGES, HANDWRITINGS, SECTIONS, WIDGETS, BUTTONS }
 
 // ═══════════════════════════════════════════════════════════
 // COMBINED ENTITY LIST — all categories merged
-// Render order: watermarks (back) → doodles → images → handwriting → obstacles → accents → sections → widgets (front)
+// Render order: watermarks (back) → doodles → images → handwriting → obstacles → accents → sections → widgets → buttons (front)
 // ═══════════════════════════════════════════════════════════
 export const ENTITIES: EntityDef[] = [
   ...WATERMARKS,
@@ -28,4 +29,5 @@ export const ENTITIES: EntityDef[] = [
   ...ACCENTS,
   ...SECTIONS,
   ...WIDGETS,
+  ...BUTTONS,
 ]

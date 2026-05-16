@@ -16,6 +16,8 @@ import { TopHeader } from "./components/TopHeader";
 import { ZoomCanvas } from "./components/ZoomCanvas";
 import { HandwritingEntity } from "./components/HandwritingEntity";
 import { MotionObstacle } from "./components/MotionObstacle";
+import { InteractiveButton } from "./components/InteractiveButton";
+import { motion as motionController } from "./motion/MotionController";
 import { ScrollInputs } from "./components/ScrollInputs";
 import { PageWrapper } from "./components/PageWrapper";
 import { SectionPhotoGallery } from "./components/SectionPhotoGallery";
@@ -36,6 +38,22 @@ import {
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val));
+}
+
+// ═══════════════════════════════════════════════════════════
+// Button action registry. Buttons reference these by key via
+// `entity.onClickAction`. Add a new entry to expose a new
+// callback — buttons stay JSON-serializable (no function refs).
+// ═══════════════════════════════════════════════════════════
+const buttonActions: Record<string, () => void> = {
+  'master-play': () => motionController.play(),
+  'master-pause': () => motionController.pause(),
+};
+
+function runButtonAction(key: string) {
+  const fn = buttonActions[key];
+  if (fn) fn();
+  else if (import.meta.env.DEV) console.warn(`[button] no action registered for "${key}"`);
 }
 
 export default function App() {
@@ -500,6 +518,17 @@ export default function App() {
           {/* ── Doodle entities (z-index 5) ── */}
           {entitiesWithPinState.map((entity) => {
             const pos = positions[entity.id] || { x: entity.x, y: entity.y };
+            if (entity.category === "button") {
+              return (
+                <InteractiveButton
+                  key={entity.id}
+                  entity={entity}
+                  x={pos.x}
+                  y={pos.y}
+                  onAction={runButtonAction}
+                />
+              );
+            }
             if (entity.motionDraggable) {
               return (
                 <MotionObstacle

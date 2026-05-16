@@ -211,6 +211,7 @@ export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function Ha
               fill={stroke.color}
               stroke={stroke.outlineWidth > 0 ? stroke.outlineColor : 'none'}
               strokeWidth={stroke.outlineWidth}
+              opacity={stroke.opacity ?? 1}
             />
           )
         })}
