@@ -56,11 +56,14 @@ function focusForEntity(triggerId: string, zoom: number): Focus | undefined {
 //   second-new.json           —  7.58s  →  hold  7.7s
 //   3rd-scene.json            —  7.85s  →  hold  8.0s
 
+// Per-scene zoom values — the camera tweens between these during pan, so
+// scenes can pull in tight, push out wide, or sit at a neutral mid-zoom.
+// Tweak freely; valid range is 0.15 – 3.0 (see store/viewport.ts).
 export const SCENES: Scene[] = [
   {
     id: 'scene-1',
     triggerId: 'welcome-1',
-    focus: focusForEntity('welcome-1', 0.69),
+    focus: focusForEntity('welcome-1', 0.55), // pulled back — wide intro
     sfx: SCRIBE_SFX,
     panDuration: 1.2,
     holdDuration: 17.1,
@@ -68,7 +71,7 @@ export const SCENES: Scene[] = [
   {
     id: 'scene-2',
     triggerId: 'welcome-2',
-    focus: focusForEntity('welcome-2', 0.69),
+    focus: focusForEntity('welcome-2', 0.90), // closer — mid punch-in
     sfx: CHALK_SFX,
     panDuration: 1.2,
     holdDuration: 7.7,
@@ -76,7 +79,7 @@ export const SCENES: Scene[] = [
   {
     id: 'scene-3',
     triggerId: 'welcome-3',
-    focus: focusForEntity('welcome-3', 0.69),
+    focus: focusForEntity('welcome-3', 1.20), // tight — final hero crop
     sfx: SCRIBE_SFX,
     panDuration: 1.2,
     holdDuration: 8.0,
