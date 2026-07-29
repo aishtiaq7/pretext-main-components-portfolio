@@ -50,6 +50,60 @@ Here's the wide table — one row per visible item, all current values inline:
 
 **Bold values = changed in the latest round.**
 
+## Spatial map (LEADS every layout snapshot)
+
+The map comes FIRST — top of the output, before any tables. Then the wide
+table, cluster summary, and reference syntax follow. Render it to scale:
+1 char ≈ 2% x, rows labeled with real y values, boxes drawn to entity
+footprint scale.
+
+**ALWAYS render the FULL map — every occupied row, every entity. Never a
+truncated or sample version.** The full view is the point: composition,
+empty space, and clusters must all be visible at once.
+
+```
+ x→   0    10   20   30   40   50   60   70   80   90  100
+      ├────┼────┼────┼────┼────┼────┼────┼────┼────┼────┤
+y  0  ░░░░░░░░░░░░ header-zone (drag-blocker) ░░░░░░░░░░░
+   7  ·                                     ◇ cube +8°
+  13  ⭐🚀💡 ┌─clock-page─┐ SHIP         💡tl  💡tr
+  16  ·     │ notebook + │ DEPLOY   rf-1¶
+  19  ·     │ clock +    │ REFACTOR     💡bl  💡br
+  23  ·     │ reflow demo│ HOTFIX             rf-2¶
+  27  ·     └────────────┘  ═══ brand hero ═══
+  30  ·    ┌─about───┐ 🚀rkt      ⌐subtag¬  [alice −4°]
+  31  ·    │         │   ✍hw-1
+  39  ·    │         │         ✍hw-2
+  41  ·    └─────────┘
+  42  ·                                    rf-3¶
+  45  ·         ┌─photos──┐
+  50  ·         │ 📷 📷 📷 │
+  55  ·         │         │              🖼sk-1
+  58  ·         │         │ [▶ button-1]
+  60  ·         │         │               rf-4¶
+  63  ·         └─────────┘
+  66  ·                                       ✍w3 ┐
+  69  ·                                 ✍w1  🖼sk-5│(hidden)
+  72  ·                                    ✍w2    ┘
+      ├─────────── everything below y≈75 empty ────────┤
+ 100  └────────────────────────────────────────────────┘
+```
+
+(The map above is the live layout as of 2026-07-29 — keep it current when
+entities move, so this doc doubles as the latest snapshot.)
+
+Always close the map with this one-line legend (only the symbols actually used):
+
+> **Legend:** `¶` reflow para • `✍` handwriting • `◇` 3D cube • `🖼` sketch/image •
+> `📷` photo gallery • `▶` button • `░` invisible region • `·` empty row filler •
+> `┌─┐` box = real footprint • `+N°` rotation • *(hidden)* = manual-reveal
+>
+> Two kinds of marks: **literal** (emoji entities like ⭐🚀💡 and red obstacle
+> words appear as themselves) vs **symbolic** (emoji standing in for SVG/raster
+> assets, suffixed with an ID fragment — e.g. `💡tl` = obs-tracker-tl lightbulb SVG).
+
+Mark hidden/manual-reveal entities explicitly — they're invisible on load.
+
 ## Reference syntax
 
 To move or modify anything, reference by ID or cluster:
