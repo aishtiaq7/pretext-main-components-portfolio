@@ -47,7 +47,10 @@ export type HandwritingHandle = {
   play: () => void
   pause: () => void
   resume: () => void
+  /** Jump to the final frame and report done. */
   reset: () => void
+  /** Jump to the final frame WITHOUT reporting done (restoring a reload). */
+  showFinished: () => void
 }
 
 type Props = {
@@ -213,11 +216,11 @@ export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function Ha
     }
   }, [])
 
-  const finish = useCallback(() => {
+  const finish = useCallback((notify = true) => {
     rafRef.current = null
     paint(1)
     setDone(true)
-    onDoneRef.current?.()
+    if (notify) onDoneRef.current?.()
   }, [paint])
 
   const runLoop = useCallback((fromProgress: number) => {
@@ -259,10 +262,20 @@ export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function Ha
   const reset = useCallback(() => {
     stopRaf()
     pausedProgressRef.current = null
-    finish()
+    finish(true)
   }, [stopRaf, finish])
 
-  useImperativeHandle(ref, () => ({ play, pause, resume, reset }), [play, pause, resume, reset])
+  const showFinished = useCallback(() => {
+    stopRaf()
+    pausedProgressRef.current = null
+    finish(false)
+  }, [stopRaf, finish])
+
+  useImperativeHandle(
+    ref,
+    () => ({ play, pause, resume, reset, showFinished }),
+    [play, pause, resume, reset, showFinished],
+  )
 
   // Autoplay: kick the loop once the JSON has loaded and the paths exist.
   const autoplayedRef = useRef(false)

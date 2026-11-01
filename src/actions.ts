@@ -38,6 +38,7 @@ type GuardFn = (ctx: Ctx, arg: string) => boolean
 export const fns: Record<string, (ctx: Ctx) => void> = {
   'master-play': () => motion.play(),
   'master-pause': () => motion.pause(),
+  'start-over': () => motion.startOver(),
 }
 
 export const actions: Record<string, ActionFn> = {

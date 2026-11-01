@@ -80,8 +80,9 @@ src/
 └── store/
     ├── viewport.ts          # Zoom/pan state via useSyncExternalStore
     ├── triggers.ts          # Phone book: triggerId → live reveal/play/pause handle
-    ├── progress.ts          # Visitor progress (played, clicked, flags) — localStorage
+    ├── progress.ts          # Visitor progress (revealed, played, clicked, flags) — localStorage; restored on reload
     ├── prefs.ts             # Visitor preferences (mute) — localStorage
+    ├── cameraMemory.ts      # Last zoom/pan per notebook — localStorage; restored on mount
     └── gestures.ts          # Multi-touch flag shared with draggables
 public/
 ├── fonts/                   # Atkinson Hyperlegible, JetBrains Mono (self-hosted)

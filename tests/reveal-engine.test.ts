@@ -7,8 +7,8 @@ import { handwriting, button } from '../src/entities/factories'
 // Node has no DOM: entities are plain rows, the phone book gets fake handles,
 // and timers are faked so 'done:<id> +Ns' and 'load +Ns' can be stepped.
 
-function fakeHandle(): EntityHandle & { play: ReturnType<typeof vi.fn> } {
-  return { reveal: vi.fn(), play: vi.fn(), pause: vi.fn(), resume: vi.fn(), reset: vi.fn() }
+function fakeHandle(): EntityHandle & { play: ReturnType<typeof vi.fn>; restore: ReturnType<typeof vi.fn> } {
+  return { reveal: vi.fn(), play: vi.fn(), pause: vi.fn(), resume: vi.fn(), reset: vi.fn(), restore: vi.fn() }
 }
 
 const hw = (id: string, extra: Record<string, unknown> = {}) =>
@@ -112,6 +112,49 @@ describe('revealEngine', () => {
     ])
     revealEngine.onClicked('a')
     expect(progress.hasFlag('reached-b')).toBe(true)
+  })
+
+  it('records reveals in visitor progress', () => {
+    register('play', 'a')
+    revealEngine.init([PLAY, hw('a', { revealedBy: 'click:play' })])
+    expect(progress.hasRevealed('a')).toBe(false)
+    revealEngine.onClicked('play')
+    expect(progress.hasRevealed('a')).toBe(true)
+  })
+
+  it('restores previously revealed entities silently on init (reload)', () => {
+    register('play', 'a', 'b')
+    progress.markRevealed('a')
+    revealEngine.init([
+      PLAY,
+      hw('a', { revealedBy: 'click:play', clickable: true, onReveal: 'set:a-sound' }),
+      hw('b', { revealedBy: ['click:a', 'done:a +6s'] }),
+    ])
+    expect(handles.a.restore).toHaveBeenCalledTimes(1)
+    expect(handles.a.play).not.toHaveBeenCalled()
+    expect(progress.hasFlag('a-sound')).toBe(false)       // onReveal did not re-run
+    expect(revealEngine.isRevealed('a')).toBe(true)
+    // b has a click source → waits for the visitor, no timer re-armed
+    vi.advanceTimersByTime(10_000)
+    expect(handles.b.play).not.toHaveBeenCalled()
+    expect(handles.b.restore).not.toHaveBeenCalled()
+    // …and the click still works after the reload
+    revealEngine.onClicked('a')
+    expect(handles.b.play).toHaveBeenCalledTimes(1)
+  })
+
+  it('after a reload, timer-only children of restored entities still arrive', () => {
+    register('a', 'b')
+    progress.markRevealed('a')
+    revealEngine.init([
+      hw('a', { revealedBy: 'load +1s' }),
+      hw('b', { revealedBy: 'done:a +2s' }),               // no click: source
+    ])
+    expect(handles.a.restore).toHaveBeenCalledTimes(1)
+    vi.advanceTimersByTime(1999)
+    expect(handles.b.play).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(handles.b.play).toHaveBeenCalledTimes(1)
   })
 
   it('a real chain: play → w1 → (click | done +6s) → w2', () => {

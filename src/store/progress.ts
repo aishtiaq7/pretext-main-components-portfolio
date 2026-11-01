@@ -1,13 +1,18 @@
 import { useSyncExternalStore } from 'react'
 
 // ═══════════════════════════════════════════════════════════
-// Visitor progress — what the visitor has reached so far.
-//   played  : triggerIds whose reveal animation has finished
-//   clicked : triggerIds the visitor has clicked at least once
-//   flags   : named booleans set by 'set:<flag>' actions
+// Visitor progress — how far the story has got.
+//   revealed : triggerIds that have appeared (reveal engine)
+//   played   : triggerIds whose reveal animation has finished
+//   clicked  : triggerIds the visitor has clicked at least once
+//   flags    : named booleans set by 'set:<flag>' actions
 // Persists in localStorage so it survives route changes and
-// reloads (decision: block 8). Read by guards ('after:', 'flag:',
-// 'once') and by anything custom in src/actions.ts.
+// reloads (decision: block 8). On a reload the reveal engine
+// restores everything in `revealed` in its finished state, so
+// the visitor never has to reveal the same thing twice.
+// Read by guards ('after:', 'flag:', 'once') and by anything
+// custom in src/actions.ts. triggerIds are global across
+// notebooks — keep them unique.
 // localStorage may be missing or throw (sandboxes, private mode);
 // everything falls back to memory-only without complaint.
 // ═══════════════════════════════════════════════════════════
@@ -15,12 +20,15 @@ import { useSyncExternalStore } from 'react'
 const STORAGE_KEY = 'notebook.progress.v1'
 
 type Snapshot = {
+  revealed: ReadonlySet<string>
   played: ReadonlySet<string>
   clicked: ReadonlySet<string>
   flags: ReadonlySet<string>
 }
 
-type Stored = { played: string[]; clicked: string[]; flags: string[] }
+type Stored = { revealed: string[]; played: string[]; clicked: string[]; flags: string[] }
+
+const EMPTY = (): Snapshot => ({ revealed: new Set(), played: new Set(), clicked: new Set(), flags: new Set() })
 
 function load(): Snapshot {
   try {
@@ -28,13 +36,10 @@ function load(): Snapshot {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) throw new Error('empty')
     const s = JSON.parse(raw) as Partial<Stored>
-    return {
-      played: new Set(Array.isArray(s.played) ? s.played : []),
-      clicked: new Set(Array.isArray(s.clicked) ? s.clicked : []),
-      flags: new Set(Array.isArray(s.flags) ? s.flags : []),
-    }
+    const list = (v: unknown) => new Set(Array.isArray(v) ? (v as string[]) : [])
+    return { revealed: list(s.revealed), played: list(s.played), clicked: list(s.clicked), flags: list(s.flags) }
   } catch {
-    return { played: new Set(), clicked: new Set(), flags: new Set() }
+    return EMPTY()
   }
 }
 
@@ -45,6 +50,7 @@ function persist() {
   try {
     if (typeof localStorage === 'undefined') return
     const out: Stored = {
+      revealed: [...state.revealed],
       played: [...state.played],
       clicked: [...state.clicked],
       flags: [...state.flags],
@@ -71,9 +77,15 @@ function withAdded(set: ReadonlySet<string>, value: string): ReadonlySet<string>
 export const progress = {
   get(): Snapshot { return state },
 
+  hasRevealed(triggerId: string): boolean { return state.revealed.has(triggerId) },
   hasPlayed(triggerId: string): boolean { return state.played.has(triggerId) },
   hasClicked(triggerId: string): boolean { return state.clicked.has(triggerId) },
   hasFlag(name: string): boolean { return state.flags.has(name) },
+
+  markRevealed(triggerId: string) {
+    const next = withAdded(state.revealed, triggerId)
+    if (next) commit({ ...state, revealed: next })
+  },
 
   markPlayed(triggerId: string) {
     const next = withAdded(state.played, triggerId)
@@ -97,9 +109,9 @@ export const progress = {
     commit({ ...state, flags: next })
   },
 
-  /** Forget everything (dev tool / "start over"). */
+  /** Forget everything ("start over"). */
   reset() {
-    commit({ played: new Set(), clicked: new Set(), flags: new Set() })
+    commit(EMPTY())
   },
 
   subscribe(fn: () => void) {

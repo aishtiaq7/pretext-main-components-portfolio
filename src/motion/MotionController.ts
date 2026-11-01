@@ -1,4 +1,6 @@
 import { triggers } from '../store/triggers'
+import { progress } from '../store/progress'
+import { cameraMemory } from '../store/cameraMemory'
 import { audio } from '../audio/AudioController'
 import { motionStore } from './motionStore'
 import { revealEngine } from './reveal'
@@ -56,6 +58,17 @@ class MotionController {
     revealEngine.pauseAll()
     audio.pauseAll()
     motionStore.set({ status: 'paused' })
+  }
+
+  /**
+   * Start the story over: forget every reveal, click and flag, forget the
+   * remembered cameras, and reload so every entity mounts hidden again.
+   * Mute is a preference, not progress, so it stays.
+   */
+  startOver() {
+    progress.reset()
+    cameraMemory.forgetAll()
+    if (typeof window !== 'undefined') window.location.reload()
   }
 
   toggleMuted() {

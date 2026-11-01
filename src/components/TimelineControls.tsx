@@ -22,6 +22,7 @@ export function TimelineControls() {
   }
 
   const onMute = () => motion.toggleMuted()
+  const onStartOver = () => motion.startOver()
 
   const playLabel = done ? '✓' : playing ? '❚❚' : '▶'
 
@@ -46,6 +47,15 @@ export function TimelineControls() {
         title={muted ? 'Unmute' : 'Mute'}
       >
         {muted ? '🔇' : '🔊'}
+      </button>
+      <button
+        type="button"
+        className="tl-btn"
+        onClick={onStartOver}
+        aria-label="Start over: forget what has been revealed and reload"
+        title="Start over"
+      >
+        ↺
       </button>
     </div>
   )

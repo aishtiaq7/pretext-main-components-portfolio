@@ -11,6 +11,8 @@ export type EntityHandle = {
   pause: () => void           // freeze current state
   resume: () => void          // continue from paused position
   reset: () => void           // jump to final state, cancel any rAF
+  restore: () => void         // show finished, silently (reload of a revealed entity):
+                              //   no animation, no done event, no sound
 }
 
 const handles = new Map<string, EntityHandle>()

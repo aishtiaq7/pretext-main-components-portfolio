@@ -13,7 +13,9 @@ import {
   settlePan,
   setZoomAndPan,
   resetViewport,
+  subscribeViewport,
 } from "./store/viewport";
+import { cameraMemory } from "./store/cameraMemory";
 import { setMultiTouchActive } from "./store/gestures";
 import { TopHeader } from "./components/TopHeader";
 import { ZoomCanvas } from "./components/ZoomCanvas";
@@ -64,6 +66,7 @@ export default function App() {
       <TopHeader notebooks={NOTEBOOKS} current={notebook.path} />
       <NotebookCanvas
         key={notebook.id}
+        notebookId={notebook.id}
         entities={notebook.entities}
         pages={notebook.pages}
       />
@@ -72,20 +75,33 @@ export default function App() {
 }
 
 type NotebookCanvasProps = {
+  notebookId: string;
   entities: EntityDef[];
   pages: PageDef[];
 };
 
-function NotebookCanvas({ entities, pages }: NotebookCanvasProps) {
+function NotebookCanvas({ notebookId, entities, pages }: NotebookCanvasProps) {
   // Viewport transform is applied imperatively by ZoomCanvas, so this
   // component does not subscribe to zoom/pan. Drag handlers read
   // getViewport() at the use site.
 
-  // A notebook mounts: fresh camera, chain can be started from ▶ again.
+  // A notebook mounts: camera back to where the visitor left it (or the
+  // initial view), transport ready for ▶ again. Every camera change is
+  // remembered (debounced) so a reload lands on the same spot.
   useEffect(() => {
-    resetViewport();
+    const saved = cameraMemory.load(notebookId);
+    if (saved) setZoomAndPan(saved.zoom, saved.panX, saved.panY);
+    else resetViewport();
     motion.reset();
-  }, []);
+    const unsubscribe = subscribeViewport(() => cameraMemory.save(notebookId, getViewport()));
+    const flush = () => cameraMemory.flush();
+    window.addEventListener("pagehide", flush);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("pagehide", flush);
+      cameraMemory.flush();
+    };
+  }, [notebookId]);
 
   // Entity positions (doodles + obstacles + accents + watermarks + images + sections)
   const [positions, setPositions] = useState<

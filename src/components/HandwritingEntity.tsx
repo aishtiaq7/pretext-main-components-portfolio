@@ -287,6 +287,18 @@ export function HandwritingEntity({
       pause: () => hwRef.current?.pause(),
       resume: () => hwRef.current?.resume(),
       reset: () => hwRef.current?.reset(),
+      // Reload of something the visitor already revealed: show it finished,
+      // count it as played for 'after:' guards, but emit no done event (the
+      // engine decides what, if anything, continues from here).
+      restore: () => {
+        setHidden(false)
+        if (isInk) {
+          // The handle may not exist yet if the JSON is still loading; the
+          // entry renders its finished state by default in that case.
+          hwRef.current?.showFinished()
+        }
+        progress.markPlayed(id)
+      },
     })
     return () => triggers.unregister(id)
   }, [entity.triggerId, isInk, markDone])

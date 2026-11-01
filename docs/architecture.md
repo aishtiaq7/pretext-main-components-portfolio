@@ -117,7 +117,8 @@ click on ink ──▶ finished? ──▶ guard ok? ──▶ for key of onClic
 | phone book | `src/store/triggers.ts` | `triggerId → { reveal, play, pause, resume, reset }`, registered on mount |
 | reveal engine | `src/motion/reveal.ts` (step 4) | indexes `revealedBy`, listens for click/done/load, first-wins, runs `onReveal`, camera |
 | actions & guards | `src/actions.ts` (step 2) | string key → function; `ctx` carries entityId, viewport, progress store, panTo |
-| progress store | `src/store/progress.ts` (step 2) | `played: Set<triggerId>`, `flags: Set<string>`; localStorage-backed; survives routes and reloads |
+| progress store | `src/store/progress.ts` | `revealed`, `played`, `clicked`, `flags` sets; localStorage-backed; survives routes and reloads; restored by the engine at init |
+| camera memory | `src/store/cameraMemory.ts` | last zoom/pan per notebook; debounced localStorage writes; restored when a notebook mounts |
 | MotionController | `src/motion/MotionController.ts` | transport only: ▶ starts the chain (`revealEngine.onClicked('button-1')`) or resumes; ❚❚ pauses drawings, timers, audio; mute |
 | prefs | `src/store/prefs.ts` | visitor preferences (mute), localStorage-backed; distinct from progress and from canvas state |
 | ~~scenes.ts~~ | deleted in step 5 | order, camera, sound and holds now live on the entities |
@@ -155,9 +156,27 @@ become instant cuts. Jitter is already disabled.
   Home is today's `ENTITIES` and `PAGES`; `freshpage1` starts with only the
   header-zone drag blocker. `App` renders `TopHeader` (one link per notebook) and
   `<NotebookCanvas key={notebook.id}>`, so a route change remounts the canvas.
-- **Canvas state** (zoom, pan, positions, pins, phone book) resets per notebook.
-- **Visitor preferences** (mute) and **visitor progress** (`played`, flags) persist
-  across notebooks and reloads in localStorage.
+- **Canvas state** (positions, pins, phone book) resets per notebook.
+- **Camera** (zoom, pan) is remembered per notebook in localStorage
+  (`store/cameraMemory.ts`, debounced) so a reload lands on the same spot.
+- **Visitor preferences** (mute) and **visitor progress** (`revealed`, `played`,
+  `clicked`, flags) persist across notebooks and reloads in localStorage.
+
+### 5.1 The story survives a reload
+
+The notebook is explore-and-reveal: what the visitor has uncovered stays uncovered.
+
+- Every reveal writes the triggerId to `progress.revealed`.
+- When a notebook mounts, the reveal engine restores everything in that set
+  **silently**: finished ink, clickable at once, no camera move, no sound, no
+  `done:` event, no `onReveal` list.
+- After a restore the story waits for the visitor's next click. The one exception:
+  a child whose only sources are `done:` timers (no `click:` at all) is re-armed,
+  so a pure auto-advance sequence still completes.
+- **Start over** (↺ in the panel, or `fn:start-over`) clears progress and camera
+  memory and reloads. Mute is a preference and stays.
+- triggerIds are global across notebooks; keep them unique so progress never
+  collides.
 
 ## 6. Build order and status
 
@@ -223,8 +242,9 @@ handwriting({
 | `src/entities/reveal.ts` | parse `revealedBy` strings into structured sources |
 | `src/entities/validate.ts` | startup validator (DEV) and test helper |
 | `src/actions.ts` | actions + guards registries, `Ctx` |
-| `src/store/progress.ts` | persisted `played` + `clicked` + flags |
+| `src/store/progress.ts` | persisted `revealed` + `played` + `clicked` + flags |
 | `src/store/prefs.ts` | persisted visitor preferences (mute) |
+| `src/store/cameraMemory.ts` | persisted camera per notebook |
 | `src/motion/reveal.ts` | reveal engine |
 | `src/motion/MotionController.ts` | transport (play / pause / mute); `scenes.ts` deleted |
 | `src/components/HandwrittenEntry.tsx` | rewritten loop + click on ink |

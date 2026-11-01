@@ -3,6 +3,7 @@ import type { CameraSpec, EntityDef } from '../types'
 import { CANVAS } from '../constants'
 import { parseRevealedBy } from '../entities/reveal'
 import { triggers } from '../store/triggers'
+import { progress } from '../store/progress'
 import { focusOn, getViewport } from '../store/viewport'
 import { audio } from '../audio/AudioController'
 import { makeCtx, runActions, type Ctx } from '../actions'
@@ -17,7 +18,14 @@ import { makeCtx, runActions, type Ctx } from '../actions'
 //
 // Each entity is revealed at most once; the first source to fire wins
 // and the entity's other pending timers are cancelled. Revealing =
-// optional camera move → phone-book play() → onReveal to-do list.
+// optional camera move → phone-book play() → onReveal to-do list,
+// and the triggerId is written to the visitor's progress.
+//
+// Reload: anything in progress.revealed is restored silently at init
+// (finished, no camera, no sound, no done event). The story then waits
+// for the visitor's next click — except children that can ONLY arrive
+// by timer ('done:' with no 'click:' source), which are re-armed so a
+// pure auto-advance chain still completes.
 //
 // 'static', 'load' (no delay) and 'manual' are not the engine's
 // business: the first two are visible at startup, the last is driven
@@ -121,6 +129,7 @@ function reveal(entry: Entry) {
   entry.revealed = true
   cancelTimers(entry)
   const e = entry.entity
+  progress.markRevealed(e.triggerId)
   const go = () => {
     const h = triggers.get(e.triggerId)
     if (h) h.play()
@@ -185,6 +194,31 @@ export const revealEngine = {
       }
     }
     ready = true
+
+    // ── Restore what the visitor already revealed (reload) ──
+    const restored: Entry[] = []
+    for (const entry of entries.values()) {
+      if (entry.revealed) continue                         // visible at start anyway
+      if (!progress.hasRevealed(entry.entity.triggerId)) continue
+      entry.revealed = true
+      doneSeen.add(entry.entity.triggerId)                 // never re-fire its done: children by itself
+      restored.push(entry)
+      const h = triggers.get(entry.entity.triggerId)
+      if (h) h.restore()
+      else triggers.whenReady(entry.entity.triggerId).then((handle) => handle.restore())
+    }
+    // Children that can only arrive by timer keep arriving after a reload;
+    // anything with a 'click:' source waits for the visitor.
+    for (const parent of restored) {
+      for (const child of byDone.get(parent.entity.triggerId) ?? []) {
+        if (child.revealed) continue
+        const sources = parseRevealedBy(child.entity)
+        if (sources.some((s) => s.kind === 'click')) continue
+        const src = sources.find((s) => s.kind === 'done' && s.target === parent.entity.triggerId)
+        schedule(child, src && src.kind === 'done' ? src.delayMs : 0)
+      }
+    }
+
     // Delayed loads
     for (const entry of entries.values()) {
       for (const s of parseRevealedBy(entry.entity)) {
