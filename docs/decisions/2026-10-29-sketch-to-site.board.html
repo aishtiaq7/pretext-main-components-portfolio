@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clickable Ink Chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* One ruled-notebook column, the portfolio's own paper and red-pen palette. Plain words, one picture per idea. */
+  --paper: #e8e4d9;
+  --box: #f6f3ec;
+  --ink: #1f1c18;
+  --rule: rgba(31, 28, 24, 0.10);
+  --rule-strong: rgba(31, 28, 24, 0.22);
+  --margin: #d4a0a0;
+  --accent: #c83030;
+  --olive: #6f6636;
+  --muted: #6b655a;
+  --card: rgba(255, 255, 255, 0.45);
+  --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-display: 'Caveat', 'Patrick Hand', cursive;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1c1a16; --box: #27241f; --ink: #ece7da;
+    --rule: rgba(236, 231, 218, 0.07); --rule-strong: rgba(236, 231, 218, 0.18);
+    --margin: #8a5050; --accent: #e25a4a; --olive: #c2b36e; --muted: #a59d8c;
+    --card: rgba(255, 255, 255, 0.04);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #1c1a16; --box: #27241f; --ink: #ece7da;
+  --rule: rgba(236, 231, 218, 0.07); --rule-strong: rgba(236, 231, 218, 0.18);
+  --margin: #8a5050; --accent: #e25a4a; --olive: #c2b36e; --muted: #a59d8c;
+  --card: rgba(255, 255, 255, 0.04);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.page { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px 28px; border-left: 2px solid var(--margin); }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: 46px; }
+h2 { font-size: 32px; margin-top: 48px; }
+h3 { font-size: 24px; margin-top: 26px; color: var(--muted); }
+p { max-width: 64ch; margin: 10px 0; }
+.sub { color: var(--muted); }
+ul, ol { max-width: 64ch; padding-left: 22px; margin: 8px 0; }
+li { margin: 5px 0; }
+code { font-family: var(--font-mono); font-size: 0.86em; background: var(--card); border: 1px solid var(--rule-strong); border-radius: 4px; padding: 0 5px; }
+pre { font-family: var(--font-mono); font-size: 13px; line-height: 1.45; background: var(--card); border: 1px solid var(--rule-strong); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 12px 0; }
+pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+figure { margin: 18px 0; padding: 16px; background: var(--card); border: 1px solid var(--rule-strong); border-radius: 8px; overflow-x: auto; }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; font-family: var(--font-body); font-size: 12px; }
+figcaption { font-family: var(--font-display); font-size: 21px; color: var(--muted); margin-top: 10px; line-height: 1.25; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0; background: var(--card); }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--rule-strong); }
+th { font-weight: 700; }
+.agenda { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 6px; max-width: none; }
+.agenda li { display: flex; gap: 12px; align-items: baseline; }
+.chip { font-family: var(--font-mono); font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid; white-space: nowrap; min-width: 48px; text-align: center; }
+.done { color: var(--olive); border-color: var(--olive); }
+.now  { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.todo { color: var(--muted); border-color: var(--muted); }
+.callout { border-left: 4px solid var(--accent); background: var(--card); padding: 12px 18px; margin: 24px 0 0; font-family: var(--font-display); font-size: 27px; line-height: 1.2; }
+.callout small { display: block; font-family: var(--font-body); font-size: 15px; color: var(--muted); margin-top: 6px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .two { grid-template-columns: 1fr; } }
+.two pre { margin: 0; }
+
+/* SVG vocabulary. Colour classes come after shape classes so they win on equal specificity. */
+.box { fill: var(--box); stroke: currentColor; stroke-width: 1.2; }
+.frame { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-dasharray: 5 4; }
+.box-dash { stroke-dasharray: 5 4; }
+.ink { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.ar { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.t { fill: currentColor; }
+.t-b { font-weight: 700; }
+.t-sm { font-size: 10.5px; fill: var(--muted); }
+.mono { font-family: var(--font-mono); }
+.hand { font-family: var(--font-display); font-size: 30px; font-weight: 700; }
+.cur { fill: currentColor; stroke: var(--paper); stroke-width: 1; }
+.note { fill: var(--olive); opacity: 0.16; }
+.note-acc { fill: var(--accent); opacity: 0.14; }
+.acc { stroke: var(--accent); }
+.acc-f { fill: var(--accent); }
+.ol { stroke: var(--olive); }
+.ol-f { fill: var(--olive); }
+.mu { stroke: var(--muted); }
+.mu-f { fill: var(--muted); }
+.on-pill { fill: var(--paper); font-weight: 700; font-size: 11px; }
+
+@media (max-width: 480px) {
+  .page { padding: 28px 16px 60px 18px; }
+  h1 { font-size: 38px; }
+  figure { padding: 10px; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+<h1>Clickable ink chain</h1>
+<p class="sub">All eight blocks decided on 2026-11-01. The decisions table and build order come first; the explainer sections below are the reasoning, kept for reference.</p>
+
+<h2>Agenda</h2>
+<ul class="agenda">
+  <li><span class="chip done">1 done</span><span>Intake: your ink-studio JSON files, dropped in <code>public/handwriting/</code></span></li>
+  <li><span class="chip done">2 done</span><span>Assets: every new drawing is recorded ink that draws itself; the PNG sketches stay static</span></li>
+  <li><span class="chip done">3 done</span><span>Interaction: click lands on ink only · logic in <code>actions</code> and <code>guards</code> registries · clickable once finished · keys <code>trigger</code> <code>link</code> <code>pan</code> <code>sfx</code></span></li>
+  <li><span class="chip done">4 done</span><span>Timeline: sources <code>click:</code> <code>done: +Ns</code> <code>load +Ns</code>, first wins · <code>scenes.ts</code> folds into the entities, staged</span></li>
+  <li><span class="chip done">5 done</span><span>Schema: the six fields on <strong>every entity</strong>, normalized with defaults · retire <code>revealMode</code>, <code>autoplay</code> · <code>triggerId</code> defaults to <code>id</code></span></li>
+  <li><span class="chip done">6 done</span><span>Layout authoring: <strong>1b</strong>, the revealed drawing holds <code>revealedBy</code> · positions typed by hand for now</span></li>
+  <li><span class="chip done">7 done</span><span>Checklist: ink always animates · pans cut under reduced motion · no Tab stops yet, <code>tabOrder</code> reserved · drawing loop rewritten now</span></li>
+  <li><span class="chip done">8 done</span><span>Routes: hash URLs · a notebook per route · canvas state resets, preferences and progress persist</span></li>
+</ul>
+
+<h2>Decisions</h2>
+<table>
+  <thead><tr><th>Block</th><th>Decision</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>1 · Intake</td><td>Drawings arrive as your ink-studio stroke JSON in <code>public/handwriting/</code></td><td>No photos, no legend, no manifest table</td></tr>
+    <tr><td>2 · Assets</td><td>Every new drawing is recorded ink that draws itself</td><td>The two PNG sketches stay static</td></tr>
+    <tr><td>3 · Interaction</td><td>Click lands on ink pixels only, whole drawing (B). Logic in <code>actions</code> and <code>guards</code> registries keyed by strings. Clickable only once finished.</td><td>Keys: <code>trigger</code> <code>link</code> <code>pan</code> <code>sfx</code> <code>fn</code> <code>set</code>; arrays allowed. Guards: <code>after</code> <code>flag</code> <code>zoomMin</code> <code>once</code></td></tr>
+    <tr><td>4 · Timeline</td><td>Reveal sources <code>click:</code>, <code>done: +Ns</code>, <code>load +Ns</code>, <code>static</code>; a drawing may list several, first wins</td><td>scenes.ts folds into entity fields as a second step, then is deleted</td></tr>
+    <tr><td>5 · Schema</td><td>Six fields on every entity, present on every row with explicit defaults. No new type.</td><td><code>revealedBy</code> replaces <code>revealMode</code> + <code>autoplay</code>; <code>triggerId</code> defaults to <code>id</code>; legacy optional fields normalized in a follow-up commit</td></tr>
+    <tr><td>6 · Hand-off</td><td>1b: the revealed drawing names what reveals it</td><td>Positions typed by hand for now; dev overlay later if it gets annoying</td></tr>
+    <tr><td>7 · Checklist</td><td>Ink animation always plays, even under reduced motion; camera pans become cuts there. No Tab stops yet. Drawing loop rewritten now.</td><td><code>tabOrder: null</code> on every entity so keyboard order can be switched on later. 4 px click threshold; two fingers never click</td></tr>
+    <tr><td>8 · Routes</td><td>Hash routing (<code>/#/freshpage1</code>), one notebook config per route, TopHeader outside with a link per notebook</td><td>Canvas state resets per notebook. Visitor preferences (mute) and visitor progress (<code>played</code>, flags) persist in localStorage. Route read through one function so clean paths are a later swap</td></tr>
+    <tr><td>Memory</td><td><code>docs/architecture.md</code> is the current truth for every future session; CLAUDE.md points to it</td><td>Decision logs stay as history. Claude's own memory never holds architecture</td></tr>
+  </tbody>
+</table>
+
+<h2>Build order</h2>
+<p>One branch, <code>feat/clickable-ink-chain</code>. One commit per step, <code>npm run build</code> and a browser check after each.</p>
+<ol start="0">
+  <li><strong>Docs of truth.</strong> Write <code>docs/architecture.md</code>, add the pointer in CLAUDE.md, add a "Reveal and click" section to object-types.md. First because every later session reads it.</li>
+  <li><strong>Schema and normalization.</strong> Six fields plus <code>tabOrder</code> on <code>EntityDef</code>, factories emit full rows, the five handwriting entries move to <code>revealedBy</code>, a startup validator checks every reference exists and every drawing is reachable. Everything else depends on the shape.</li>
+  <li><strong>Registries and progress store.</strong> <code>src/actions.ts</code> with the action kinds and guards, the <code>played</code> set and flags backed by localStorage, the button map folded in. Pure logic, testable before any UI.</li>
+  <li><strong>HandwrittenEntry rewrite.</strong> Cached outlines, ref-driven loop, one render at completion, click on ink with the 4 px threshold, keyboard wiring behind <code>tabOrder</code>. One rewrite of the hot path.</li>
+  <li><strong>Reveal engine.</strong> Index entities by <code>revealedBy</code> at startup, fire on click, done and load, honour first-wins, run <code>onReveal</code>, pan the camera for <code>camera</code>. Wire Play as <code>click:button-1</code>. scenes.ts keeps working beside it. Verify with the three welcome drawings.</li>
+  <li><strong>Migrate and delete scenes.ts.</strong> Move the three scenes onto their entities, shrink MotionController to camera-on-reveal and firing <code>done:</code>, make the mute preference persist. Deletion only after step 4 is proven.</li>
+  <li><strong>Routes.</strong> <code>currentRoute()</code> hash reader, notebook config per route, empty <code>freshpage1</code>, header links, canvas state reset per notebook. Independent of the chain, so last.</li>
+  <li><strong>Follow-up.</strong> Legacy field normalization sweep, Chrome Performance check at 60 fps while a drawing animates and the camera pans.</li>
+</ol>
+
+<div class="callout">Consult closed · start building from step 0, or reopen a block?</div>
+
+<h2>Part 1 · How a drawing gets on the page today</h2>
+<p>Think of <code>src/entities/handwriting.ts</code> as a list of stickers. Each entry says: which JSON file, where on the canvas, how wide, and optionally a name (<code>triggerId</code>). App.tsx loops over the list and puts one component on the canvas per entry. That component fetches the JSON and draws the strokes one by one with a timer. If the entry has a name, the component signs up in a phone book so anyone can call it later.</p>
+<figure>
+<svg viewBox="0 0 820 150" role="img" aria-label="Four boxes left to right: the handwriting.ts list, HandwritingEntity which places an entry at x percent y percent, HandwrittenEntry which draws strokes over time, and the triggers phone book mapping a name to play. Arrows say App loops over it, fetches the JSON, signs up by name.">
+  <defs><marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" class="t"/></marker></defs>
+  <rect x="20" y="50" width="150" height="64" rx="6" class="box"/>
+  <text x="95" y="76" text-anchor="middle" class="t t-b">handwriting.ts</text>
+  <text x="95" y="94" text-anchor="middle" class="t t-sm">a list of entries</text>
+  <line x1="170" y1="82" x2="230" y2="82" class="ar" marker-end="url(#arA)"/>
+  <text x="200" y="40" text-anchor="middle" class="t t-sm">App loops over it</text>
+
+  <rect x="230" y="50" width="150" height="64" rx="6" class="box"/>
+  <text x="305" y="76" text-anchor="middle" class="t t-b">HandwritingEntity</text>
+  <text x="305" y="94" text-anchor="middle" class="t t-sm">puts one entry at x%, y%</text>
+  <line x1="380" y1="82" x2="440" y2="82" class="ar" marker-end="url(#arA)"/>
+  <text x="410" y="40" text-anchor="middle" class="t t-sm">fetches the JSON</text>
+
+  <rect x="440" y="50" width="150" height="64" rx="6" class="box"/>
+  <text x="515" y="76" text-anchor="middle" class="t t-b">HandwrittenEntry</text>
+  <text x="515" y="94" text-anchor="middle" class="t t-sm">draws strokes over time</text>
+  <line x1="590" y1="82" x2="650" y2="82" class="ar" marker-end="url(#arA)"/>
+  <text x="620" y="40" text-anchor="middle" class="t t-sm">signs up by name</text>
+
+  <rect x="650" y="50" width="150" height="64" rx="6" class="box ol"/>
+  <text x="725" y="76" text-anchor="middle" class="t t-b">triggers · phone book</text>
+  <text x="725" y="94" text-anchor="middle" class="t t-sm mono">name → play()</text>
+  <text x="410" y="138" text-anchor="middle" class="t t-sm">today the Play button's timeline is the only one who calls the phone book</text>
+</svg>
+<figcaption>One entry in the list becomes one drawing on the canvas. The phone book is how anything can say "hey welcome-2, start drawing" without knowing where it lives.</figcaption>
+</figure>
+<pre><code>// one sticker in the list
+handwriting({
+  id: 'hw-welcome-2',
+  x: 74, y: 72, width: 600,                 // canvas is 8000 x 8000 px, x and y are percentages
+  src: '/handwriting/second-new.json',      // the strokes you recorded
+  triggerId: 'welcome-2',                   // its name in the phone book
+  revealMode: 'manual',                     // stay invisible until someone calls play()
+})</code></pre>
+
+<h2>Part 2 · What a click will do (new)</h2>
+<p>Right now the drawing's wrapper has <code>pointer-events: none</code>, so a click goes straight through to the canvas and pans. The change: let the ink itself catch the click, then run a short checklist.</p>
+<figure>
+<svg viewBox="0 0 800 300" role="img" aria-label="Flowchart: a click lands on ink. Is the drawing finished? No: ignore, the canvas pans. Yes: does any extra rule pass? No: nothing happens. Yes: read the drawing's to-do list, call the phone book with play of welcome-2, and welcome-2 appears and draws itself.">
+  <defs><marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" class="t"/></marker></defs>
+  <rect x="20" y="120" width="130" height="50" rx="6" class="box"/>
+  <text x="85" y="141" text-anchor="middle" class="t t-b">click lands on ink</text>
+  <text x="85" y="158" text-anchor="middle" class="t t-sm">not on blank paper</text>
+  <line x1="150" y1="145" x2="195" y2="145" class="ar" marker-end="url(#arB)"/>
+
+  <polygon points="255,105 320,145 255,185 190,145" class="box acc"/>
+  <text x="255" y="141" text-anchor="middle" class="t t-b">finished</text>
+  <text x="255" y="156" text-anchor="middle" class="t t-sm">drawing?</text>
+  <line x1="255" y1="185" x2="255" y2="215" class="ar" marker-end="url(#arB)"/>
+  <text x="263" y="205" class="t t-sm">no</text>
+  <rect x="190" y="218" width="130" height="44" rx="6" class="box box-dash"/>
+  <text x="255" y="237" text-anchor="middle" class="t">ignore</text>
+  <text x="255" y="253" text-anchor="middle" class="t t-sm">the canvas pans as usual</text>
+  <line x1="320" y1="145" x2="355" y2="145" class="ar" marker-end="url(#arB)"/>
+  <text x="337" y="137" text-anchor="middle" class="t t-sm">yes</text>
+
+  <polygon points="420,105 485,145 420,185 355,145" class="box acc"/>
+  <text x="420" y="141" text-anchor="middle" class="t t-b">extra rule</text>
+  <text x="420" y="156" text-anchor="middle" class="t t-sm">passes? (optional)</text>
+  <line x1="420" y1="185" x2="420" y2="215" class="ar" marker-end="url(#arB)"/>
+  <text x="428" y="205" class="t t-sm">no</text>
+  <rect x="355" y="218" width="130" height="44" rx="6" class="box box-dash"/>
+  <text x="420" y="237" text-anchor="middle" class="t">nothing happens</text>
+  <text x="420" y="253" text-anchor="middle" class="t t-sm">e.g. "only after welcome-1"</text>
+  <line x1="485" y1="145" x2="520" y2="145" class="ar" marker-end="url(#arB)"/>
+  <text x="502" y="137" text-anchor="middle" class="t t-sm">yes</text>
+
+  <rect x="520" y="120" width="120" height="50" rx="6" class="box"/>
+  <text x="580" y="141" text-anchor="middle" class="t t-b">read its to-do list</text>
+  <text x="580" y="158" text-anchor="middle" class="t t-sm mono">onClickAction</text>
+  <line x1="640" y1="145" x2="665" y2="145" class="ar" marker-end="url(#arB)"/>
+
+  <rect x="665" y="120" width="125" height="50" rx="6" class="box ol"/>
+  <text x="727" y="141" text-anchor="middle" class="t t-b">phone book</text>
+  <text x="727" y="158" text-anchor="middle" class="t t-sm mono">play('welcome-2')</text>
+  <line x1="727" y1="170" x2="727" y2="215" class="ar" marker-end="url(#arB)"/>
+  <rect x="655" y="218" width="145" height="44" rx="6" class="box"/>
+  <text x="727" y="237" text-anchor="middle" class="t">welcome-2 appears</text>
+  <text x="727" y="253" text-anchor="middle" class="t t-sm">draws itself, then is clickable</text>
+
+  <text x="400" y="40" text-anchor="middle" class="t t-sm">the two red diamonds are the only "logic". Everything else is a lookup.</text>
+</svg>
+<figcaption>A click is a checklist, not a program. Finished? Rule passes? Then do each item on the to-do list, and the usual item is "call this name in the phone book".</figcaption>
+</figure>
+<pre><code>// the whole thing, in plain words
+function onInkClick(entity) {
+  if (progress &lt; 1) return                              // not finished → the click falls through
+  if (entity.enabledWhen &amp;&amp; !guards.check(entity.enabledWhen)) return   // optional rule
+  for (const item of list(entity.onClickAction)) {      // 'trigger:welcome-2', 'sfx:/sounds/chalk.mp3'
+    const [kind, arg] = item.split(':')
+    actions[kind](ctx, arg)                              // trigger → triggers.play(arg)
+  }
+}</code></pre>
+
+<h2>Part 3 · The open decision: who holds the arrow?</h2>
+<p>Clicking A should make B appear. Somebody has to write that down. Two choices, same behaviour, different bookkeeping.</p>
+<figure>
+<svg viewBox="0 0 800 300" role="img" aria-label="Two panels. Left, 1a: drawing A carries a sticky note listing B and C, with D added in red. Right, 1b: drawings B, C and D each carry a note saying they appear when A is clicked; D's note is red. Red marks what you edit to add D.">
+  <defs>
+    <marker id="arC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" class="t"/></marker>
+    <marker id="arCr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" class="acc-f"/></marker>
+  </defs>
+  <text x="20" y="24" class="t t-b">1a · the clicked drawing keeps the list</text>
+  <rect x="20" y="44" width="110" height="70" rx="6" class="box"/>
+  <text x="75" y="88" text-anchor="middle" class="hand">A</text>
+  <rect x="20" y="124" width="160" height="62" rx="4" class="note"/>
+  <rect x="20" y="124" width="160" height="62" rx="4" class="frame ol"/>
+  <text x="30" y="143" class="t t-sm t-b">sticky note on A</text>
+  <text x="30" y="160" class="t t-sm mono">when clicked → B, C</text>
+  <text x="30" y="177" class="t t-sm mono acc-f">+ D   ← you edit A</text>
+  <rect x="230" y="44" width="110" height="70" rx="6" class="box"/>
+  <text x="285" y="88" text-anchor="middle" class="hand">B</text>
+  <rect x="230" y="130" width="110" height="70" rx="6" class="box"/>
+  <text x="285" y="174" text-anchor="middle" class="hand">C</text>
+  <rect x="230" y="216" width="110" height="70" rx="6" class="frame acc"/>
+  <text x="285" y="260" text-anchor="middle" class="hand acc-f">D</text>
+  <line x1="130" y1="70" x2="230" y2="79" class="ar" marker-end="url(#arC)"/>
+  <line x1="130" y1="90" x2="230" y2="165" class="ar" marker-end="url(#arC)"/>
+  <line x1="130" y1="100" x2="230" y2="251" class="ar acc" stroke-dasharray="4 4" marker-end="url(#arCr)"/>
+
+  <line x1="400" y1="20" x2="400" y2="290" class="ar mu" stroke-dasharray="3 4"/>
+
+  <text x="420" y="24" class="t t-b">1b · each revealed drawing names its parent</text>
+  <rect x="420" y="44" width="110" height="70" rx="6" class="box"/>
+  <text x="475" y="88" text-anchor="middle" class="hand">A</text>
+  <text x="475" y="135" text-anchor="middle" class="t t-sm">A knows nothing</text>
+  <rect x="630" y="44" width="150" height="70" rx="6" class="box"/>
+  <text x="660" y="84" text-anchor="middle" class="hand">B</text>
+  <rect x="686" y="56" width="88" height="46" rx="3" class="note"/>
+  <text x="730" y="75" text-anchor="middle" class="t t-sm">appears when</text>
+  <text x="730" y="90" text-anchor="middle" class="t t-sm mono">click:A</text>
+  <rect x="630" y="130" width="150" height="70" rx="6" class="box"/>
+  <text x="660" y="170" text-anchor="middle" class="hand">C</text>
+  <rect x="686" y="142" width="88" height="46" rx="3" class="note"/>
+  <text x="730" y="161" text-anchor="middle" class="t t-sm">appears when</text>
+  <text x="730" y="176" text-anchor="middle" class="t t-sm mono">click:A</text>
+  <rect x="630" y="216" width="150" height="70" rx="6" class="frame acc"/>
+  <text x="660" y="256" text-anchor="middle" class="hand acc-f">D</text>
+  <rect x="686" y="228" width="88" height="46" rx="3" class="note-acc"/>
+  <text x="730" y="247" text-anchor="middle" class="t t-sm acc-f">appears when</text>
+  <text x="730" y="262" text-anchor="middle" class="t t-sm mono acc-f">click:A</text>
+  <line x1="630" y1="79" x2="530" y2="70" class="ar" marker-end="url(#arC)"/>
+  <line x1="630" y1="165" x2="530" y2="90" class="ar" marker-end="url(#arC)"/>
+  <line x1="630" y1="251" x2="530" y2="100" class="ar acc" stroke-dasharray="4 4" marker-end="url(#arCr)"/>
+</svg>
+<figcaption>Red is what you touch to add drawing D. In 1a you reopen A's note. In 1b you only write D's own note. Both produce the same click.</figcaption>
+</figure>
+
+<div class="two">
+<pre><code>// 1a — on the one you CLICK
+handwriting({
+  id: 'hw-a', triggerId: 'A',
+  clickable: true,
+  onClickAction: [
+    'trigger:B',
+    'trigger:C',
+    'trigger:D',          // added later
+  ],
+})
+handwriting({ id: 'hw-d', triggerId: 'D',
+  revealMode: 'manual' })</code></pre>
+<pre><code>// 1b — on the one that APPEARS
+handwriting({
+  id: 'hw-a', triggerId: 'A',
+  clickable: true,
+  onClickAction: 'sfx:/sounds/chalk.mp3',  // extras only
+})
+handwriting({ id: 'hw-d', triggerId: 'D',
+  revealedBy: 'click:A' })    // the only line you add
+
+// at startup: who is revealed by click:A?  → B, C, D</code></pre>
+</div>
+
+<table>
+  <thead><tr><th></th><th>1a · list on the clicked drawing</th><th>1b · note on the revealed drawing</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Adding a drawing</strong></td><td>Write its entry and edit the parent's list</td><td>Write its entry. Done.</td></tr>
+    <tr><td><strong>Reading one entry tells you</strong></td><td>What it does when clicked</td><td>How it got on the page, and what it does when clicked</td></tr>
+    <tr><td><strong>Reveals that are not clicks</strong><br><span class="sub" style="font-size:14px">timeline, scroll into view, hover</span></td><td>No clicked drawing to hold them, so they live in <code>scenes.ts</code>, a second file</td><td>Same field: <code>revealedBy: 'timeline:scene-2'</code>, <code>'enter-view'</code>, <code>'hover:A'</code></td></tr>
+    <tr><td><strong>Looks like</strong></td><td>The button today (<code>onClickAction: 'master-play'</code>)</td><td>A <code>parent_id</code> column</td></tr>
+    <tr><td><strong>Effort to build</strong></td><td>Smallest. The resolver already exists in spirit.</td><td>One extra startup index: group entries by <code>revealedBy</code>. About 10 lines.</td></tr>
+    <tr><td><strong>Switching later</strong></td><td colspan="2">Both are strings. Converting one to the other is a mechanical rewrite of the entity files, not a redesign.</td></tr>
+  </tbody>
+</table>
+<p><strong>My recommendation: 1b.</strong> Not because 1a is wrong, but because of the third row. The timeline in block 4 and anything like "appears when scrolled into view" become the same one field instead of a second file. 1a is the right call if you want the smallest possible change this week and are fine keeping timeline reveals in scenes.ts as they are today.</p>
+<p><strong>Decided 2026-10-30: 1b.</strong> Positions: typed by hand for now, overlay later if it gets annoying.</p>
+
+<h2>Part 4 · The other half of block 6: where do the numbers come from?</h2>
+<p>Every entry needs <code>x</code> and <code>y</code>. The canvas is 8000 by 8000 pixels and positions are percentages, so <code>x: 74</code> means 5920 px from the left. Guessing those by hand and refreshing is slow. Three ways to get them:</p>
+<ol>
+  <li><strong>Dev overlay.</strong> Press a key in dev mode. Every drawing becomes draggable and shows a small tag with its live <code>x</code> and <code>y</code>. Drag it where it looks right, copy the two numbers into the entry. <code>MotionObstacle</code> already has this readout behind <code>showPosition</code>; this generalises it.</li>
+  <li><strong>Relative helpers.</strong> Write <code>...rightOf('hw-welcome-1', 2)</code> instead of numbers. Fine for chains that read left to right, awkward for anything freeform.</li>
+  <li><strong>Type and iterate.</strong> Guess, save, look, adjust. Zero code, slowest loop.</li>
+</ol>
+<figure>
+<svg viewBox="0 0 800 200" role="img" aria-label="A notebook canvas with ruled lines. One drawing sits on it with a tag above reading x 74.2 y 71.8 and a cursor dragging it. A hint in the corner says press P, drag, copy.">
+  <rect x="20" y="20" width="760" height="160" rx="6" class="box"/>
+  <line x1="20" y1="52" x2="780" y2="52" class="mu" stroke-width="0.6"/>
+  <line x1="20" y1="84" x2="780" y2="84" class="mu" stroke-width="0.6"/>
+  <line x1="20" y1="116" x2="780" y2="116" class="mu" stroke-width="0.6"/>
+  <line x1="20" y1="148" x2="780" y2="148" class="mu" stroke-width="0.6"/>
+  <rect x="300" y="70" width="180" height="60" rx="6" class="frame acc"/>
+  <path d="M325 105c10-25 20-25 30 0s20 25 30 0 20-25 30 0 20 25 30 0" class="ink"/>
+  <rect x="300" y="44" width="124" height="20" rx="10" class="ol-f"/>
+  <text x="362" y="58" text-anchor="middle" class="on-pill mono">x 74.2 · y 71.8</text>
+  <path d="M470 118l0 15 4-4 3 6 2.5-1-3-6 5.5 0z" class="cur"/>
+  <text x="768" y="42" text-anchor="end" class="t t-sm mono">press P · drag · copy</text>
+  <text x="40" y="168" class="t t-sm">dev only, never shipped to visitors</text>
+</svg>
+<figcaption>The dev overlay: the canvas tells you the numbers instead of you guessing them.</figcaption>
+</figure>
+
+<h2>Block 4, closed · reveal sources, and does scenes.ts survive?</h2>
+<p>Today Play runs a fixed script: pan the camera, start welcome-1, wait 17 seconds, pan, start welcome-2, and so on. You asked for both freedoms: clicks drive the show, and things can still appear on their own after a while. With 1b that is one field with more than one value.</p>
+<figure>
+<svg viewBox="0 0 800 130" role="img" aria-label="Play starts scene 1. From scene 1 two arrows lead to scene 2: a red one labelled the visitor clicks, and a dashed grey one labelled or 17 seconds pass with no click, optional auto-advance.">
+  <defs>
+    <marker id="arD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" class="t"/></marker>
+    <marker id="arDr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" class="acc-f"/></marker>
+    <marker id="arDm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5 0 10z" class="mu-f"/></marker>
+  </defs>
+  <rect x="20" y="45" width="90" height="40" rx="6" class="box"/>
+  <text x="65" y="70" text-anchor="middle" class="t">Play</text>
+  <line x1="110" y1="65" x2="170" y2="65" class="ar" marker-end="url(#arD)"/>
+  <text x="140" y="57" text-anchor="middle" class="t t-sm">camera + start</text>
+  <rect x="170" y="45" width="110" height="40" rx="6" class="box"/>
+  <text x="225" y="70" text-anchor="middle" class="t">welcome-1</text>
+  <line x1="280" y1="55" x2="600" y2="55" class="ar acc" marker-end="url(#arDr)"/>
+  <text x="440" y="47" text-anchor="middle" class="t t-sm acc-f">the visitor clicks it</text>
+  <line x1="280" y1="76" x2="600" y2="76" class="ar mu" stroke-dasharray="4 4" marker-end="url(#arDm)"/>
+  <text x="440" y="96" text-anchor="middle" class="t t-sm">or 17 s pass with no click · optional auto-advance</text>
+  <rect x="600" y="45" width="110" height="40" rx="6" class="box"/>
+  <text x="655" y="70" text-anchor="middle" class="t">welcome-2</text>
+</svg>
+<figcaption>Both arrows can exist. The drawing lists every way it can appear; the first one to happen wins and the others are cancelled.</figcaption>
+</figure>
+<pre><code>// reveal sources — a drawing may list several, first one wins
+revealedBy: 'click:button-1'                        // the Play button is just another clickable entity
+revealedBy: 'load +2s'                              // appears 2 s after the page loads
+revealedBy: ['click:welcome-1', 'done:welcome-1 +3s']  // click it, or wait 3 s after it finishes drawing
+
+// what scenes.ts holds today, and where it would go
+//   triggerId     → the entity itself
+//   focus (camera)→ camera: { zoom: 0.9 }  on the entity, position already known
+//   sfx           → onReveal: 'sfx:/sounds/chalk-7s.mp3'
+//   holdDuration  → 'done:welcome-1 +3s' on the next drawing (the JSON length is known)
+//   order         → the chain of done: / click: sources</code></pre>
+<p>If every row above moves onto the entities, scenes.ts has nothing left and MotionController shrinks to two jobs: pan the camera when a drawing with <code>camera</code> is revealed, and fire <code>done:</code> when a drawing finishes. Staged: build the click chain first with scenes.ts untouched, then migrate the three existing scenes.</p>
+
+<p><strong>Decided 2026-11-01:</strong> sources <code>click:</code>, <code>done: +Ns</code>, <code>load +Ns</code>, arrays with first-wins. scenes.ts folds into the entities as a second step.</p>
+
+<h2>Block 5, closed · where do the new fields live?</h2>
+<p>Six new fields came out of blocks 3, 4 and 6. The question is how wide they apply.</p>
+<table>
+  <thead><tr><th>field</th><th>from</th><th>meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>revealedBy</code></td><td>blocks 6, 4</td><td>how this entity appears: <code>'load'</code>, <code>'static'</code>, <code>'click:A'</code>, <code>'done:A +3s'</code>, or a list</td></tr>
+    <tr><td><code>clickable</code></td><td>block 3</td><td>the ink catches clicks once finished</td></tr>
+    <tr><td><code>onClickAction</code></td><td>block 3</td><td>to-do list on click: <code>link:</code>, <code>sfx:</code>, <code>pan:</code></td></tr>
+    <tr><td><code>enabledWhen</code></td><td>block 3</td><td>optional guard before the to-do list runs</td></tr>
+    <tr><td><code>onReveal</code></td><td>block 4</td><td>to-do list when it appears, usually <code>sfx:</code></td></tr>
+    <tr><td><code>camera</code></td><td>block 4</td><td>pan and zoom to it when it is revealed</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li><strong>Recommended: universal.</strong> The six fields live on <code>EntityDef</code>, so any entity can be revealed or clicked: a PNG sketch fading in after a click, a photo section appearing when a drawing finishes. Built first for handwriting and the button; the rest become small follow-ups. Alternative: handwriting only. Smaller surface, but the first time you want a sketch to appear on click you are back here.</li>
+  <li><strong>Retire two fields.</strong> <code>revealMode</code> and <code>autoplay</code> are both covered by <code>revealedBy</code>. The five existing entries get rewritten.</li>
+  <li><strong>One name.</strong> <code>triggerId</code> defaults to <code>id</code>; it stays as an optional alias so the old scenes keep working during the staged migration.</li>
+  <li><strong>No new type.</strong> object-types.md gets one shared "Reveal and click" section instead of a new row.</li>
+</ul>
+<p><strong>Decided 2026-11-01: universal, one source of truth.</strong> And normalized: every entity carries every field, with explicit defaults when unused, the way every row in a table has every column.</p>
+<pre><code>// after the factory, every entity, every category
+revealedBy: ['static'],   clickable: false,   onClickAction: [],   enabledWhen: null,
+onReveal: [],             camera: null,       tabOrder: null</code></pre>
+
+<h2>Blocks 7 and 8, closed</h2>
+
+<h3>Block 7 · the checklist, as decided</h3>
+<ul>
+  <li><strong>Phones.</strong> Under 4 px of movement is a click, more is a pan. Two fingers never click.</li>
+  <li><strong>Reduced motion.</strong> The ink animation always plays; it is the point of the site. Camera pans become instant cuts, since pans and zooms are what cause discomfort.</li>
+  <li><strong>Keyboard.</strong> No Tab stops for now. Every entity carries <code>tabOrder: null</code>; set a number and that drawing becomes focusable, in that order, with Enter running the click list.</li>
+  <li><strong>Performance.</strong> The drawing loop is rewritten now: each finished stroke is computed once and cached, only the stroke being drawn is recomputed, and the loop writes to the DOM directly instead of a React state update per frame. Same pattern as useJitter and ZoomCanvas. Only HandwrittenEntry.tsx changes; its props, handle and pixels stay the same.</li>
+</ul>
+
+<h3>Block 8 · routes, as decided</h3>
+<ul>
+  <li><strong>Hash URLs.</strong> <code>/#/freshpage1</code>. Everything after <code>#</code> stays in the browser, so the server only ever serves <code>index.html</code> and refresh always works with zero Vercel config. The route is read through one <code>currentRoute()</code> function, so switching to clean paths later is one line plus a Vercel rewrite.</li>
+  <li><strong>A notebook per route.</strong> <code>{ entities, pages }</code> picked by route. Home is today's content; <code>freshpage1</code> starts empty. TopHeader stays outside and gets one link per notebook.</li>
+  <li><strong>Two kinds of state.</strong> Canvas state (zoom, pan, positions, pins, phone book) resets per notebook. Visitor preferences (mute) and visitor progress (<code>played</code>, flags) persist across notebooks and reloads in localStorage.</li>
+  <li><strong>Unique logic on reaching a sketch.</strong> <code>onReveal: 'fn:unlockSecret'</code> runs your function, <code>set:secret</code> writes a flag, <code>enabledWhen: 'flag:secret'</code> reads it elsewhere.</li>
+</ul>
+
+</main>
+<script type="application/json" id="consult-state">
+{"skill":"consult","topic":"sketch-to-site","started":"2026-10-29","closed":"2026-11-01","log":"docs/decisions/2026-10-29-sketch-to-site.md","open":0,"branch":"feat/clickable-ink-chain",
+ "blocks":[
+  {"n":1,"name":"Intake format","status":"done"},
+  {"n":2,"name":"Asset pipeline","status":"done"},
+  {"n":3,"name":"Interaction model","status":"done","sub":{"hitArea":"B","logic":"registries","gating":"progress=1","actionKeys":"trigger,link,pan,sfx,fn,set"}},
+  {"n":4,"name":"Timeline model","status":"done","sub":{"sources":"click, done+Ns, load+Ns, static, arrays first-wins","scenesFold":"yes, staged second step, then delete scenes.ts"}},
+  {"n":5,"name":"Schema and types","status":"done","sub":{"scope":"universal, normalized with defaults","retire":"revealMode, autoplay","oneName":"triggerId defaults to id","legacySweep":"follow-up commit"}},
+  {"n":6,"name":"Layout authoring","status":"done","sub":{"handoff":"1b revealedBy on revealed entity","placement":"type and iterate for now"}},
+  {"n":7,"name":"Cross-cutting checklist","status":"done","sub":{"reducedMotion":"ink always animates, pans cut","keyboard":"no tab stops, tabOrder reserved","perf":"loop rewrite now","phones":"4px threshold, multitouch never clicks"}},
+  {"n":8,"name":"Routes: second notebook at /freshpage1","status":"done","sub":{"url":"hash","notebook":"config per route","state":"canvas resets; prefs + progress persist"}}
+ ],
+ "buildOrder":["docs of truth","schema + normalization","registries + progress store","HandwrittenEntry rewrite","reveal engine","migrate + delete scenes.ts","routes","legacy sweep + perf check"]}
+</script>
+</body>
+</html>

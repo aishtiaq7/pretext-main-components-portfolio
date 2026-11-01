@@ -28,8 +28,12 @@ Read the user's intent top-to-bottom and pick the first match:
 | Is a sketched SVG doodle icon with drift/wobble animation | 🖼️ **Image** |
 | Is a large draggable placeholder with click-to-activate | 🧩 **Widget** |
 | Is a clickable SVG/raster button that fires an action (e.g. master timeline play) | 🟢 **Button** |
+| Is recorded pen ink (ink-studio JSON) that draws itself stroke by stroke | ✒️ **Handwriting** (image variant) |
 
 If none fit, **ask** the user whether to define a new type.
+
+**Any type can be revealed and clicked.** See [Reveal & click fields](#reveal--click-fields-all-types)
+at the end of this document before wiring a chain.
 
 ---
 
@@ -200,6 +204,26 @@ If none fit, **ask** the user whether to define a new type.
 
 ---
 
+### ✒️ Handwriting (Image variant)
+
+| Aspect | Value |
+|---|---|
+| **Defined in** | `src/entities/handwriting.ts` via `handwriting()` factory |
+| **Category** | `'image'` (shares the image render branch) |
+| **Rendered by** | `<HandwritingEntity>` → `<HandwrittenEntry>` (inline SVG, one `<path>` per stroke, perfect-freehand) |
+| **Source** | `handwritingSrc` → stroke JSON exported from `ink-studio`, stored in `public/handwriting/` |
+| **Size** | `width` (px); height auto-derives from the JSON aspect ratio unless `height` is given |
+| **Draggable?** | Pinned by default |
+| **Causes reflow** | ❌ no |
+| **Appears via** | `revealedBy` — `'load'` draws on page load, `'click:<id>'` / `'done:<id>'` for the chain |
+| **Clickable** | `clickable: true` → the ink pixels (not the box) catch clicks once the drawing has finished |
+| **Examples** | `hw-1`, `hw-2` (load), `hw-welcome`, `hw-welcome-2`, `hw-welcome-3` (chain) |
+
+**When to create a Handwriting entity:** User recorded something in ink-studio and wants it on
+the canvas, animated. Recipe in `docs/architecture.md` §7.
+
+---
+
 ### 🧩 Widget
 
 | Aspect | Value |
@@ -260,6 +284,28 @@ Then set `onClickAction: 'your-new-action'` on the button entity.
 3. **Copy the nearest existing entry** and adjust `id`, position, content, etc.
 4. **Verify nothing references the removed/changed ID** — search in `App.tsx` for string literals.
 5. **Show a snapshot** in [@my-output-format.md](./my-output-format.md) style so the user can confirm.
+
+---
+
+## Reveal & click fields (all types)
+
+Every entity row carries these, normalized by its factory. Omit what you do not need;
+the default is filled in so every row has every column.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `triggerId` | `id` | Name in the phone book (`triggers`). Only set when a shorter alias is wanted. |
+| `revealedBy` | `['static']` | How the entity appears. `'static'`, `'load'`, `'load +2s'`, `'manual'`, `'click:<id>'`, `'done:<id> +3s'`. Several allowed; first to fire wins. |
+| `clickable` | `false` | Painted pixels catch clicks once the entity has finished appearing. |
+| `onClickAction` | `[]` | To-do list on click: `'trigger:<id>'`, `'link:<url>'`, `'pan:<id>'`, `'sfx:<path>'`, `'fn:<name>'`, `'set:<flag>'`. |
+| `enabledWhen` | `null` | Guard before the to-do list: `'after:<id>'`, `'flag:<name>'`, `'zoomMin:<n>'`, `'once'`. |
+| `onReveal` | `[]` | To-do list when revealed (usually `'sfx:…'`). |
+| `camera` | `null` | `{ zoom, panDuration? }` — pan/zoom to the entity on reveal. |
+| `tabOrder` | `null` | When set, the entity is keyboard-focusable in this order. Off by default. |
+
+**Who holds the arrow:** the *revealed* entity names what reveals it (`revealedBy`), like a
+`parent_id` column. Adding a drawing never edits another drawing's entry. Functions and
+conditions live in `src/actions.ts`; entity files stay data.
 
 ---
 

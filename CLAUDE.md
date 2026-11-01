@@ -73,6 +73,12 @@ public/
 
 ## Architecture
 
+**IMPORTANT — before any architectural change, read [docs/architecture.md](./docs/architecture.md).**
+It is the current truth: vision, principles, the entity reveal-and-click model, routes,
+state, the build order and its status. The reasoning behind each decision lives in
+`docs/decisions/` (consult logs + board source). Update `docs/architecture.md` at the end
+of every build session. Claude's own memory never holds architecture.
+
 ### Canvas Coordinate System
 - 8000x8000px virtual canvas, positions stored as **percentages** (0-100)
 - Viewport transform: `translate(tx, ty) scale(zoom)` where `tx = -4000 * zoom + panX`
@@ -103,6 +109,10 @@ when showing layout snapshots back to the user.
 
 To add a new entity: create an entry in the matching `src/entities/*.ts` file following the
 `EntityDef` type. It auto-renders — no component changes needed.
+
+**Reveal & click (every entity).** Each row also carries `revealedBy`, `clickable`,
+`onClickAction`, `enabledWhen`, `onReveal`, `camera`, `tabOrder` with explicit defaults.
+Grammar and runtime in `docs/architecture.md` §3; per-type notes in `object-types.md`.
 
 ### State Management
 - **Viewport** (zoom, panX, panY): `useSyncExternalStore` in `store/viewport.ts` — no Redux
