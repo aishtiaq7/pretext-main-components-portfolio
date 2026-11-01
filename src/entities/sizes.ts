@@ -23,7 +23,7 @@ export const SECTION_SIZES: Record<string, PxSize> = {
   'photo-gallery': { w: 1300, h: 1440 },
 }
 
-export function getSectionSize(componentId: string | undefined): PxSize | null {
+export function getSectionSize(componentId: string | null | undefined): PxSize | null {
   if (!componentId) return null
   return SECTION_SIZES[componentId] ?? null
 }

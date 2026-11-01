@@ -108,12 +108,12 @@ function NotebookCanvas({ entities, pages }: NotebookCanvasProps) {
   // Active widget — only one at a time, null = none active
   const [activeWidget, setActiveWidget] = useState<string | null>(null);
   const activeWidgetRef = useRef<string | null>(null);
-  activeWidgetRef.current = activeWidget;
+  useEffect(() => { activeWidgetRef.current = activeWidget; }, [activeWidget]);
 
   // Drag-state hooks kept as no-ops — paragraphs now act as obstacles all the
   // time, so wrapping persists after you drop a paragraph on another.
-  const handleDragStart = useCallback((_id: string) => {}, []);
-  const handleDragEnd = useCallback((_id: string) => {}, []);
+  const handleDragStart = useCallback(() => {}, []);
+  const handleDragEnd = useCallback(() => {}, []);
 
   // Page positions (for draggable pages)
   const [pagePositions, setPagePositions] = useState<

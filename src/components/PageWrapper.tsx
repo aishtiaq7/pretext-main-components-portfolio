@@ -89,8 +89,8 @@ export function PageWrapper({ page, x, y, pageRegions, onPositionChange, childre
     const dx = (e.clientX - dragRef.current.startX) / z
     const dy = (e.clientY - dragRef.current.startY) / z
     const pctPerPx = CANVAS / 100
-    let newX = dragRef.current.startElX + (dx / pctPerPx)
-    let newY = dragRef.current.startElY + (dy / pctPerPx)
+    const newX = dragRef.current.startElX + (dx / pctPerPx)
+    const newY = dragRef.current.startElY + (dy / pctPerPx)
     const resolved = resolvePageCollisions(newX, newY, page.id, page.width, page.height, pageRegions)
     onPositionChange(page.id, resolved.x, resolved.y)
   }

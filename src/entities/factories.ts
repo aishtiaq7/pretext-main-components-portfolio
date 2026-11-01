@@ -4,11 +4,11 @@ import type {
 
 // ═══════════════════════════════════════════════════════════
 // Entity factories — one per category/variant. Each factory
-// returns a fully-formed EntityDef with sensible defaults.
-// Per-instance fields (position, content, overrides) are the
-// explicit arguments; behavior flags (pinned, draggable,
-// motion) are expressed as options so different instances of
-// the same type can diverge cleanly.
+// returns a fully-formed EntityDef: every column present, with
+// an explicit default where it does not apply (docs/architecture
+// .md §2, principle 2). Per-instance fields (position, content,
+// overrides) are the explicit arguments; behaviour flags are
+// options so instances of one type can diverge cleanly.
 //
 // To add a new instance: call the matching factory with the
 // fields that differ. To add a new variant: extend the options
@@ -34,8 +34,7 @@ type StyleOverrides = {
 
 // Reveal & click inputs — accepted by EVERY factory, all optional at the
 // call site. `normalizeBehavior` turns them into the required, fully-populated
-// `EntityBehavior` block so every emitted row has every column.
-// Single strings are accepted where lists are stored.
+// `EntityBehavior` block. Single strings are accepted where lists are stored.
 type BehaviorInput = {
   triggerId?: string
   revealedBy?: RevealSource | RevealSource[]
@@ -67,6 +66,76 @@ export function normalizeBehavior(id: string, b: BehaviorInput): EntityBehavior 
 
 type Positional = { id: string; x: number; y: number } & BehaviorInput
 
+// Every non-behaviour column with its "does not apply" value. Factories lay
+// their category defaults over this, then the call-site input, then the
+// normalized behaviour block — so a row always has every column.
+const CORE_DEFAULTS = {
+  content: '',
+  maxWidth: null,
+  componentId: null,
+  fixed: false,
+  obstacle: false,
+  obstacleW: null,
+  obstacleH: null,
+  imgSrc: null,
+  imgW: null,
+  imgH: null,
+  blendMultiply: false,
+  handwritingSrc: null,
+  playbackSpeed: 1,
+  jitter: 'none' as JitterType,
+  pinned: true,
+  motionDraggable: false,
+  showPosition: false,
+  className: '',
+  style: null,
+  width: null,
+  height: null,
+  hoverSrc: null,
+  pressSrc: null,
+  postClickSrc: null,
+  hoverScale: 1.05,
+  pressScale: 0.95,
+  hoverFilter: null,
+  hoverSound: null,
+  clickSound: null,
+} satisfies Partial<EntityDef>
+
+/** Drop keys whose value is `undefined` so they cannot override a default. */
+function compact<T extends object>(obj: T): Partial<T> {
+  const out: Partial<T> = {}
+  for (const k of Object.keys(obj) as (keyof T)[]) {
+    if (obj[k] !== undefined) out[k] = obj[k]
+  }
+  return out
+}
+
+type CategoryDefaults = Pick<EntityDef, 'type' | 'category' | 'rotate' | 'font' | 'fontSize' | 'fontWeight' | 'color' | 'opacity'>
+  & Partial<EntityDef>
+
+/**
+ * Assemble a full row: core defaults ← category defaults ← call-site input
+ * ← normalized behaviour. Behaviour keys in `input` are consumed by
+ * normalizeBehavior (they may be single strings there), never spread raw.
+ */
+function finish(
+  categoryDefaults: CategoryDefaults,
+  input: { id: string } & BehaviorInput & Record<string, unknown>,
+): EntityDef {
+  const {
+    triggerId: _t, revealedBy: _r, clickable: _c, onClickAction: _a,
+    enabledWhen: _e, onReveal: _o, camera: _m, tabOrder: _b,
+    ...rest
+  } = input
+  void _t; void _r; void _c; void _a; void _e; void _o; void _m; void _b
+  return {
+    ...CORE_DEFAULTS,
+    ...categoryDefaults,
+    ...compact(rest),
+    ...normalizeBehavior(input.id, input),
+  } as EntityDef
+}
+
 // ── Doodle (plain static label) ─────────────────────────────
 type DoodleInput = Positional & StyleOverrides & {
   content: string
@@ -76,7 +145,7 @@ type DoodleInput = Positional & StyleOverrides & {
 }
 
 export function doodle(input: DoodleInput): EntityDef {
-  return {
+  return finish({
     type: 'text',
     category: 'doodle',
     rotate: 0,
@@ -85,11 +154,8 @@ export function doodle(input: DoodleInput): EntityDef {
     fontWeight: '400',
     color: '#2a2520',
     opacity: 0.9,
-    jitter: 'none',
     pinned: input.pinned ?? true,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, input)
 }
 
 // ── Reflow paragraph (doodle variant) ───────────────────────
@@ -101,8 +167,8 @@ type ReflowInput = Positional & StyleOverrides & {
 }
 
 export function reflowParagraph(input: ReflowInput): EntityDef {
-  const draggable = input.draggable ?? false
-  return {
+  const { draggable = false, ...rest } = input
+  return finish({
     type: 'text',
     category: 'doodle',
     rotate: 0,
@@ -111,11 +177,8 @@ export function reflowParagraph(input: ReflowInput): EntityDef {
     fontWeight: draggable ? '700' : '400',
     color: draggable ? '#2a2520' : '#3a3530',
     opacity: draggable ? 0.9 : 0.85,
-    jitter: 'none',
     pinned: !draggable,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, rest)
 }
 
 // ── Accent (animated bold word OR header emoji) ─────────────
@@ -124,7 +187,7 @@ type AccentInput = Positional & StyleOverrides & {
 }
 
 export function accent(input: AccentInput): EntityDef {
-  return {
+  return finish({
     type: 'text',
     category: 'accent',
     rotate: 0,
@@ -135,13 +198,11 @@ export function accent(input: AccentInput): EntityDef {
     opacity: 0.9,
     jitter: 'wobble',
     pinned: true,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, input)
 }
 
 export function emojiAccent(input: AccentInput): EntityDef {
-  return {
+  return finish({
     type: 'text',
     category: 'accent',
     rotate: 0,
@@ -150,11 +211,8 @@ export function emojiAccent(input: AccentInput): EntityDef {
     fontWeight: '400',
     color: '#3a3530',
     opacity: 0.9,
-    jitter: 'none',
     pinned: true,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, input)
 }
 
 // ── Watermark (huge faded background label) ─────────────────
@@ -163,7 +221,7 @@ type WatermarkInput = Positional & StyleOverrides & {
 }
 
 export function watermark(input: WatermarkInput): EntityDef {
-  return {
+  return finish({
     type: 'text',
     category: 'watermark',
     rotate: 0,
@@ -174,9 +232,7 @@ export function watermark(input: WatermarkInput): EntityDef {
     opacity: 0.1,
     jitter: 'pulse',
     pinned: true,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, input)
 }
 
 // ── Image (SVG / PNG doodle) ────────────────────────────────
@@ -193,7 +249,7 @@ type ImageInput = Positional & StyleOverrides & {
 }
 
 export function image(input: ImageInput): EntityDef {
-  return {
+  return finish({
     type: 'text',
     category: 'image',
     rotate: 0,
@@ -202,12 +258,8 @@ export function image(input: ImageInput): EntityDef {
     fontWeight: '400',
     color: '',
     opacity: 1,
-    jitter: 'none',
     pinned: input.pinned ?? true,
-    blendMultiply: false,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, input)
 }
 
 // ── Handwriting (animated stroke-capture JSON — ink-studio export) ──
@@ -216,7 +268,7 @@ export function image(input: ImageInput): EntityDef {
 //   pinned by default, no collision, no reflow. Sized via width/height.
 //   Whether it animates on load or waits for the chain is `revealedBy`:
 //     'load'            → draws itself on page load
-//     'manual'          → hidden until the legacy timeline calls play()
+//     'manual'          → hidden until something calls play() imperatively
 //     'click:<id>' etc. → hidden until revealed by the chain
 type HandwritingInput = Positional & StyleOverrides & {
   src: string        // path to the JSON (usually under /handwriting/)
@@ -232,8 +284,8 @@ type HandwritingInput = Positional & StyleOverrides & {
 }
 
 export function handwriting(input: HandwritingInput): EntityDef {
-  const { src, width, height, pinned, ...rest } = input
-  return {
+  const { src, width, height, ...rest } = input
+  return finish({
     type: 'text',
     category: 'image',
     rotate: 0,
@@ -242,14 +294,11 @@ export function handwriting(input: HandwritingInput): EntityDef {
     fontWeight: '400',
     color: '',
     opacity: 1,
-    jitter: 'none',
-    pinned: pinned ?? true,
+    pinned: input.pinned ?? true,
     handwritingSrc: src,
     imgW: width,
-    imgH: height,
-    ...rest,
-    ...normalizeBehavior(input.id, input),
-  }
+    imgH: height ?? null,
+  }, rest)
 }
 
 // ── Obstacle (red handwritten word with text reflow) ────────
@@ -262,8 +311,8 @@ type ObstacleInput = Positional & StyleOverrides & {
 }
 
 export function obstacle(input: ObstacleInput): EntityDef {
-  const motion = input.motion ?? true
-  return {
+  const { motion = true, ...rest } = input
+  return finish({
     type: 'text',
     category: 'obstacle',
     rotate: 0,
@@ -272,13 +321,10 @@ export function obstacle(input: ObstacleInput): EntityDef {
     fontWeight: '400',
     color: '#c83030',
     opacity: 0.9,
-    jitter: 'none',
     pinned: false,
     obstacle: true,
     motionDraggable: motion,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, rest)
 }
 
 // ── Image-based obstacle (rocket SVG etc.) ──────────────────
@@ -292,8 +338,8 @@ type ImageObstacleInput = Positional & StyleOverrides & {
 }
 
 export function imageObstacle(input: ImageObstacleInput): EntityDef {
-  const motion = input.motion ?? true
-  return {
+  const { motion = true, ...rest } = input
+  return finish({
     type: 'text',
     category: 'obstacle',
     rotate: 0,
@@ -302,14 +348,10 @@ export function imageObstacle(input: ImageObstacleInput): EntityDef {
     fontWeight: '400',
     color: '',
     opacity: 1,
-    jitter: 'none',
-    content: '',
     pinned: false,
     obstacle: true,
     motionDraggable: motion,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, rest)
 }
 
 // ── Section (bordered block hosting a React component) ──────
@@ -318,7 +360,7 @@ type SectionInput = Positional & StyleOverrides & {
 }
 
 export function section(input: SectionInput): EntityDef {
-  return {
+  return finish({
     type: 'component',
     category: 'section',
     rotate: 0,
@@ -327,12 +369,9 @@ export function section(input: SectionInput): EntityDef {
     fontWeight: '400',
     color: '#3a3530',
     opacity: 1,
-    jitter: 'none',
     pinned: true,
     content: input.componentId,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, input)
 }
 
 // ── Button (interactive SVG/raster button with state machine) ──
@@ -356,7 +395,7 @@ type ButtonInput = Positional & StyleOverrides & {
 }
 
 export function button(input: ButtonInput): EntityDef {
-  return {
+  return finish({
     type: 'text',
     category: 'button',
     rotate: 0,
@@ -365,11 +404,8 @@ export function button(input: ButtonInput): EntityDef {
     fontWeight: '400',
     color: '',
     opacity: 1,
-    jitter: 'none',
     pinned: true,
-    ...input,
-    ...normalizeBehavior(input.id, { ...input, clickable: true }),
-  }
+  }, { ...input, clickable: true })
 }
 
 // ── Widget (large click-to-activate block) ──────────────────
@@ -381,7 +417,7 @@ type WidgetInput = Positional & StyleOverrides & {
 }
 
 export function widget(input: WidgetInput): EntityDef {
-  return {
+  return finish({
     type: 'text',
     category: 'widget',
     rotate: 0,
@@ -390,9 +426,6 @@ export function widget(input: WidgetInput): EntityDef {
     fontWeight: '700',
     color: '#c83030',
     opacity: 1,
-    jitter: 'none',
     pinned: false,
-    ...input,
-    ...normalizeBehavior(input.id, input),
-  }
+  }, input)
 }

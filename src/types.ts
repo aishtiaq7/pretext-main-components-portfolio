@@ -132,8 +132,17 @@ export type EntityBehavior = {
   tabOrder: number | null
 }
 
+// ═══════════════════════════════════════════════════════════
+// ENTITY ROW — every field is present on every entity. Fields
+// that do not apply to a category hold their explicit default
+// (null / false / '' / 1), the way every row in a table has every
+// column. Factories (entities/factories.ts) fill the defaults;
+// authoring inputs stay optional at the call site.
+// ═══════════════════════════════════════════════════════════
 export type EntityDef = EntityBehavior & {
   id: string
+  category: EntityCategory
+  type: 'text' | 'component'
   x: number
   y: number
   rotate: number
@@ -142,56 +151,56 @@ export type EntityDef = EntityBehavior & {
   fontWeight: string
   color: string
   opacity: number
-  content?: string
-  maxWidth?: number
-  type: 'text' | 'component'
-  componentId?: string
-  fixed?: boolean
-  obstacle?: boolean     // red draggable obstacle — text reflows around it
-  obstacleW?: number     // bounding box width in px (including padding)
-  obstacleH?: number     // bounding box height in px (including padding)
-  imgSrc?: string        // image path (SVG/PNG/GIF) — renders <img> instead of text
-  imgW?: number          // display width in px
-  imgH?: number          // display height in px
-  blendMultiply?: boolean // mix-blend-mode: multiply — blends white out for sketch JPGs
-  handwritingSrc?: string // path to a stroke-capture JSON (ink-studio export)
-                          //   → renders <HandwrittenEntry> instead of <img>
-                          //   sized via imgW / imgH (same as image variant)
-  playbackSpeed?: number  // handwriting: replay speed multiplier (default 1)
+
+  /** Text content. '' when the entity is not text-based. */
+  content: string
+  /** Width constraint in px; presence turns a doodle into a reflow paragraph. */
+  maxWidth: number | null
+  /** Section component id ('about-block', 'photo-gallery'). */
+  componentId: string | null
+  fixed: boolean
+  obstacle: boolean       // red draggable obstacle — text reflows around it
+  obstacleW: number | null // bounding box width in px (including padding)
+  obstacleH: number | null // bounding box height in px (including padding)
+  imgSrc: string | null   // image path (SVG/PNG/GIF) — renders <img> instead of text
+  imgW: number | null     // display width in px
+  imgH: number | null     // display height in px (null = derive from aspect ratio)
+  blendMultiply: boolean  // mix-blend-mode: multiply — blends white out for sketch JPGs
+  handwritingSrc: string | null // stroke-capture JSON (ink-studio export)
+                                //   → renders <HandwrittenEntry> instead of <img>
+                                //   sized via imgW / imgH (same as image variant)
+  playbackSpeed: number   // handwriting: replay speed multiplier (1 = recorded pace)
   // (Whether a handwriting entity animates on load or waits to be revealed is
   //  expressed by `revealedBy` — 'load' vs 'manual' / 'click:…' / 'done:…'.)
 
-  // ── New fields ──
-  category: EntityCategory
-  jitter?: JitterType     // animation type (default: 'none')
-  pinned?: boolean        // if true, shows pin icon, not draggable
-  motionDraggable?: boolean  // if true, rendered via MotionObstacle (framer-motion polish)
-  showPosition?: boolean     // MotionObstacle only — overlay live x/y readout on the entity
+  jitter: JitterType      // animation type ('none' = static)
+  pinned: boolean         // true → pin icon, not draggable
+  motionDraggable: boolean // true → rendered via MotionObstacle (framer-motion polish)
+  showPosition: boolean   // MotionObstacle only — overlay live x/y readout
 
-  // ── Per-instance visual overrides (optional) ──
+  // ── Per-instance visual overrides ──
   // Let individual entities diverge from their factory defaults without
   // introducing new category-level flags. Append to the root element's
   // className / merge into its inline style.
-  className?: string
-  style?: React.CSSProperties
+  className: string
+  style: React.CSSProperties | null
 
   // Per-instance pixel-size override (sections & widgets).
-  // When omitted, the default from `src/entities/sizes.ts` is used.
-  width?: number
-  height?: number
+  // null → the default from `src/entities/sizes.ts`.
+  width: number | null
+  height: number | null
 
-  // ── Button-specific fields (category === 'button') ──
-  // Visual states. imgSrc / imgW / imgH (above) carry the idle visual.
-  // The *Src fields are optional asset swaps — when omitted the button
-  // falls back to transform-only feedback (scale / filter).
-  hoverSrc?: string
-  pressSrc?: string
-  postClickSrc?: string
-  hoverScale?: number          // default 1.05
-  pressScale?: number          // default 0.95
-  hoverFilter?: string         // optional CSS filter on hover (e.g. 'brightness(1.1)')
-  hoverSound?: string          // file path
-  clickSound?: string
+  // ── Button visuals (category === 'button') ──
+  // imgSrc / imgW / imgH carry the idle visual. The *Src fields are optional
+  // asset swaps — when null the button uses transform-only feedback.
+  hoverSrc: string | null
+  pressSrc: string | null
+  postClickSrc: string | null
+  hoverScale: number           // 1.05
+  pressScale: number           // 0.95
+  hoverFilter: string | null   // CSS filter on hover (e.g. 'brightness(1.1)')
+  hoverSound: string | null    // file path
+  clickSound: string | null
   // (The click's to-do list is the shared `onClickAction` above.)
 }
 

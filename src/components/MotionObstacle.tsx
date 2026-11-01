@@ -35,7 +35,7 @@ export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
   })
   const rafRef = useRef<number | null>(null)
   const posRef = useRef({ x, y })
-  posRef.current = { x, y }
+  useEffect(() => { posRef.current = { x, y } }, [x, y])
 
   useEffect(() => {
     return () => {

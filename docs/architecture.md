@@ -5,8 +5,10 @@ change, in any session. The *why* behind each decision lives in
 [docs/decisions/](./decisions/); this file is the *what*. Update it at the end of
 every build session.
 
-Last updated: 2026-11-01 · phase: **building the clickable ink chain**
-(branch `feat/clickable-ink-chain`).
+Last updated: 2026-11-01 · phase: **clickable ink chain built** on branch
+`feat/clickable-ink-chain` (8 commits, not yet merged to `main`). Next: author the
+real chain content and the `freshpage1` notebook; dev placement overlay when typing
+coordinates gets annoying.
 
 ---
 
@@ -174,8 +176,14 @@ check after each.
       MotionController, mute persists
 - [x] 6. Routes: `currentRoute()`, notebook config per route, empty `freshpage1`,
       header links, canvas state reset per notebook
-- [ ] 7. Follow-up: legacy optional-field normalization sweep, 60 fps check while a
+- [x] 7. Follow-up: legacy optional-field normalization sweep, 60 fps check while a
       drawing animates and the camera pans
+
+All eight steps shipped on 2026-11-01. `EntityDef` now has no optional fields:
+every row carries every column (`CORE_DEFAULTS` in `factories.ts`). `npm run lint`
+is clean across the repo. Frame timing measured in Chrome while welcome-1 drew
+itself during the 1.2 s camera tween: 720 frames in 6 s, average 8.3 ms, max 9.4 ms,
+no frame over 20 ms (120 Hz display, so the ceiling was the display, not the app).
 
 ## 6b. Dev aids
 

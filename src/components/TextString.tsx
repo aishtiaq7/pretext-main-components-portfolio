@@ -51,7 +51,10 @@ export function TextString() {
   const [ready, setReady] = useState(false)
 
   // Choose text based on viewport width at mount
-  const textRef = useRef(window.innerWidth < 600 ? SHORT_TEXT : FULL_TEXT)
+  // Picked once at mount; kept in state so render can read it without
+  // touching a ref, and mirrored into a ref for the layout effect below.
+  const [text] = useState(() => (window.innerWidth < 600 ? SHORT_TEXT : FULL_TEXT))
+  const textRef = useRef(text)
 
   // Measure context for grapheme widths
   const measureCtxRef = useRef<CanvasRenderingContext2D | null>(null)
@@ -469,7 +472,7 @@ export function TextString() {
   return (
     <section className="textstring-section" aria-label="Interactive text physics demo">
       <div className="sr-only" role="region" aria-label="Demo text content">
-        <p>{textRef.current}</p>
+        <p>{text}</p>
       </div>
 
       <div

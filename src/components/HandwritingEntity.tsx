@@ -142,7 +142,7 @@ function WidgetView(props: SharedViewProps & { isWidgetActive: boolean }) {
     >
       <div
         className="widget-block"
-        style={{ width: entity.obstacleW, height: entity.obstacleH }}
+        style={{ width: entity.obstacleW ?? undefined, height: entity.obstacleH ?? undefined }}
       >
         <div className="widget-label" style={{ fontFamily: entity.font, fontSize: entity.fontSize }}>
           {entity.content}
@@ -211,8 +211,8 @@ function DefaultView(props: SharedViewProps & {
         <HandwrittenEntry
           ref={handwritingRef}
           src={entity.handwritingSrc}
-          width={entity.imgW}
-          height={entity.imgH}
+          width={entity.imgW ?? undefined}
+          height={entity.imgH ?? undefined}
           autoplay={loadSource(entity)?.delayMs === 0}
           speed={entity.playbackSpeed}
           clickable={entity.clickable}
@@ -225,8 +225,8 @@ function DefaultView(props: SharedViewProps & {
         <img
           src={entity.imgSrc}
           alt={entity.content || ''}
-          width={entity.imgW}
-          height={entity.imgH}
+          width={entity.imgW ?? undefined}
+          height={entity.imgH ?? undefined}
           style={{ pointerEvents: 'none', display: 'block', ...(entity.blendMultiply ? { mixBlendMode: 'multiply' } : {}) }}
           draggable={false}
         />

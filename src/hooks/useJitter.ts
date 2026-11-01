@@ -48,15 +48,14 @@ export function useJitter(
   const rafRef = useRef<number>(0)
   const elRef = useRef<HTMLDivElement | null>(null)
 
-  // Stable phase offset per entity (hash the id)
-  const phaseRef = useRef(0)
-  if (phaseRef.current === 0) {
+  // Stable phase offset per entity (hash the id), computed once at mount.
+  const [phase] = useState(() => {
     let h = 0
     for (let i = 0; i < entityId.length; i++) {
       h = ((h << 5) - h + entityId.charCodeAt(i)) | 0
     }
-    phaseRef.current = Math.abs(h % 10000)
-  }
+    return Math.abs(h % 10000)
+  })
 
   const toggleFreeze = useCallback(() => setFrozen(f => !f), [])
 
@@ -71,7 +70,7 @@ export function useJitter(
     }
 
     let running = true
-    const phase = phaseRef.current
+    // `phase` comes from the mount-time hash above (listed in the deps below)
 
     const tick = () => {
       if (!running || !elRef.current) return
@@ -111,7 +110,7 @@ export function useJitter(
       running = false
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [type, frozen, baseRotate])
+  }, [type, frozen, baseRotate, phase])
 
   return {
     jitterRef: elRef,

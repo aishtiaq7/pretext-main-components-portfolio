@@ -109,7 +109,9 @@ export function InteractiveButton({ entity, x, y, onActivate }: Props) {
   );
 
   const isSvgSrc = !!currentSrc && currentSrc.endsWith(".svg");
-  const svgPayload = useSvg(currentSrc);
+  const svgPayload = useSvg(currentSrc ?? undefined);
+  const imgW = entity.imgW ?? undefined;
+  const imgH = entity.imgH ?? undefined;
 
   const currentScale =
     phase === "press" ? pressScale : phase === "hover" ? hoverScale : 1;
@@ -203,8 +205,8 @@ export function InteractiveButton({ entity, x, y, onActivate }: Props) {
         svgPayload ? (
           <svg
             viewBox={svgPayload.viewBox}
-            width={entity.imgW}
-            height={entity.imgH}
+            width={imgW}
+            height={imgH}
             style={{
               display: "block",
               // visiblePainted: each <path> inside (default pointer-events)
@@ -221,13 +223,13 @@ export function InteractiveButton({ entity, x, y, onActivate }: Props) {
           />
         ) : (
           // Layout placeholder until the SVG fetch completes
-          <div style={{ width: entity.imgW, height: entity.imgH }} />
+          <div style={{ width: imgW, height: imgH }} />
         )
       ) : (
         <img
-          src={currentSrc}
-          width={entity.imgW}
-          height={entity.imgH}
+          src={currentSrc ?? undefined}
+          width={imgW}
+          height={imgH}
           draggable={false}
           alt=""
           style={{

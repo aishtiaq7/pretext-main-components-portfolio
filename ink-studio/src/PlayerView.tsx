@@ -137,18 +137,13 @@ export function PlayerView() {
       setError(null)
       setProgress(0)
       setLoaded({ kind: 'json', drawing, totalMs })
+      runFrom(0)   // auto-play once a JSON is loaded
     } else {
       totalMsRef.current = 0
       setError(null)
       setLoaded({ kind: 'svg', markup: text })
     }
-  }, [])
-
-  // Auto-play once a JSON is loaded.
-  useEffect(() => {
-    if (loaded?.kind !== 'json') return
-    runFrom(0)
-  }, [loaded, runFrom])
+  }, [runFrom])
 
   // Cleanup on unmount
   useEffect(() => () => stopRaf(), [stopRaf])

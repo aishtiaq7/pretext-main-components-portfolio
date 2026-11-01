@@ -175,6 +175,10 @@ Decision ✅ (2026-11-01): **hash routing now**, route read through `currentRout
 so clean paths are a later one-line swap plus a vercel.json rewrite.
 `docs/architecture.md` as the long-run source of truth: ✅ user agreed.
 
+## BUILT 2026-11-01 · all 8 steps shipped on `feat/clickable-ink-chain`
+
+Current truth moved to `docs/architecture.md`. This log is history from here on.
+
 ## CLOSED 2026-11-01 · all 8 blocks decided
 
 Build order (one commit per step on `feat/clickable-ink-chain`, build + browser
