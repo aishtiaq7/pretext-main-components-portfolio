@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useLayoutEffect } from 'react'
 import { motion } from 'framer-motion'
 import type { EntityDef } from '../types'
 import { CANVAS } from '../constants'
@@ -34,8 +34,22 @@ export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
     lastT: 0,
   })
   const rafRef = useRef<number | null>(null)
+  const elRef = useRef<HTMLDivElement | null>(null)
+  // Latest committed position, kept current before paint (layout effect).
   const posRef = useRef({ x, y })
-  useEffect(() => { posRef.current = { x, y } }, [x, y])
+  useLayoutEffect(() => { posRef.current = { x, y } }, [x, y])
+
+  // Move the element NOW, then tell React. The DOM write keeps the word glued
+  // to the pointer (and the glide smooth) regardless of when React commits;
+  // the state update re-applies the same value and drives the text reflow.
+  const place = useCallback((nx: number, ny: number) => {
+    const el = elRef.current
+    if (el) {
+      el.style.left = `${nx}%`
+      el.style.top = `${ny}%`
+    }
+    onPositionChange(entity.id, nx, ny)
+  }, [entity.id, onPositionChange])
 
   useEffect(() => {
     return () => {
@@ -85,8 +99,8 @@ export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
 
     const dxPct = (e.clientX - dragRef.current.sx) / (PCT_TO_PX * z)
     const dyPct = (e.clientY - dragRef.current.sy) / (PCT_TO_PX * z)
-    onPositionChange(entity.id, dragRef.current.ox + dxPct, dragRef.current.oy + dyPct)
-  }, [entity.id, onPositionChange])
+    place(dragRef.current.ox + dxPct, dragRef.current.oy + dyPct)
+  }, [place])
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragRef.current) return
@@ -96,9 +110,14 @@ export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
     let vx = velocityRef.current.vx
     let vy = velocityRef.current.vy
     let lastT = performance.now()
+    // The glide integrates its own position from the release point. Reading
+    // React state every frame instead would stall whenever a render lands a
+    // frame late (the position would be re-added to a stale value).
+    let px = posRef.current.x
+    let py = posRef.current.y
 
     const step = (now: number) => {
-      const dt = now - lastT
+      const dt = Math.min(50, now - lastT)   // a stalled tab must not teleport the word
       lastT = now
       const frames = dt / 16.67
       const decay = Math.pow(FRICTION_PER_FRAME, frames)
@@ -108,13 +127,13 @@ export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
         rafRef.current = null
         return
       }
-      const nextX = posRef.current.x + vx * dt
-      const nextY = posRef.current.y + vy * dt
-      onPositionChange(entity.id, nextX, nextY)
+      px += vx * dt
+      py += vy * dt
+      place(px, py)
       rafRef.current = requestAnimationFrame(step)
     }
     rafRef.current = requestAnimationFrame(step)
-  }, [entity.id, onPositionChange])
+  }, [place])
 
   // Dimensions: use image size if present, else obstacle bounding box
   const w = entity.imgW ?? entity.obstacleW ?? 100
@@ -122,6 +141,7 @@ export function MotionObstacle({ entity, x, y, onPositionChange }: Props) {
 
   return (
     <motion.div
+      ref={elRef}
       className="entity entity-motion"
       style={{
         position: 'absolute',

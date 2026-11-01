@@ -36,6 +36,11 @@ clicks to discover more; nothing moves around, things *appear*.
 4. **No React state per frame.** Animation writes to the DOM through refs
    (`useJitter`, `ZoomCanvas`, the handwriting loop). React renders on state
    changes only. No `requestAnimationFrame` loop runs while nothing moves.
+   Drags and the inertia glide follow the same rule: `MotionObstacle` and
+   `HandwritingEntity` write `left`/`top` to the element first and tell React
+   second, and the glide integrates its own position instead of re-reading state
+   each frame. A ref that mirrors a prop for use in event handlers is synced in
+   `useLayoutEffect`, never a passive effect (that lags a frame and stutters).
 5. **Zero-config hosting.** Vercel serves `index.html`; routing is hash-based so a
    refresh never 404s. Switching to clean paths later is one function plus a
    `vercel.json` rewrite.

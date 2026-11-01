@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import type { EntityDef, FixedRegion } from "./types";
 import { activate, makeCtx } from "./actions";
 import { revealEngine } from "./motion/reveal";
@@ -127,7 +127,8 @@ function NotebookCanvas({ notebookId, entities, pages, initialView }: NotebookCa
   // Active widget — only one at a time, null = none active
   const [activeWidget, setActiveWidget] = useState<string | null>(null);
   const activeWidgetRef = useRef<string | null>(null);
-  useEffect(() => { activeWidgetRef.current = activeWidget; }, [activeWidget]);
+  // Read inside drag handlers; keep it current before the next event (layout effect).
+  useLayoutEffect(() => { activeWidgetRef.current = activeWidget; }, [activeWidget]);
 
   // Drag-state hooks kept as no-ops — paragraphs now act as obstacles all the
   // time, so wrapping persists after you drop a paragraph on another.

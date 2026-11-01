@@ -365,6 +365,13 @@ export function HandwritingEntity({
     const newX = dragRef.current.startElX + (dx / PCT_TO_PX)
     const newY = dragRef.current.startElY + (dy / PCT_TO_PX)
     const resolved = resolveCollisions(newX, newY, entity.id, fixedRegions, entityBox.w, entityBox.h)
+    // Move the element now, then tell React: the DOM write keeps the entity
+    // glued to the pointer regardless of when the state update commits.
+    const el = jitterRef.current
+    if (el) {
+      el.style.left = `${resolved.x}%`
+      el.style.top = `${resolved.y}%`
+    }
     onPositionChange(entity.id, resolved.x, resolved.y)
   }
 
