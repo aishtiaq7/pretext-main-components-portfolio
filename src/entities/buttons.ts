@@ -1,14 +1,14 @@
 import type { EntityDef } from '../types'
 import { button } from './factories'
 
-// Buttons are always clickable; their click runs the shared `onClickAction`
-// to-do list. 'fn:master-play' starts the legacy master timeline — in build
-// step 4 the first drawing is instead revealed by 'click:button-1'.
+// Buttons are always clickable. This one is a pure reveal source: the first
+// drawing of the welcome chain declares `revealedBy: 'click:button-1'`, so
+// its own to-do list stays empty. (The legacy master timeline is still
+// reachable from the ▶ in the minimap panel until build step 5 removes it.)
 export const BUTTONS: EntityDef[] = [
   button({
     id: 'button-1', x: 50, y: 58,
     imgSrc: '/button-1.svg',
     imgW: 1200, imgH: 389,
-    onClickAction: 'fn:master-play',
   }),
 ]

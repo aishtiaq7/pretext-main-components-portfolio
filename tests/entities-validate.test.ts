@@ -69,7 +69,8 @@ describe('reveal grammar', () => {
 
   it('derives startup visibility', () => {
     expect(isHiddenAtStart({ revealedBy: ['static'] })).toBe(false)
-    expect(isHiddenAtStart({ revealedBy: ['load +1s'] })).toBe(false)
+    expect(isHiddenAtStart({ revealedBy: ['load'] })).toBe(false)
+    expect(isHiddenAtStart({ revealedBy: ['load +1s'] })).toBe(true)   // engine reveals it later
     expect(isHiddenAtStart({ revealedBy: ['manual'] })).toBe(true)
     expect(isHiddenAtStart({ revealedBy: ['click:a', 'done:a +2s'] })).toBe(true)
     expect(loadSource({ revealedBy: ['load +1s'] })).toEqual({ delayMs: 1000 })

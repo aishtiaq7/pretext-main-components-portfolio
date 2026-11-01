@@ -81,7 +81,8 @@ export type JitterType =
 /**
  * How an entity appears.
  *   'static'              visible from the start, already finished
- *   'load' | 'load +2s'   visible from the start, animates on load (optional delay)
+ *   'load'                visible from the start, animates on mount
+ *   'load +2s'            hidden, then revealed 2 s after startup
  *   'manual'              hidden until something calls play() imperatively
  *   'click:<triggerId>'   hidden until that entity is clicked
  *   'done:<triggerId> +3s' hidden until that entity finishes (+ optional delay)

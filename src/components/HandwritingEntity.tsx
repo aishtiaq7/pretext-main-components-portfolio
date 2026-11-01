@@ -10,6 +10,7 @@ import { isMultiTouchActive } from '../store/gestures'
 import { HandwrittenEntry, type HandwritingHandle } from './HandwrittenEntry'
 import { triggers } from '../store/triggers'
 import { progress } from '../store/progress'
+import { revealEngine } from '../motion/reveal'
 import { isHiddenAtStart, loadSource } from '../entities/reveal'
 
 const PCT_TO_PX = CANVAS / 100  // 1% of canvas in px
@@ -212,7 +213,7 @@ function DefaultView(props: SharedViewProps & {
           src={entity.handwritingSrc}
           width={entity.imgW}
           height={entity.imgH}
-          autoplay={loadSource(entity) !== null}
+          autoplay={loadSource(entity)?.delayMs === 0}
           speed={entity.playbackSpeed}
           clickable={entity.clickable}
           tabOrder={entity.tabOrder}
@@ -265,32 +266,39 @@ export function HandwritingEntity({
   const hwRef = useRef<HandwritingHandle | null>(null)
   const [hidden, setHidden] = useState<boolean>(() => isHiddenAtStart(entity))
 
+  const isInk = !!entity.handwritingSrc
+
+  // "Finished appearing": recorded for 'after:<id>' guards and handed to the
+  // reveal engine so 'done:<id>' sources can fire.
+  const markDone = useCallback(() => {
+    progress.markPlayed(entity.triggerId)
+    revealEngine.onDone(entity.triggerId)
+  }, [entity.triggerId])
+
   useEffect(() => {
     const id = entity.triggerId
     triggers.register(id, {
       reveal: () => setHidden(false),
       play: () => {
         setHidden(false)
-        hwRef.current?.play()
+        if (isInk) hwRef.current?.play()
+        else markDone()          // nothing to animate: visible means finished
       },
       pause: () => hwRef.current?.pause(),
       resume: () => hwRef.current?.resume(),
       reset: () => hwRef.current?.reset(),
     })
     return () => triggers.unregister(id)
-  }, [entity.triggerId])
+  }, [entity.triggerId, isInk, markDone])
 
-  // An entity that is visible from the start and does not animate on load is
-  // already "finished" — record it so 'after:<id>' guards and 'done:<id>'
-  // sources treat it as such. Animated ones report through onInkDone.
+  // Visible from the start and not animating on load → already finished.
+  // Load-animated ink reports through onInkDone when its run completes.
   useEffect(() => {
-    if (!isHiddenAtStart(entity) && loadSource(entity) === null) {
-      progress.markPlayed(entity.triggerId)
-    }
-  }, [entity])
+    if (!isHiddenAtStart(entity) && loadSource(entity) === null) markDone()
+  }, [entity, markDone])
 
   const handleInkActivate = useCallback(() => onActivate?.(entity), [onActivate, entity])
-  const handleInkDone = useCallback(() => progress.markPlayed(entity.triggerId), [entity.triggerId])
+  const handleInkDone = markDone
 
   const isPinned = !!entity.pinned
   const isSection = entity.category === 'section'

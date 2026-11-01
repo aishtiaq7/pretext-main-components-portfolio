@@ -10,10 +10,17 @@ import { handwriting } from './factories'
 // JSON files into `public/handwriting/` and add another entry here.
 //
 // `revealedBy` says how each one appears (docs/architecture.md §3.2):
-//   'load'   → draws itself on page load
-//   'manual' → hidden until the master timeline (scenes.ts) calls play()
-//              — these three migrate to 'click:' / 'done:' in build step 5.
+//   'load'                       → draws itself on page load
+//   'click:<id>'                 → hidden until that entity is clicked
+//   'done:<id> +6s'              → …or 6 s after that entity finishes
+// The welcome chain below: Play button → welcome-1 → welcome-2 → welcome-3.
+// Each step can be clicked through, or advances on its own after 6 s.
+// Recording lengths: welcome 16.96 s · second 7.58 s · 3rd 7.85 s.
 // ═══════════════════════════════════════════════════════════
+
+const SCRIBE_SFX = '/sounds/pencil-scribe-10s.mp3'
+const CHALK_SFX = '/sounds/chalk-7s.mp3'
+
 export const HANDWRITINGS: EntityDef[] = [
   handwriting({
     id: 'hw-1',
@@ -37,7 +44,10 @@ export const HANDWRITINGS: EntityDef[] = [
     width: 600,
     src: '/handwriting/welcome-and-notebook.json',
     triggerId: 'welcome-1',
-    revealedBy: 'manual',
+    revealedBy: 'click:button-1',
+    camera: { zoom: 0.55 },                 // pulled back — wide intro
+    onReveal: `sfx:${SCRIBE_SFX}`,
+    clickable: true,
   }),
   handwriting({
     id: 'hw-welcome-2',
@@ -45,7 +55,10 @@ export const HANDWRITINGS: EntityDef[] = [
     width: 600,
     src: '/handwriting/second-new.json',
     triggerId: 'welcome-2',
-    revealedBy: 'manual',
+    revealedBy: ['click:welcome-1', 'done:welcome-1 +6s'],
+    camera: { zoom: 0.9 },                  // closer — mid punch-in
+    onReveal: `sfx:${CHALK_SFX}`,
+    clickable: true,
   }),
   handwriting({
     id: 'hw-welcome-3',
@@ -53,6 +66,8 @@ export const HANDWRITINGS: EntityDef[] = [
     width: 600,
     src: '/handwriting/3rd-scene.json',
     triggerId: 'welcome-3',
-    revealedBy: 'manual',
+    revealedBy: ['click:welcome-2', 'done:welcome-2 +6s'],
+    camera: { zoom: 1.2 },                  // tight — final hero crop
+    onReveal: `sfx:${SCRIBE_SFX}`,
   }),
 ]

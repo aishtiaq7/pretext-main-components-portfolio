@@ -295,7 +295,7 @@ the default is filled in so every row has every column.
 | Field | Default | Meaning |
 |---|---|---|
 | `triggerId` | `id` | Name in the phone book (`triggers`). Only set when a shorter alias is wanted. |
-| `revealedBy` | `['static']` | How the entity appears. `'static'`, `'load'`, `'load +2s'`, `'manual'`, `'click:<id>'`, `'done:<id> +3s'`. Several allowed; first to fire wins. |
+| `revealedBy` | `['static']` | How the entity appears. `'static'`, `'load'` (animates on mount), `'load +2s'` (hidden, revealed 2 s after startup), `'manual'`, `'click:<id>'`, `'done:<id> +3s'`. Several allowed; first to fire wins. |
 | `clickable` | `false` | Painted pixels catch clicks once the entity has finished appearing. |
 | `onClickAction` | `[]` | To-do list on click: `'trigger:<id>'`, `'link:<url>'`, `'pan:<id>'`, `'sfx:<path>'`, `'fn:<name>'`, `'set:<flag>'`. |
 | `enabledWhen` | `null` | Guard before the to-do list: `'after:<id>'`, `'flag:<name>'`, `'zoomMin:<n>'`, `'once'`. |

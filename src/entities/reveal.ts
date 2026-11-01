@@ -74,15 +74,20 @@ export function parseRevealedBy(entity: Pick<EntityDef, 'revealedBy'>): ParsedSo
   return out
 }
 
-/** True when nothing makes the entity visible at startup (no 'static' / 'load'). */
+/**
+ * True when nothing makes the entity visible at startup.
+ * 'static' and plain 'load' show it immediately; 'load +Ns' keeps it hidden
+ * until the reveal engine fires N seconds after startup.
+ */
 export function isHiddenAtStart(entity: Pick<EntityDef, 'revealedBy'>): boolean {
   for (const p of parseRevealedBy(entity)) {
-    if (p.kind === 'static' || p.kind === 'load') return false
+    if (p.kind === 'static') return false
+    if (p.kind === 'load' && p.delayMs === 0) return false
   }
   return true
 }
 
-/** The 'load' source if present (the entity animates on page load after delayMs). */
+/** The 'load' source if present. delayMs 0 → animates on mount; >0 → engine reveals it later. */
 export function loadSource(entity: Pick<EntityDef, 'revealedBy'>): { delayMs: number } | null {
   for (const p of parseRevealedBy(entity)) {
     if (p.kind === 'load') return { delayMs: p.delayMs }

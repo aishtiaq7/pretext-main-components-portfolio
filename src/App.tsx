@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { ENTITIES } from "./entities";
 import type { EntityDef, FixedRegion } from "./types";
 import { activate, makeCtx } from "./actions";
+import { revealEngine } from "./motion/reveal";
 import { CANVAS, PAN_LIMIT } from "./constants";
 import {
   getViewport,
@@ -240,6 +241,8 @@ export default function App() {
   );
 
   // 'pan:<triggerId>' action → ease the camera to that entity.
+  // Kept behind a ref so the reveal engine gets one stable callback and is
+  // not re-initialised every time an entity is dragged.
   const panToTrigger = useCallback(
     (triggerId: string) => {
       const target = ENTITIES.find((e) => e.triggerId === triggerId);
@@ -247,14 +250,25 @@ export default function App() {
     },
     [handleEntityClick],
   );
+  const panToRef = useRef(panToTrigger);
+  useEffect(() => { panToRef.current = panToTrigger; }, [panToTrigger]);
+  const stablePanTo = useCallback((id: string) => panToRef.current(id), []);
 
-  // A click on a clickable entity (button today, ink from step 3):
-  // guard → to-do list → remember the click. See src/actions.ts.
+  // Reveal engine: indexes `revealedBy`, fires on click / done / load.
+  useEffect(() => {
+    revealEngine.init(ENTITIES, { panTo: stablePanTo });
+    return () => revealEngine.dispose();
+  }, [stablePanTo]);
+
+  // A click on a clickable entity (button or finished ink):
+  // guard → to-do list → remember the click → reveal whatever waits on it.
   const handleActivate = useCallback(
     (entity: EntityDef) => {
-      activate(entity, makeCtx(entity, panToTrigger));
+      if (activate(entity, makeCtx(entity, stablePanTo))) {
+        revealEngine.onClicked(entity.triggerId);
+      }
     },
-    [panToTrigger],
+    [stablePanTo],
   );
 
   // Wheel / trackpad gestures

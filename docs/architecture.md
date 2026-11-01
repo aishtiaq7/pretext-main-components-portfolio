@@ -67,7 +67,8 @@ Retired: `revealMode`, `autoplay` (both expressed by `revealedBy`).
 
 ```
 'static'                 visible from the start, already finished
-'load'   | 'load +2s'    visible from the start, animates on load (optional delay)
+'load'                   visible from the start, animates on mount
+'load +2s'               hidden, then revealed 2 s after startup
 'manual'                 hidden until something calls play() imperatively (legacy timeline)
 'click:<triggerId>'      hidden until that entity is clicked
 'done:<triggerId> +3s'   hidden until that entity finishes drawing (+ optional delay)
@@ -165,14 +166,22 @@ check after each.
 - [x] 2. Registries + progress store (`src/actions.ts`, `src/store/progress.ts`)
 - [x] 3. `HandwrittenEntry` rewrite: cached outlines, ref-driven loop, click on ink,
       keyboard behind `tabOrder`
-- [ ] 4. Reveal engine: click / done / load sources, first-wins, `onReveal`, `camera`.
-      Play button wired as `click:button-1`. `scenes.ts` untouched
+- [x] 4. Reveal engine: click / done / load sources, first-wins, `onReveal`, `camera`.
+      Play button wired as `click:button-1`. `scenes.ts` untouched (legacy ▶ only)
 - [ ] 5. Migrate the three scenes onto entities, delete `scenes.ts`, shrink
       MotionController, mute persists
 - [ ] 6. Routes: `currentRoute()`, notebook config per route, empty `freshpage1`,
       header links, canvas state reset per notebook
 - [ ] 7. Follow-up: legacy optional-field normalization sweep, 60 fps check while a
       drawing animates and the camera pans
+
+## 6b. Dev aids
+
+- `npm run dev` validates the entity list on startup and prints problems to the console.
+- In dev the browser exposes `window.__notebook` = `{ revealEngine, triggers, progress, entities }`.
+  Useful while testing a chain: `__notebook.revealEngine.pauseAll()` freezes pending
+  `done:`/`load:` timers, `__notebook.triggers.play('welcome-2')` reveals by hand,
+  `__notebook.progress.reset()` forgets what the visitor reached.
 
 ## 7. Recipe: add a drawing to the chain
 
