@@ -163,7 +163,7 @@ check after each.
 - [x] 1. Schema + normalization: fields on `EntityDef`, factories emit full rows,
       handwriting entries move to `revealedBy`, startup validator + test
 - [x] 2. Registries + progress store (`src/actions.ts`, `src/store/progress.ts`)
-- [ ] 3. `HandwrittenEntry` rewrite: cached outlines, ref-driven loop, click on ink,
+- [x] 3. `HandwrittenEntry` rewrite: cached outlines, ref-driven loop, click on ink,
       keyboard behind `tabOrder`
 - [ ] 4. Reveal engine: click / done / load sources, first-wins, `onReveal`, `camera`.
       Play button wired as `click:button-1`. `scenes.ts` untouched

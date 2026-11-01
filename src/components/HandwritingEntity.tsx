@@ -9,6 +9,7 @@ import { getViewport } from '../store/viewport'
 import { isMultiTouchActive } from '../store/gestures'
 import { HandwrittenEntry, type HandwritingHandle } from './HandwrittenEntry'
 import { triggers } from '../store/triggers'
+import { progress } from '../store/progress'
 import { isHiddenAtStart, loadSource } from '../entities/reveal'
 
 const PCT_TO_PX = CANVAS / 100  // 1% of canvas in px
@@ -66,6 +67,8 @@ type Props = {
   obstacles: CanvasObstacle[]
   onPositionChange: (id: string, x: number, y: number) => void
   onClick?: () => void
+  /** Click / Enter on a clickable entity's ink. App runs guard + to-do list. */
+  onActivate?: (entity: EntityDef) => void
   renderSection?: (componentId: string) => React.ReactNode
   isWidgetActive?: boolean
   onWidgetActivate?: (id: string) => void
@@ -158,9 +161,12 @@ function DefaultView(props: SharedViewProps & {
   localObstacles: ObstacleRect[]
   handwritingRef?: React.Ref<HandwritingHandle>
   hidden?: boolean
+  onInkActivate?: () => void
+  onInkDone?: () => void
 }) {
   const { entity, x, y, setRef, isDraggable, isPinned, jitterFrozen, hasReflow, localObstacles,
-          handwritingRef, hidden, onPointerDown, onPointerMove, onPointerUp } = props
+          handwritingRef, hidden, onInkActivate, onInkDone,
+          onPointerDown, onPointerMove, onPointerUp } = props
 
   const classes = [
     'entity',
@@ -208,6 +214,11 @@ function DefaultView(props: SharedViewProps & {
           height={entity.imgH}
           autoplay={loadSource(entity) !== null}
           speed={entity.playbackSpeed}
+          clickable={entity.clickable}
+          tabOrder={entity.tabOrder}
+          ariaLabel={`Drawing ${entity.triggerId}. Press Enter to continue.`}
+          onActivate={onInkActivate}
+          onDone={onInkDone}
         />
       ) : entity.imgSrc ? (
         <img
@@ -241,7 +252,7 @@ function DefaultView(props: SharedViewProps & {
 // to render based on entity category.
 
 export function HandwritingEntity({
-  entity, x, y, fixedRegions, obstacles, onPositionChange, onClick, renderSection,
+  entity, x, y, fixedRegions, obstacles, onPositionChange, onClick, onActivate, renderSection,
   isWidgetActive, onWidgetActivate, onDragStart, onDragEnd,
 }: Props) {
   const dragRef = useRef({ startX: 0, startY: 0, startElX: 0, startElY: 0, dragging: false })
@@ -268,6 +279,18 @@ export function HandwritingEntity({
     })
     return () => triggers.unregister(id)
   }, [entity.triggerId])
+
+  // An entity that is visible from the start and does not animate on load is
+  // already "finished" — record it so 'after:<id>' guards and 'done:<id>'
+  // sources treat it as such. Animated ones report through onInkDone.
+  useEffect(() => {
+    if (!isHiddenAtStart(entity) && loadSource(entity) === null) {
+      progress.markPlayed(entity.triggerId)
+    }
+  }, [entity])
+
+  const handleInkActivate = useCallback(() => onActivate?.(entity), [onActivate, entity])
+  const handleInkDone = useCallback(() => progress.markPlayed(entity.triggerId), [entity.triggerId])
 
   const isPinned = !!entity.pinned
   const isSection = entity.category === 'section'
@@ -381,6 +404,8 @@ export function HandwritingEntity({
       localObstacles={localObstacles}
       handwritingRef={entity.handwritingSrc ? hwRef : undefined}
       hidden={hidden}
+      onInkActivate={handleInkActivate}
+      onInkDone={handleInkDone}
     />
   )
 }

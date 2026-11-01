@@ -275,6 +275,17 @@ body {
   z-index: 60;
 }
 
+/* Clickable ink (HandwrittenEntry, finished + clickable). Only painted
+   pixels are hit targets; the hover shadow is one composite on the <svg>. */
+.ink-clickable {
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.ink-clickable:hover,
+.ink-clickable:focus-visible {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.28));
+}
+
 
 /* ═══════════════════════════════════════════════════════════
    SCROLL INPUTS — Right-edge compact widget

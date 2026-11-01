@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { getStroke } from 'perfect-freehand'
-import type { Drawing, EasingName } from '../../ink-studio/src/types'
+import type { Drawing, EasingName, Point, StoredStroke } from '../../ink-studio/src/types'
+import { isMultiTouchActive } from '../store/gestures'
 
 // ═══════════════════════════════════════════════════════════
 // HandwrittenEntry — plays back stroke-capture JSON exported
@@ -8,19 +9,22 @@ import type { Drawing, EasingName } from '../../ink-studio/src/types'
 // pressure/tilt produce the ink body; absolute timestamps
 // reproduce the original writing rhythm (pauses included).
 //
-// Imperative handle (via ref):
-//   play()   — restart the writing animation from progress 0
-//   pause()  — freeze at current progress
-//   resume() — continue from paused progress
-//   reset()  — jump to final frame (progress 1)
+// Performance model (docs/architecture.md §4):
+//   • every stroke's finished outline is computed ONCE when the
+//     JSON loads and cached as a path string
+//   • the rAF loop writes `d` attributes through refs — React
+//     renders once on load and once when the drawing completes
+//   • per frame only the stroke currently being drawn calls
+//     perfect-freehand; finished strokes reuse their cache
+//   • no loop runs while nothing is animating
 //
-// When `autoplay` is true the animation starts as soon as the
-// JSON loads. When false the entry renders the *fully drawn*
-// final state by default — pair with `revealMode: 'manual'`
-// on the parent entity to keep it hidden until play() fires.
+// Click on ink: the wrapper ignores pointer events, the <svg> uses
+// `visiblePainted`, so only painted pixels are targets. A press that
+// moves less than CLICK_SLOP px before release is a click; anything
+// else is left to the viewport's pan (we never stop propagation or
+// capture the pointer, so the canvas pan starts as usual).
 //
-// JSON-format types are imported from `ink-studio/src/types`
-// — single source of truth shared with the writer.
+// Imperative handle (via ref): play / pause / resume / reset.
 // ═══════════════════════════════════════════════════════════
 
 const EASINGS: Record<EasingName, (t: number) => number> = {
@@ -37,6 +41,8 @@ const EASINGS: Record<EasingName, (t: number) => number> = {
     t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
 }
 
+const CLICK_SLOP = 4 // px
+
 export type HandwritingHandle = {
   play: () => void
   pause: () => void
@@ -49,33 +55,89 @@ type Props = {
   /** On-canvas pixel size. Optional — defaults to fill parent. */
   width?: number
   height?: number
-  /** Animate the drawing on mount. Default false → renders statically. */
+  /** Animate the drawing on mount. Default false → renders the finished ink. */
   autoplay?: boolean
   /** Playback speed multiplier — 2 = twice as fast. */
   speed?: number
+  /** Ink pixels catch clicks once the drawing has finished. */
+  clickable?: boolean
+  /** Keyboard order; null = no Tab stop (default). */
+  tabOrder?: number | null
+  ariaLabel?: string
+  /** A click (or Enter/Space) on finished, clickable ink. */
+  onActivate?: () => void
+  /** The writing animation reached the end (or reset() jumped there). */
+  onDone?: () => void
+}
+
+// One stroke, prepared once: timing relative to the first stroke + cached
+// finished outline. `src` keeps the raw points for partial frames.
+type Prepared = {
+  src: StoredStroke
+  offset: number   // ms from the drawing's first stroke to this one
+  endT: number     // offset + last point's t
+  fullD: string    // finished outline (last: true)
+}
+
+type PaintState = 'empty' | 'partial' | 'full'
+
+function prepare(drawing: Drawing): { strokes: Prepared[]; total: number } {
+  const firstStart = drawing.strokes[0]?.startedAt ?? 0
+  const strokes = drawing.strokes.map((s) => {
+    const offset = s.startedAt - firstStart
+    const lastT = s.points[s.points.length - 1]?.t ?? 0
+    return { src: s, offset, endT: offset + lastT, fullD: outlineOf(s, s.points, true) }
+  })
+  const total = Math.max(1, ...strokes.map((s) => s.endT))
+  return { strokes, total }
+}
+
+function outlineOf(stroke: StoredStroke, pts: readonly Point[], last: boolean): string {
+  if (pts.length < 2) return ''
+  const outline = getStroke(pts.map((p) => [p.x, p.y, p.p]), {
+    size: stroke.options.size,
+    thinning: stroke.options.thinning,
+    smoothing: stroke.options.smoothing,
+    streamline: stroke.options.streamline,
+    easing: EASINGS[stroke.options.easing],
+    start: { taper: stroke.options.taperStart, cap: stroke.options.capStart },
+    end: { taper: stroke.options.taperEnd, cap: stroke.options.capEnd },
+    last,
+  })
+  return getSvgPathFromStroke(outline)
 }
 
 export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function HandwrittenEntry(
-  { src, width, height, autoplay = false, speed = 1 },
+  {
+    src, width, height, autoplay = false, speed = 1,
+    clickable = false, tabOrder = null, ariaLabel, onActivate, onDone,
+  },
   ref,
 ) {
-  const [drawing, setDrawing] = useState<Drawing | null>(null)
-  // progress starts at 1 (static end state) unless autoplay. The play()
-  // imperative handle resets to 0 and runs the rAF loop manually below —
-  // no React effect dependency hopping required.
-  const [progress, setProgress] = useState(autoplay ? 0 : 1)
+  // Set once when the JSON loads. `initialFull` is frozen here so the JSX `d`
+  // never changes between renders and React never overwrites the loop's writes.
+  const [loaded, setLoaded] = useState<{ drawing: Drawing; strokes: Prepared[]; initialFull: boolean } | null>(null)
+  // The only per-run React state: flips when a run finishes (enables click).
+  const [done, setDone] = useState<boolean>(!autoplay)
 
-  // Live animation state — kept in refs so callers can drive the loop
-  // imperatively without triggering re-renders per frame.
+  // ── Imperative state (no re-renders) ──
+  const preparedRef = useRef<Prepared[]>([])
+  const totalRef = useRef(1)                       // recording length, ms
+  const pathRefs = useRef<(SVGPathElement | null)[]>([])
+  const paintRef = useRef<PaintState[]>([])        // what each path currently shows
+  const doneUpToRef = useRef(0)                    // strokes [0, doneUpTo) are finalized
   const rafRef = useRef<number | null>(null)
-  const startRef = useRef<number>(0)            // performance.now() when current run began
+  const startRef = useRef(0)                       // performance.now() at progress 0 of this run
   const pausedProgressRef = useRef<number | null>(null)
-  const totalRef = useRef<number>(1)            // computed once drawing loads
-  const drawingRef = useRef<Drawing | null>(null)
-  const speedRef = useRef<number>(speed)
-  useEffect(() => { speedRef.current = speed }, [speed])
+  const speedRef = useRef(speed)
+  const onDoneRef = useRef(onDone)
+  const onActivateRef = useRef(onActivate)
 
-  // Load JSON
+  useEffect(() => { speedRef.current = speed }, [speed])
+  useEffect(() => { onDoneRef.current = onDone }, [onDone])
+  useEffect(() => { onActivateRef.current = onActivate }, [onActivate])
+
+  // ── Load + prepare ──
   useEffect(() => {
     let cancelled = false
     fetch(src)
@@ -85,20 +147,65 @@ export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function Ha
       })
       .then((json: Drawing) => {
         if (cancelled) return
-        drawingRef.current = json
-        const firstStart = json.strokes[0]?.startedAt ?? 0
-        const lastStroke = json.strokes[json.strokes.length - 1]
-        const lastT = lastStroke?.points[lastStroke.points.length - 1]?.t ?? 0
-        totalRef.current = Math.max(
-          1,
-          ((lastStroke?.startedAt ?? firstStart) - firstStart + lastT) / speedRef.current,
-        )
-        setDrawing(json)
+        const { strokes, total } = prepare(json)
+        const initialFull = !autoplay
+        preparedRef.current = strokes
+        totalRef.current = total
+        paintRef.current = strokes.map(() => (initialFull ? 'full' : 'empty'))
+        doneUpToRef.current = initialFull ? strokes.length : 0
+        setLoaded({ drawing: json, strokes, initialFull })
       })
       .catch(() => { /* swallow — entry just won't render */ })
     return () => { cancelled = true }
+    // `autoplay` is read once at load on purpose: it decides the first frame only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src])
 
+  // ── Painting ──
+  const clearAll = useCallback(() => {
+    const paths = pathRefs.current
+    for (let i = 0; i < paths.length; i++) {
+      paths[i]?.setAttribute('d', '')
+      paintRef.current[i] = 'empty'
+    }
+    doneUpToRef.current = 0
+  }, [])
+
+  /** Write the DOM for progress p ∈ [0, 1]. Only in-progress strokes recompute. */
+  const paint = useCallback((p: number) => {
+    const strokes = preparedRef.current
+    const elapsed = p * totalRef.current
+    for (let i = doneUpToRef.current; i < strokes.length; i++) {
+      const s = strokes[i]
+      const el = pathRefs.current[i]
+      if (!el) continue
+      if (s.endT <= elapsed) {
+        if (paintRef.current[i] !== 'full') {
+          el.setAttribute('d', s.fullD)
+          paintRef.current[i] = 'full'
+        }
+        // Finalized strokes are skipped on later frames once everything
+        // before them is also final (keeps doneUpTo a simple cursor).
+        if (doneUpToRef.current === i) doneUpToRef.current = i + 1
+        continue
+      }
+      if (s.offset > elapsed) {
+        if (paintRef.current[i] !== 'empty') {
+          el.setAttribute('d', '')
+          paintRef.current[i] = 'empty'
+        }
+        continue
+      }
+      // In progress: the one place perfect-freehand runs per frame.
+      const pts = s.src.points
+      let n = 0
+      while (n < pts.length && s.offset + pts[n].t <= elapsed) n++
+      el.setAttribute('d', outlineOf(s.src, pts.slice(0, n), false))
+      paintRef.current[i] = 'partial'
+    }
+  }, [])
+
+  // ── Loop ──
   const stopRaf = useCallback(() => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current)
@@ -106,32 +213,38 @@ export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function Ha
     }
   }, [])
 
+  const finish = useCallback(() => {
+    rafRef.current = null
+    paint(1)
+    setDone(true)
+    onDoneRef.current?.()
+  }, [paint])
+
   const runLoop = useCallback((fromProgress: number) => {
     stopRaf()
-    if (!drawingRef.current) return
-    startRef.current = performance.now() - fromProgress * totalRef.current
+    if (preparedRef.current.length === 0) return
+    const durationMs = totalRef.current / speedRef.current
+    startRef.current = performance.now() - fromProgress * durationMs
     const step = (now: number) => {
-      const p = Math.min(1, (now - startRef.current) / totalRef.current)
-      setProgress(p)
-      if (p < 1) {
-        rafRef.current = requestAnimationFrame(step)
-      } else {
-        rafRef.current = null
-      }
+      const p = Math.min(1, (now - startRef.current) / durationMs)
+      if (p >= 1) { finish(); return }
+      paint(p)
+      rafRef.current = requestAnimationFrame(step)
     }
     rafRef.current = requestAnimationFrame(step)
-  }, [stopRaf])
+  }, [stopRaf, paint, finish])
 
   const play = useCallback(() => {
     pausedProgressRef.current = null
-    setProgress(0)
+    setDone(false)
+    clearAll()
     runLoop(0)
-  }, [runLoop])
+  }, [clearAll, runLoop])
 
   const pause = useCallback(() => {
     if (rafRef.current === null) return
-    const elapsed = performance.now() - startRef.current
-    const p = Math.min(1, Math.max(0, elapsed / totalRef.current))
+    const durationMs = totalRef.current / speedRef.current
+    const p = Math.min(1, Math.max(0, (performance.now() - startRef.current) / durationMs))
     pausedProgressRef.current = p
     stopRaf()
   }, [stopRaf])
@@ -146,33 +259,56 @@ export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function Ha
   const reset = useCallback(() => {
     stopRaf()
     pausedProgressRef.current = null
-    setProgress(1)
-  }, [stopRaf])
+    finish()
+  }, [stopRaf, finish])
 
   useImperativeHandle(ref, () => ({ play, pause, resume, reset }), [play, pause, resume, reset])
 
-  // Autoplay: kick the loop once the JSON has loaded.
+  // Autoplay: kick the loop once the JSON has loaded and the paths exist.
   const autoplayedRef = useRef(false)
   useEffect(() => {
-    if (!drawing || !autoplay || autoplayedRef.current) return
+    if (!loaded || !autoplay || autoplayedRef.current) return
     autoplayedRef.current = true
     runLoop(0)
-  }, [drawing, autoplay, runLoop])
+  }, [loaded, autoplay, runLoop])
 
-  // Cleanup
   useEffect(() => () => stopRaf(), [stopRaf])
 
-  if (!drawing) return null
+  // ── Click on ink (no capture, no stopPropagation — the pan still works) ──
+  const pressRef = useRef<{ id: number; x: number; y: number } | null>(null)
+  const interactive = clickable && done
 
-  const firstStart = drawing.strokes[0]?.startedAt ?? 0
-  const lastStroke = drawing.strokes[drawing.strokes.length - 1]
-  const lastT = lastStroke?.points[lastStroke.points.length - 1]?.t ?? 0
-  const total = Math.max(1, (lastStroke?.startedAt ?? firstStart) - firstStart + lastT)
-  const elapsed = progress * total
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (!interactive || isMultiTouchActive()) return
+    const press = { id: e.pointerId, x: e.clientX, y: e.clientY }
+    pressRef.current = press
+    const onUp = (up: PointerEvent) => {
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      if (pressRef.current !== press) return
+      pressRef.current = null
+      if (up.type === 'pointercancel' || up.pointerId !== press.id) return
+      if (isMultiTouchActive()) return
+      if (Math.hypot(up.clientX - press.x, up.clientY - press.y) > CLICK_SLOP) return
+      onActivateRef.current?.()
+    }
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }, [interactive])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!interactive) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onActivateRef.current?.()
+    }
+  }, [interactive])
+
+  if (!loaded) return null
+  const { drawing, strokes: prepared, initialFull } = loaded
 
   // When the caller supplies only `width`, derive height from the JSON's
-  // intrinsic aspect ratio so the slot matches the drawing exactly — no
-  // letterboxing, no per-file tuning when a new recording gets dropped in.
+  // intrinsic aspect ratio so the slot matches the drawing exactly.
   const autoFit = width !== undefined && height === undefined
   const containerStyle: React.CSSProperties = {
     width: width ?? '100%',
@@ -187,34 +323,29 @@ export const HandwrittenEntry = forwardRef<HandwritingHandle, Props>(function Ha
         viewBox={`0 0 ${drawing.width} ${drawing.height}`}
         width="100%"
         height="100%"
-        style={{ display: 'block' }}
+        className={interactive ? 'ink ink-clickable' : 'ink'}
+        style={{
+          display: 'block',
+          // Only painted ink receives events, and only when clickable + finished.
+          pointerEvents: interactive ? 'visiblePainted' : 'none',
+        }}
+        role={interactive ? 'button' : undefined}
+        aria-label={interactive ? (ariaLabel ?? 'Drawing') : undefined}
+        tabIndex={interactive && tabOrder !== null ? tabOrder : undefined}
+        onPointerDown={handlePointerDown}
+        onKeyDown={handleKeyDown}
       >
-        {drawing.strokes.map((stroke, i) => {
-          const offset = stroke.startedAt - firstStart
-          const revealed = stroke.points.filter((pt) => offset + pt.t <= elapsed)
-          if (revealed.length < 2) return null
-          const pts = revealed.map((p) => [p.x, p.y, p.p])
-          const outline = getStroke(pts, {
-            size: stroke.options.size,
-            thinning: stroke.options.thinning,
-            smoothing: stroke.options.smoothing,
-            streamline: stroke.options.streamline,
-            easing: EASINGS[stroke.options.easing],
-            start: { taper: stroke.options.taperStart, cap: stroke.options.capStart },
-            end: { taper: stroke.options.taperEnd, cap: stroke.options.capEnd },
-            last: revealed.length === stroke.points.length,
-          })
-          return (
-            <path
-              key={i}
-              d={getSvgPathFromStroke(outline)}
-              fill={stroke.color}
-              stroke={stroke.outlineWidth > 0 ? stroke.outlineColor : 'none'}
-              strokeWidth={stroke.outlineWidth}
-              opacity={stroke.opacity ?? 1}
-            />
-          )
-        })}
+        {prepared.map((s, i) => (
+          <path
+            key={i}
+            ref={(el) => { pathRefs.current[i] = el }}
+            d={initialFull ? s.fullD : ''}
+            fill={s.src.color}
+            stroke={s.src.outlineWidth > 0 ? s.src.outlineColor : 'none'}
+            strokeWidth={s.src.outlineWidth}
+            opacity={s.src.opacity ?? 1}
+          />
+        ))}
       </svg>
     </div>
   )

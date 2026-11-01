@@ -555,6 +555,7 @@ export default function App() {
                 obstacles={obstacleRects}
                 onPositionChange={handleEntityPositionChange}
                 onClick={() => handleEntityClick(entity.id)}
+                onActivate={handleActivate}
                 renderSection={
                   entity.category === "section" ? renderSection : undefined
                 }
