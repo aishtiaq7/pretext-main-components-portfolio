@@ -8,6 +8,11 @@ import { handwriting } from './factories'
 // from each JSON's intrinsic aspect ratio so any future recording
 // drops in without per-file tuning. Tilt via `rotate`. Drop more
 // JSON files into `public/handwriting/` and add another entry here.
+//
+// `revealedBy` says how each one appears (docs/architecture.md §3.2):
+//   'load'   → draws itself on page load
+//   'manual' → hidden until the master timeline (scenes.ts) calls play()
+//              — these three migrate to 'click:' / 'done:' in build step 5.
 // ═══════════════════════════════════════════════════════════
 export const HANDWRITINGS: EntityDef[] = [
   handwriting({
@@ -16,7 +21,7 @@ export const HANDWRITINGS: EntityDef[] = [
     width: 720,
     rotate: -1,
     src: '/handwriting/ink-2026-04-17-2017.json',
-    autoplay: true,
+    revealedBy: 'load',
   }),
   handwriting({
     id: 'hw-2',
@@ -24,33 +29,30 @@ export const HANDWRITINGS: EntityDef[] = [
     width: 720,
     rotate: 1,
     src: '/handwriting/ink-2026-04-17-2037.json',
-    autoplay: true,
+    revealedBy: 'load',
   }),
   handwriting({
     id: 'hw-welcome',
     x: 69, y: 69,
     width: 600,
     src: '/handwriting/welcome-and-notebook.json',
-    autoplay: false,
     triggerId: 'welcome-1',
-    revealMode: 'manual',
+    revealedBy: 'manual',
   }),
   handwriting({
     id: 'hw-welcome-2',
     x: 74, y: 72,
     width: 600,
     src: '/handwriting/second-new.json',
-    autoplay: false,
     triggerId: 'welcome-2',
-    revealMode: 'manual',
+    revealedBy: 'manual',
   }),
   handwriting({
     id: 'hw-welcome-3',
     x: 81, y: 66,
     width: 600,
     src: '/handwriting/3rd-scene.json',
-    autoplay: false,
     triggerId: 'welcome-3',
-    revealMode: 'manual',
+    revealedBy: 'manual',
   }),
 ]

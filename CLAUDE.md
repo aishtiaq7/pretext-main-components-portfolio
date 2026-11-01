@@ -52,6 +52,13 @@ src/
 │   └── SectionAbout.tsx       # About block with inset photo
 ├── entities/                # Data-driven entity definitions (one file per category)
 │   ├── index.ts             # Combines all entity arrays
+│   ├── factories.ts         # One factory per type; normalizes reveal & click fields
+│   ├── reveal.ts            # Parses revealedBy / action / guard strings
+│   ├── validate.ts          # Startup validator (DEV) — dangling refs, grammar, reachability
+│   ├── registry.ts          # Collision / minimap / obstacle contributions per entity
+│   ├── sizes.ts             # Pixel footprints (sections, widgets, reflow boxes)
+│   ├── handwriting.ts       # Ink-studio JSON drawings (the chain lives here)
+│   ├── buttons.ts           # Clickable SVG buttons
 │   ├── doodles.ts           # ~13 scattered text quotes & snippets
 │   ├── accents.ts           # ~13 bold animated words (DEBUG, DEPLOY, etc.)
 │   ├── watermarks.ts        # ~10 large faint background text

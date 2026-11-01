@@ -72,7 +72,66 @@ export type JitterType =
   | 'pulse'       // font-size breathing
   | 'wobble-drift' // combined
 
-export type EntityDef = {
+// ═══════════════════════════════════════════════════════════
+// REVEAL & CLICK VOCABULARY — see docs/architecture.md §3
+// Short strings with a fixed grammar, parsed once at startup by
+// src/entities/reveal.ts and checked by src/entities/validate.ts.
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * How an entity appears.
+ *   'static'              visible from the start, already finished
+ *   'load' | 'load +2s'   visible from the start, animates on load (optional delay)
+ *   'manual'              hidden until something calls play() imperatively
+ *   'click:<triggerId>'   hidden until that entity is clicked
+ *   'done:<triggerId> +3s' hidden until that entity finishes (+ optional delay)
+ */
+export type RevealSource = string
+
+/**
+ * One item of a to-do list.
+ *   'trigger:<triggerId>' | 'link:<url>' | 'pan:<triggerId>' | 'sfx:<path>'
+ *   'fn:<name>' | 'set:<flag>'
+ */
+export type ActionKey = string
+
+/**
+ * A rule checked before a click's to-do list runs.
+ *   'after:<triggerId>' | 'flag:<name>' | 'zoomMin:<n>' | 'once'
+ */
+export type GuardKey = string
+
+/** Pan/zoom the viewport to the entity when it is revealed. */
+export type CameraSpec = {
+  zoom: number
+  /** seconds; default 1.2 */
+  panDuration?: number
+}
+
+/**
+ * Behaviour fields present on EVERY entity (normalized by the factories, so a
+ * row always has every column — unused ones hold their explicit default).
+ */
+export type EntityBehavior = {
+  /** Name in the phone book (store/triggers). Defaults to `id`. */
+  triggerId: string
+  /** Every way this entity can appear; the first to fire wins. Default ['static']. */
+  revealedBy: RevealSource[]
+  /** Painted pixels catch clicks once the entity has finished appearing. Default false. */
+  clickable: boolean
+  /** To-do list run on click. Default []. */
+  onClickAction: ActionKey[]
+  /** Optional rule checked before onClickAction runs. Default null. */
+  enabledWhen: GuardKey | null
+  /** To-do list run when the entity is revealed. Default []. */
+  onReveal: ActionKey[]
+  /** Camera move on reveal. Default null. */
+  camera: CameraSpec | null
+  /** When set, keyboard-focusable in this order. Default null (no Tab stop). */
+  tabOrder: number | null
+}
+
+export type EntityDef = EntityBehavior & {
   id: string
   x: number
   y: number
@@ -97,16 +156,9 @@ export type EntityDef = {
   handwritingSrc?: string // path to a stroke-capture JSON (ink-studio export)
                           //   → renders <HandwrittenEntry> instead of <img>
                           //   sized via imgW / imgH (same as image variant)
-  autoplay?: boolean      // handwriting: replay the writing animation on mount
   playbackSpeed?: number  // handwriting: replay speed multiplier (default 1)
-
-  // ── Master-timeline integration (handwriting + future entity types) ──
-  // `triggerId` registers the entity with the global trigger registry so the
-  // master timeline / scene scripts can call play/pause/reset on it. Pair with
-  // `revealMode: 'manual'` to keep the entity hidden (visibility:hidden) until
-  // its `reveal()` or `play()` is called. Default reveal mode is 'auto'.
-  triggerId?: string
-  revealMode?: 'auto' | 'manual'
+  // (Whether a handwriting entity animates on load or waits to be revealed is
+  //  expressed by `revealedBy` — 'load' vs 'manual' / 'click:…' / 'done:…'.)
 
   // ── New fields ──
   category: EntityCategory
@@ -139,8 +191,7 @@ export type EntityDef = {
   hoverFilter?: string         // optional CSS filter on hover (e.g. 'brightness(1.1)')
   hoverSound?: string          // file path
   clickSound?: string
-  /** Action key resolved via App.tsx's buttonActions map. */
-  onClickAction?: string
+  // (The click's to-do list is the shared `onClickAction` above.)
 }
 
 export type FixedRegion = {

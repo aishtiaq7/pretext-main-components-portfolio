@@ -41,13 +41,13 @@ function clamp(val: number, min: number, max: number) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Button action registry. Buttons reference these by key via
-// `entity.onClickAction`. Add a new entry to expose a new
-// callback — buttons stay JSON-serializable (no function refs).
+// Button action registry (interim — folds into src/actions.ts in
+// build step 2). Buttons reference these by key via their
+// `onClickAction` list. Entities stay JSON-serializable.
 // ═══════════════════════════════════════════════════════════
 const buttonActions: Record<string, () => void> = {
-  'master-play': () => motionController.play(),
-  'master-pause': () => motionController.pause(),
+  'fn:master-play': () => motionController.play(),
+  'fn:master-pause': () => motionController.pause(),
 };
 
 function runButtonAction(key: string) {

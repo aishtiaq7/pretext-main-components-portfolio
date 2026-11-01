@@ -1,4 +1,6 @@
-import type { EntityDef, JitterType } from '../types'
+import type {
+  ActionKey, CameraSpec, EntityBehavior, EntityDef, GuardKey, JitterType, RevealSource,
+} from '../types'
 
 // ═══════════════════════════════════════════════════════════
 // Entity factories — one per category/variant. Each factory
@@ -30,7 +32,40 @@ type StyleOverrides = {
   style?: React.CSSProperties
 }
 
-type Positional = { id: string; x: number; y: number }
+// Reveal & click inputs — accepted by EVERY factory, all optional at the
+// call site. `normalizeBehavior` turns them into the required, fully-populated
+// `EntityBehavior` block so every emitted row has every column.
+// Single strings are accepted where lists are stored.
+type BehaviorInput = {
+  triggerId?: string
+  revealedBy?: RevealSource | RevealSource[]
+  clickable?: boolean
+  onClickAction?: ActionKey | ActionKey[]
+  enabledWhen?: GuardKey | null
+  onReveal?: ActionKey | ActionKey[]
+  camera?: CameraSpec | null
+  tabOrder?: number | null
+}
+
+function toList<T>(v: T | T[] | undefined, fallback: T[]): T[] {
+  if (v === undefined) return fallback
+  return Array.isArray(v) ? [...v] : [v]
+}
+
+export function normalizeBehavior(id: string, b: BehaviorInput): EntityBehavior {
+  return {
+    triggerId: b.triggerId ?? id,
+    revealedBy: toList(b.revealedBy, ['static']),
+    clickable: b.clickable ?? false,
+    onClickAction: toList(b.onClickAction, []),
+    enabledWhen: b.enabledWhen ?? null,
+    onReveal: toList(b.onReveal, []),
+    camera: b.camera ?? null,
+    tabOrder: b.tabOrder ?? null,
+  }
+}
+
+type Positional = { id: string; x: number; y: number } & BehaviorInput
 
 // ── Doodle (plain static label) ─────────────────────────────
 type DoodleInput = Positional & StyleOverrides & {
@@ -53,6 +88,7 @@ export function doodle(input: DoodleInput): EntityDef {
     jitter: 'none',
     pinned: input.pinned ?? true,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -78,6 +114,7 @@ export function reflowParagraph(input: ReflowInput): EntityDef {
     jitter: 'none',
     pinned: !draggable,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -99,6 +136,7 @@ export function accent(input: AccentInput): EntityDef {
     jitter: 'wobble',
     pinned: true,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -115,6 +153,7 @@ export function emojiAccent(input: AccentInput): EntityDef {
     jitter: 'none',
     pinned: true,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -136,6 +175,7 @@ export function watermark(input: WatermarkInput): EntityDef {
     jitter: 'pulse',
     pinned: true,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -166,6 +206,7 @@ export function image(input: ImageInput): EntityDef {
     pinned: input.pinned ?? true,
     blendMultiply: false,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -173,24 +214,21 @@ export function image(input: ImageInput): EntityDef {
 //   Renders with `<HandwrittenEntry>`, which replays pen strokes from a
 //   JSON file (produced by the ink-studio tool). Behaves like an image:
 //   pinned by default, no collision, no reflow. Sized via width/height.
+//   Whether it animates on load or waits for the chain is `revealedBy`:
+//     'load'            → draws itself on page load
+//     'manual'          → hidden until the legacy timeline calls play()
+//     'click:<id>' etc. → hidden until revealed by the chain
 type HandwritingInput = Positional & StyleOverrides & {
   src: string        // path to the JSON (usually under /handwriting/)
   width: number      // on-canvas pixel width
   // Optional. Omit to let the slot's height auto-derive from the JSON's
   // intrinsic aspect ratio at render time — preferred so the slot always
   // matches the drawing without per-file tuning. Set explicitly only when
-  // you need precise scene focus framing (the master timeline reads imgH
-  // to center the camera on the entity).
+  // you need precise camera framing (focus math reads imgH).
   height?: number
   pinned?: boolean
-  /** Replay the writing animation on mount (default: false → static). */
-  autoplay?: boolean
   /** Playback speed multiplier (default: 1). */
   playbackSpeed?: number
-  /** Register with the trigger registry so the master timeline can drive it. */
-  triggerId?: string
-  /** 'manual' keeps the entity hidden (visibility:hidden) until reveal/play. */
-  revealMode?: 'auto' | 'manual'
 }
 
 export function handwriting(input: HandwritingInput): EntityDef {
@@ -210,6 +248,7 @@ export function handwriting(input: HandwritingInput): EntityDef {
     imgW: width,
     imgH: height,
     ...rest,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -238,6 +277,7 @@ export function obstacle(input: ObstacleInput): EntityDef {
     obstacle: true,
     motionDraggable: motion,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -268,6 +308,7 @@ export function imageObstacle(input: ImageObstacleInput): EntityDef {
     obstacle: true,
     motionDraggable: motion,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
@@ -290,14 +331,16 @@ export function section(input: SectionInput): EntityDef {
     pinned: true,
     content: input.componentId,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }
 
 // ── Button (interactive SVG/raster button with state machine) ──
-//   Hover → optional pressSrc + scale. Click → fires `onClickAction`
-//   (resolved in App.tsx's buttonActions map) and locks into a one-shot
-//   post-click state. All visual states are optional asset swaps; when
-//   absent the button uses transform-only feedback (scale / filter).
+//   Hover → optional pressSrc + scale. Click → runs the shared
+//   `onClickAction` to-do list (e.g. ['fn:master-play']) and locks into a
+//   one-shot post-click state. All visual states are optional asset swaps;
+//   when absent the button uses transform-only feedback (scale / filter).
+//   Buttons are always clickable.
 type ButtonInput = Positional & StyleOverrides & {
   imgSrc: string
   imgW: number
@@ -310,7 +353,6 @@ type ButtonInput = Positional & StyleOverrides & {
   hoverFilter?: string
   hoverSound?: string
   clickSound?: string
-  onClickAction?: string
 }
 
 export function button(input: ButtonInput): EntityDef {
@@ -326,6 +368,7 @@ export function button(input: ButtonInput): EntityDef {
     jitter: 'none',
     pinned: true,
     ...input,
+    ...normalizeBehavior(input.id, { ...input, clickable: true }),
   }
 }
 
@@ -350,5 +393,6 @@ export function widget(input: WidgetInput): EntityDef {
     jitter: 'none',
     pinned: false,
     ...input,
+    ...normalizeBehavior(input.id, input),
   }
 }

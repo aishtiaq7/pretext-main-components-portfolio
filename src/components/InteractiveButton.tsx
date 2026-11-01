@@ -16,8 +16,8 @@ import { isMultiTouchActive } from "../store/gestures";
 //
 // Visual feedback uses framer-motion transforms by default; optional
 // asset swaps (hoverSrc/pressSrc/postClickSrc) take precedence when
-// provided. Click fires `onAction(actionKey)`, resolved by App.tsx's
-// buttonActions map.
+// provided. Click fires `onAction(key)` for every key in the entity's
+// `onClickAction` list (e.g. 'fn:master-play'), resolved by App.tsx.
 // ═══════════════════════════════════════════════════════════
 
 const DEFAULT_HOVER_FILTER = "drop-shadow(0 8px 14px rgba(0,0,0,0.35))";
@@ -151,7 +151,7 @@ export function InteractiveButton({ entity, x, y, onAction }: Props) {
       }
       clickedRef.current = true;
       setPhase("postClick");
-      if (entity.onClickAction) onAction(entity.onClickAction);
+      for (const key of entity.onClickAction) onAction(key);
     },
     [phase, entity.clickSound, entity.onClickAction, onAction],
   );

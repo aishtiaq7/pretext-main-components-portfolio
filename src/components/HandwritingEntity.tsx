@@ -9,6 +9,7 @@ import { getViewport } from '../store/viewport'
 import { isMultiTouchActive } from '../store/gestures'
 import { HandwrittenEntry, type HandwritingHandle } from './HandwrittenEntry'
 import { triggers } from '../store/triggers'
+import { isHiddenAtStart, loadSource } from '../entities/reveal'
 
 const PCT_TO_PX = CANVAS / 100  // 1% of canvas in px
 
@@ -205,7 +206,7 @@ function DefaultView(props: SharedViewProps & {
           src={entity.handwritingSrc}
           width={entity.imgW}
           height={entity.imgH}
-          autoplay={entity.autoplay}
+          autoplay={loadSource(entity) !== null}
           speed={entity.playbackSpeed}
         />
       ) : entity.imgSrc ? (
@@ -245,15 +246,15 @@ export function HandwritingEntity({
 }: Props) {
   const dragRef = useRef({ startX: 0, startY: 0, startElX: 0, startElY: 0, dragging: false })
 
-  // ── Master-timeline integration ──
-  // Only handwriting entities with a triggerId participate. The handle wraps
-  // the inner HandwrittenEntry ref + local "hidden" state, then registers
-  // with the trigger registry so MotionController can call .play() etc.
+  // ── Phone-book registration ──
+  // Every entity registers under its triggerId (defaults to id) so the
+  // timeline / reveal engine can call reveal/play/pause/reset on it by name.
+  // The handle wraps the inner HandwrittenEntry ref + local "hidden" state.
+  // An entity starts hidden when nothing in `revealedBy` shows it at startup.
   const hwRef = useRef<HandwritingHandle | null>(null)
-  const [hidden, setHidden] = useState<boolean>(entity.revealMode === 'manual')
+  const [hidden, setHidden] = useState<boolean>(() => isHiddenAtStart(entity))
 
   useEffect(() => {
-    if (!entity.triggerId) return
     const id = entity.triggerId
     triggers.register(id, {
       reveal: () => setHidden(false),
