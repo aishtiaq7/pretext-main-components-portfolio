@@ -39,6 +39,8 @@ export const fns: Record<string, (ctx: Ctx) => void> = {
   'master-play': () => motion.play(),
   'master-pause': () => motion.pause(),
   'start-over': () => motion.startOver(),
+  'sound-on': () => motion.setMuted(false),
+  'sound-off': () => motion.setMuted(true),
 }
 
 export const actions: Record<string, ActionFn> = {
@@ -70,6 +72,7 @@ export const actions: Record<string, ActionFn> = {
 export const guards: Record<string, GuardFn> = {
   after: (_ctx, id) => progress.hasPlayed(id),
   flag: (_ctx, name) => progress.hasFlag(name),
+  noflag: (_ctx, name) => !progress.hasFlag(name),   // either/or choices: set a flag on click, guard the rest with noflag
   zoomMin: (ctx, n) => ctx.viewport().zoom >= Number(n),
   once: (ctx) => !progress.hasClicked(ctx.triggerId),
 }

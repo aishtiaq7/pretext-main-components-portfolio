@@ -76,6 +76,7 @@ export function validateEntities(entities: readonly EntityDef[]): EntityProblem[
       const g = parseGuardKey(e.enabledWhen)
       if (!g) error(e.id, `enabledWhen "${e.enabledWhen}" has unknown kind "${parseKey(e.enabledWhen).kind}"`)
       else if (g.kind === 'after' && !exists(g.arg)) error(e.id, `enabledWhen "${e.enabledWhen}" points at unknown triggerId "${g.arg}"`)
+      else if ((g.kind === 'flag' || g.kind === 'noflag') && g.arg === '') error(e.id, `enabledWhen "${e.enabledWhen}" needs a flag name`)
       else if (g.kind === 'zoomMin' && !Number.isFinite(parseFloat(g.arg))) error(e.id, `enabledWhen "${e.enabledWhen}" needs a number`)
       else if (g.kind === 'once' && g.arg !== '') warn(e.id, `enabledWhen "once" takes no argument`)
     }

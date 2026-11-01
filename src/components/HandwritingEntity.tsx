@@ -213,7 +213,9 @@ function DefaultView(props: SharedViewProps & {
           src={entity.handwritingSrc}
           width={entity.imgW ?? undefined}
           height={entity.imgH ?? undefined}
-          autoplay={loadSource(entity)?.delayMs === 0}
+          // Draws itself on mount — unless this visitor already watched it
+          // finish (reload): then it shows up finished, like everything else.
+          autoplay={loadSource(entity)?.delayMs === 0 && !progress.hasPlayed(entity.triggerId)}
           speed={entity.playbackSpeed}
           clickable={entity.clickable}
           tabOrder={entity.tabOrder}

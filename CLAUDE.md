@@ -71,7 +71,9 @@ src/
 │   └── usePrefersReducedMotion.ts  # Accessibility media query hook
 ├── actions.ts               # Actions / guards / fns registries — ALL click behaviour lives here
 ├── router.ts                # Hash routing (#/freshpage1) — the only file that reads the URL
-├── notebooks/index.ts       # One { entities, pages } per route; App remounts the canvas per notebook
+├── notebooks/
+│   ├── index.ts             # One { entities, pages, initialView } per route; App remounts the canvas per notebook
+│   └── freshpage1.ts        # /#/freshpage1 content: welcome → sound choice → answer (ink in public/handwriting/fresh-page/)
 ├── motion/
 │   ├── reveal.ts            # Reveal engine: revealedBy → click / done / load, first wins, camera
 │   ├── MotionController.ts  # Transport: ▶ starts/resumes the chain, ❚❚ pauses, mute

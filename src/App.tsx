@@ -14,6 +14,7 @@ import {
   setZoomAndPan,
   resetViewport,
   subscribeViewport,
+  type ViewSpec,
 } from "./store/viewport";
 import { cameraMemory } from "./store/cameraMemory";
 import { setMultiTouchActive } from "./store/gestures";
@@ -69,6 +70,7 @@ export default function App() {
         notebookId={notebook.id}
         entities={notebook.entities}
         pages={notebook.pages}
+        initialView={notebook.initialView}
       />
     </>
   );
@@ -78,9 +80,10 @@ type NotebookCanvasProps = {
   notebookId: string;
   entities: EntityDef[];
   pages: PageDef[];
+  initialView?: ViewSpec;
 };
 
-function NotebookCanvas({ notebookId, entities, pages }: NotebookCanvasProps) {
+function NotebookCanvas({ notebookId, entities, pages, initialView }: NotebookCanvasProps) {
   // Viewport transform is applied imperatively by ZoomCanvas, so this
   // component does not subscribe to zoom/pan. Drag handlers read
   // getViewport() at the use site.
@@ -91,7 +94,7 @@ function NotebookCanvas({ notebookId, entities, pages }: NotebookCanvasProps) {
   useEffect(() => {
     const saved = cameraMemory.load(notebookId);
     if (saved) setZoomAndPan(saved.zoom, saved.panX, saved.panY);
-    else resetViewport();
+    else resetViewport(initialView);
     motion.reset();
     const unsubscribe = subscribeViewport(() => cameraMemory.save(notebookId, getViewport()));
     const flush = () => cameraMemory.flush();
@@ -101,7 +104,7 @@ function NotebookCanvas({ notebookId, entities, pages }: NotebookCanvasProps) {
       window.removeEventListener("pagehide", flush);
       cameraMemory.flush();
     };
-  }, [notebookId]);
+  }, [notebookId, initialView]);
 
   // Entity positions (doodles + obstacles + accents + watermarks + images + sections)
   const [positions, setPositions] = useState<

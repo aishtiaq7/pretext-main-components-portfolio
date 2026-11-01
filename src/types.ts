@@ -98,7 +98,7 @@ export type ActionKey = string
 
 /**
  * A rule checked before a click's to-do list runs.
- *   'after:<triggerId>' | 'flag:<name>' | 'zoomMin:<n>' | 'once'
+ *   'after:<triggerId>' | 'flag:<name>' | 'noflag:<name>' | 'zoomMin:<n>' | 'once'
  */
 export type GuardKey = string
 

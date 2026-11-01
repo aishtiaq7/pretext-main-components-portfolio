@@ -18,7 +18,7 @@ export type ParsedSource =
 export type ParsedKey = { kind: string; arg: string }
 
 export const ACTION_KINDS = ['trigger', 'link', 'pan', 'sfx', 'fn', 'set'] as const
-export const GUARD_KINDS = ['after', 'flag', 'zoomMin', 'once'] as const
+export const GUARD_KINDS = ['after', 'flag', 'noflag', 'zoomMin', 'once'] as const
 export const SOURCE_KINDS = ['static', 'load', 'manual', 'click', 'done'] as const
 
 // Trailing "+3s" / "+250ms" / "+ 1.5 s" on a source string.

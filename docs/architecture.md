@@ -94,6 +94,8 @@ An entity may list several. The first to fire reveals it and cancels the rest.
 ```
 'after:<triggerId>'      only once that entity has finished drawing
 'flag:<name>'            only when the visitor-progress flag is set
+'noflag:<name>'          only while the flag is NOT set (either/or choices: every option
+                         sets the flag on click and is guarded by noflag of the same name)
 'zoomMin:<n>'            only when viewport zoom >= n
 'once'                   only the first click on this entity
 ```
@@ -152,10 +154,13 @@ become instant cuts. Jitter is already disabled.
 
 - Hash routing: `/#/freshpage1`. `src/router.ts` is the only place that reads the
   URL (`currentRoute`, `useRoute`, `href`, `navigate`).
-- A notebook is `{ id, path, title, entities, pages }` in `src/notebooks/index.ts`.
-  Home is today's `ENTITIES` and `PAGES`; `freshpage1` starts with only the
-  header-zone drag blocker. `App` renders `TopHeader` (one link per notebook) and
-  `<NotebookCanvas key={notebook.id}>`, so a route change remounts the canvas.
+- A notebook is `{ id, path, title, entities, pages, initialView? }` in
+  `src/notebooks/index.ts`. Home is today's `ENTITIES` and `PAGES`; `freshpage1`
+  (`src/notebooks/freshpage1.ts`) holds the journal's opening choice: a welcome
+  that draws on load, two choices revealed by `done:`, one answer per choice. `App`
+  renders `TopHeader` (one link per notebook) and `<NotebookCanvas key={notebook.id}>`,
+  so a route change remounts the canvas. `initialView` is where the camera opens on
+  a first visit; afterwards camera memory wins.
 - **Canvas state** (positions, pins, phone book) resets per notebook.
 - **Camera** (zoom, pan) is remembered per notebook in localStorage
   (`store/cameraMemory.ts`, debounced) so a reload lands on the same spot.
@@ -170,6 +175,9 @@ The notebook is explore-and-reveal: what the visitor has uncovered stays uncover
 - When a notebook mounts, the reveal engine restores everything in that set
   **silently**: finished ink, clickable at once, no camera move, no sound, no
   `done:` event, no `onReveal` list.
+- A `'load'` drawing the visitor has already watched to the end (`progress.played`)
+  mounts finished instead of replaying. Reload mid-drawing and it replays, which
+  is what you would expect.
 - After a restore the story waits for the visitor's next click. The one exception:
   a child whose only sources are `done:` timers (no `click:` at all) is re-armed,
   so a pure auto-advance sequence still completes.

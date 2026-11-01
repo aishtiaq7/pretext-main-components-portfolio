@@ -256,13 +256,14 @@ export function setPanY(y: number) {
   emit()
 }
 
-/** Back to the initial view (INITIAL_VIEW). Used when a notebook mounts. */
-export function resetViewport() {
+/** A camera described by the canvas-% point under the viewport centre and a zoom. */
+export type ViewSpec = { focusX: number; focusY: number; zoom: number }
+
+/** Back to an initial view (default: constants.INITIAL_VIEW). Used when a notebook mounts. */
+export function resetViewport(view: ViewSpec = INITIAL_VIEW) {
   cancelZoomSpring()
-  state = {
-    zoom: INITIAL_VIEW.zoom,
-    ...focusToPan(INITIAL_VIEW.focusX, INITIAL_VIEW.focusY, INITIAL_VIEW.zoom),
-  }
+  const z = clamp(view.zoom, MIN_ZOOM, MAX_ZOOM)
+  state = { zoom: z, ...focusToPan(view.focusX, view.focusY, z) }
   emit()
 }
 

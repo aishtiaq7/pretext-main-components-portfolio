@@ -75,6 +75,14 @@ describe('checkGuard', () => {
     expect(checkGuard('flag:secret', ctx())).toBe(true)
   })
 
+  it("'noflag:' makes an either/or choice: the first click wins, the rest are blocked", () => {
+    const a = handwriting({ id: 'a', x: 0, y: 0, width: 10, src: '/a.json', clickable: true, enabledWhen: 'noflag:chosen', onClickAction: 'set:chosen' })
+    const b = handwriting({ id: 'b', x: 0, y: 0, width: 10, src: '/b.json', clickable: true, enabledWhen: 'noflag:chosen', onClickAction: 'set:chosen' })
+    expect(activate(a, ctx({ triggerId: 'a' }))).toBe(true)
+    expect(activate(b, ctx({ triggerId: 'b' }))).toBe(false)
+    expect(activate(a, ctx({ triggerId: 'a' }))).toBe(false)
+  })
+
   it("'zoomMin:' compares against the live zoom", () => {
     expect(checkGuard('zoomMin:0.8', ctx({ viewport: () => ({ zoom: 0.5, panX: 0, panY: 0 }) }))).toBe(false)
     expect(checkGuard('zoomMin:0.8', ctx({ viewport: () => ({ zoom: 1.2, panX: 0, panY: 0 }) }))).toBe(true)
