@@ -162,7 +162,7 @@ check after each.
 - [x] 0. Docs of truth (this file, CLAUDE.md pointer, object-types.md section)
 - [x] 1. Schema + normalization: fields on `EntityDef`, factories emit full rows,
       handwriting entries move to `revealedBy`, startup validator + test
-- [ ] 2. Registries + progress store (`src/actions.ts`, `src/store/progress.ts`)
+- [x] 2. Registries + progress store (`src/actions.ts`, `src/store/progress.ts`)
 - [ ] 3. `HandwrittenEntry` rewrite: cached outlines, ref-driven loop, click on ink,
       keyboard behind `tabOrder`
 - [ ] 4. Reveal engine: click / done / load sources, first-wins, `onReveal`, `camera`.

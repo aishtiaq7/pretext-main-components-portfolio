@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { ENTITIES } from "./entities";
-import type { FixedRegion } from "./types";
+import type { EntityDef, FixedRegion } from "./types";
+import { activate, makeCtx } from "./actions";
 import { CANVAS, PAN_LIMIT } from "./constants";
 import {
   getViewport,
@@ -17,7 +18,6 @@ import { ZoomCanvas } from "./components/ZoomCanvas";
 import { HandwritingEntity } from "./components/HandwritingEntity";
 import { MotionObstacle } from "./components/MotionObstacle";
 import { InteractiveButton } from "./components/InteractiveButton";
-import { motion as motionController } from "./motion/MotionController";
 import { ScrollInputs } from "./components/ScrollInputs";
 import { PageWrapper } from "./components/PageWrapper";
 import { SectionPhotoGallery } from "./components/SectionPhotoGallery";
@@ -40,21 +40,8 @@ function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val));
 }
 
-// ═══════════════════════════════════════════════════════════
-// Button action registry (interim — folds into src/actions.ts in
-// build step 2). Buttons reference these by key via their
-// `onClickAction` list. Entities stay JSON-serializable.
-// ═══════════════════════════════════════════════════════════
-const buttonActions: Record<string, () => void> = {
-  'fn:master-play': () => motionController.play(),
-  'fn:master-pause': () => motionController.pause(),
-};
-
-function runButtonAction(key: string) {
-  const fn = buttonActions[key];
-  if (fn) fn();
-  else if (import.meta.env.DEV) console.warn(`[button] no action registered for "${key}"`);
-}
+// Click behaviour lives in src/actions.ts (registries keyed by string).
+// App only supplies the `panTo` capability, since it owns entity positions.
 
 export default function App() {
   // Viewport transform is applied imperatively by ZoomCanvas, so App does not
@@ -250,6 +237,24 @@ export default function App() {
       animRef.current = requestAnimationFrame(animate);
     },
     [positions],
+  );
+
+  // 'pan:<triggerId>' action → ease the camera to that entity.
+  const panToTrigger = useCallback(
+    (triggerId: string) => {
+      const target = ENTITIES.find((e) => e.triggerId === triggerId);
+      if (target) handleEntityClick(target.id);
+    },
+    [handleEntityClick],
+  );
+
+  // A click on a clickable entity (button today, ink from step 3):
+  // guard → to-do list → remember the click. See src/actions.ts.
+  const handleActivate = useCallback(
+    (entity: EntityDef) => {
+      activate(entity, makeCtx(entity, panToTrigger));
+    },
+    [panToTrigger],
   );
 
   // Wheel / trackpad gestures
@@ -525,7 +530,7 @@ export default function App() {
                   entity={entity}
                   x={pos.x}
                   y={pos.y}
-                  onAction={runButtonAction}
+                  onActivate={() => handleActivate(entity)}
                 />
               );
             }

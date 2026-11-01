@@ -69,8 +69,12 @@ src/
 ├── hooks/
 │   ├── useJitter.ts         # DOM-level animation (wobble, drift, pulse) via rAF
 │   └── usePrefersReducedMotion.ts  # Accessibility media query hook
+├── actions.ts               # Actions / guards / fns registries — ALL click behaviour lives here
 └── store/
-    └── viewport.ts          # Zoom/pan state via useSyncExternalStore
+    ├── viewport.ts          # Zoom/pan state via useSyncExternalStore
+    ├── triggers.ts          # Phone book: triggerId → live reveal/play/pause handle
+    ├── progress.ts          # Visitor progress (played, clicked, flags) — localStorage
+    └── gestures.ts          # Multi-touch flag shared with draggables
 public/
 ├── fonts/                   # Atkinson Hyperlegible, JetBrains Mono (self-hosted)
 ├── doodles/                 # SVG icons (pin, lightbulb, coffee, rocket, etc.)

@@ -16,8 +16,8 @@ import { isMultiTouchActive } from "../store/gestures";
 //
 // Visual feedback uses framer-motion transforms by default; optional
 // asset swaps (hoverSrc/pressSrc/postClickSrc) take precedence when
-// provided. Click fires `onAction(key)` for every key in the entity's
-// `onClickAction` list (e.g. 'fn:master-play'), resolved by App.tsx.
+// provided. Click calls `onActivate()`; App runs the entity's guard and
+// `onClickAction` to-do list through src/actions.ts.
 // ═══════════════════════════════════════════════════════════
 
 const DEFAULT_HOVER_FILTER = "drop-shadow(0 8px 14px rgba(0,0,0,0.35))";
@@ -26,7 +26,7 @@ type Props = {
   entity: EntityDef;
   x: number; // canvas %
   y: number; // canvas %
-  onAction: (actionKey: string) => void;
+  onActivate: () => void;
 };
 
 type Phase = "idle" | "hover" | "press" | "postClick";
@@ -78,7 +78,7 @@ function useSvg(src: string | undefined): SvgPayload | undefined {
   return isSvg && src ? svgCache.get(src) : undefined;
 }
 
-export function InteractiveButton({ entity, x, y, onAction }: Props) {
+export function InteractiveButton({ entity, x, y, onActivate }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   // One-shot lock — once true, button stays in postClick state forever.
   const clickedRef = useRef(false);
@@ -151,9 +151,9 @@ export function InteractiveButton({ entity, x, y, onAction }: Props) {
       }
       clickedRef.current = true;
       setPhase("postClick");
-      for (const key of entity.onClickAction) onAction(key);
+      onActivate();
     },
-    [phase, entity.clickSound, entity.onClickAction, onAction],
+    [phase, entity.clickSound, onActivate],
   );
 
   const handlePointerCancel = useCallback(() => {
