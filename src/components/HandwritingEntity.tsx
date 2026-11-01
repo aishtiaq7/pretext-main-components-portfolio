@@ -197,7 +197,7 @@ function DefaultView(props: SharedViewProps & {
         wordWrap: (!hasReflow && entity.maxWidth) ? 'break-word' : undefined,
         cursor: isDraggable ? 'grab' : 'default',
         // Manual-reveal entities stay laid out (no shift) but invisible
-        // and non-interactive until the master timeline reveals them.
+        // and non-interactive until the reveal engine reveals them.
         visibility: hidden ? 'hidden' : undefined,
         pointerEvents: hidden ? 'none' : undefined,
         ...entity.style,

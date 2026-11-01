@@ -10,10 +10,12 @@ Text reflows around obstacles in real-time. Deployed on Vercel via Git integrati
 - **Vite 8** — bundler & dev server
 - **Three.js 0.183** — 3D metallic cube demo (ThreeIntro component)
 - **@chenglou/pretext 0.0.3** — advanced text layout & reflow around obstacles
+- **perfect-freehand 1.2** — ink outlines for the handwriting player (`HandwrittenEntry`)
+- **GSAP 3** — camera tween on reveal (`motion/reveal.ts`)
+- **Framer Motion 12** — spring/hover/tap polish on `MotionObstacle` and `InteractiveButton`
 - **No CSS framework** — hand-written CSS in `src/index.css`, notebook aesthetic, Google Fonts
 
 ### Unused Dependencies (keep for now, do not remove)
-- **Framer Motion 12** — not actively used
 - **Lenis 1.3** — not actively used
 
 ### Unused Files (not in use, do not modify)
@@ -108,7 +110,8 @@ of every build session. Claude's own memory never holds architecture.
 - Conversion: `PCT_TO_PX = CANVAS / 100 = 80`
 
 ### Entity System (data-driven)
-7 categories defined in `src/entities/`, all rendered by `HandwritingEntity`:
+8 categories defined in `src/entities/`. `HandwritingEntity` renders all of them except
+buttons (`InteractiveButton`) and obstacles with `motionDraggable` (`MotionObstacle`):
 
 | Category   | Draggable | Animated     | Causes Reflow | Purpose                    |
 |------------|-----------|--------------|---------------|----------------------------|
@@ -117,8 +120,10 @@ of every build session. Claude's own memory never holds architecture.
 | watermark  | no        | pulse        | no            | Large faint background     |
 | obstacle   | yes       | no           | yes           | Red text, pushes text away |
 | image      | some      | drift        | some          | SVG doodles                |
+| image (handwriting) | no | draws itself | no          | Ink-studio JSON; the reveal chain |
 | section    | pinnable  | no           | no            | Photo galleries, about     |
 | widget     | on click  | no           | yes           | Large interactive blocks   |
+| button     | no        | hover/tap    | no            | Clickable SVG, runs an action list |
 
 **IMPORTANT — before creating or updating any instance, consult
 [object-types.md](./object-types.md).** It contains the decision tree, behavioral
@@ -169,8 +174,23 @@ Grammar and runtime in `docs/architecture.md` §3; per-type notes in `object-typ
 - Accessibility: focus-visible outlines, sr-only text, reduced motion support
 
 ## Deployment
-- **Vercel** via Git integration (zero-config, no vercel.json)
+- **Vercel** via Git integration (zero-config, no vercel.json). Every pushed branch gets a
+  Preview Deployment; previews sit behind Vercel Authentication unless disabled in the
+  project's Deployment Protection settings.
 - Build command: `tsc -b && vite build` -> `dist/`
+- Routing is hash-based (`/#/freshpage1`) so a refresh never 404s without a rewrite.
 
 ## Gotchas & Notes
-<!-- Add bugs, quirks, and gotchas here as you encounter them -->
+- **Testing a reload:** navigating to the same hash URL is a same-document navigation and
+  does NOT reload the page. Use the browser's refresh or `location.reload()`.
+- **triggerIds are global across notebooks.** Visitor progress is keyed by triggerId, so
+  keep them unique even between pages (prefix per notebook, e.g. `fp-`).
+- **localStorage keys:** `notebook.progress.v1` (revealed/played/clicked/flags),
+  `notebook.prefs.v1` (mute), `notebook.camera.v1` (zoom/pan per notebook). The ↺ button
+  clears progress and camera; it leaves prefs.
+- **Dev console hook:** `window.__notebook` = `{ revealEngine, triggers, progress, notebooks }`.
+- **Animation rule:** never drive per-frame motion through React state. Write to the DOM
+  through refs and let state follow (see `docs/architecture.md` §2, principle 4).
+- **Refs mirrored from props for event handlers** must be synced in `useLayoutEffect`, not
+  `useEffect`; a passive effect lags a frame and drags stutter.
+- `npm run lint` is clean across the repo (including `ink-studio/`); keep it that way.

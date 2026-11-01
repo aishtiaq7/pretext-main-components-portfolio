@@ -8,7 +8,7 @@ import { getPref } from '../store/prefs'
 // preference so the icon is right on first paint.
 // ═══════════════════════════════════════════════════════════
 
-export type MotionStatus = 'idle' | 'playing' | 'paused' | 'done'
+export type MotionStatus = 'idle' | 'playing' | 'paused'
 
 export type MotionState = {
   status: MotionStatus
