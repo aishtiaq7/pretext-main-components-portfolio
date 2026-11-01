@@ -2,10 +2,10 @@ import { motion } from '../motion/MotionController'
 import { useMotionState } from '../motion/motionStore'
 
 // ═══════════════════════════════════════════════════════════
-// TimelineControls — phase-1 master-timeline buttons.
-// Live inside ScrollInputs (the fixed minimap panel).
-// Plain text labels for now; will be swapped for handwriting-
-// entity buttons in phase 2.
+// TimelineControls — transport for the reveal chain, inside the
+// fixed minimap panel. ▶ starts the chain (same as clicking the
+// drawn Button) or resumes; ❚❚ freezes drawings, pending reveal
+// timers and audio; 🔇 is a persisted visitor preference.
 // ═══════════════════════════════════════════════════════════
 
 export function TimelineControls() {

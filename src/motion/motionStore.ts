@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from 'react'
+import { getPref } from '../store/prefs'
 
 // ═══════════════════════════════════════════════════════════
 // motionStore — reactive mirror of the MotionController.
-// Components subscribe to this for UI state (play button icon,
-// disabled state when scene done). Per-frame timeline progress
-// is NOT mirrored here — it's expensive and only the master
-// controls need it (which read it imperatively).
+// Components subscribe to this for UI state (play / pause icon,
+// mute icon). `muted` starts from the persisted visitor
+// preference so the icon is right on first paint.
 // ═══════════════════════════════════════════════════════════
 
 export type MotionStatus = 'idle' | 'playing' | 'paused' | 'done'
@@ -15,7 +15,7 @@ export type MotionState = {
   muted: boolean
 }
 
-let state: MotionState = { status: 'idle', muted: false }
+let state: MotionState = { status: 'idle', muted: getPref('muted') }
 const listeners = new Set<() => void>()
 
 function emit() {

@@ -70,10 +70,16 @@ src/
 │   ├── useJitter.ts         # DOM-level animation (wobble, drift, pulse) via rAF
 │   └── usePrefersReducedMotion.ts  # Accessibility media query hook
 ├── actions.ts               # Actions / guards / fns registries — ALL click behaviour lives here
+├── motion/
+│   ├── reveal.ts            # Reveal engine: revealedBy → click / done / load, first wins, camera
+│   ├── MotionController.ts  # Transport: ▶ starts/resumes the chain, ❚❚ pauses, mute
+│   └── motionStore.ts       # Reactive status/muted for TimelineControls
+├── audio/AudioController.ts # Single-bus SFX, prime-on-gesture, mute
 └── store/
     ├── viewport.ts          # Zoom/pan state via useSyncExternalStore
     ├── triggers.ts          # Phone book: triggerId → live reveal/play/pause handle
     ├── progress.ts          # Visitor progress (played, clicked, flags) — localStorage
+    ├── prefs.ts             # Visitor preferences (mute) — localStorage
     └── gestures.ts          # Multi-touch flag shared with draggables
 public/
 ├── fonts/                   # Atkinson Hyperlegible, JetBrains Mono (self-hosted)

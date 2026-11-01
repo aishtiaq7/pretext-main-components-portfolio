@@ -116,8 +116,9 @@ click on ink ──▶ finished? ──▶ guard ok? ──▶ for key of onClic
 | reveal engine | `src/motion/reveal.ts` (step 4) | indexes `revealedBy`, listens for click/done/load, first-wins, runs `onReveal`, camera |
 | actions & guards | `src/actions.ts` (step 2) | string key → function; `ctx` carries entityId, viewport, progress store, panTo |
 | progress store | `src/store/progress.ts` (step 2) | `played: Set<triggerId>`, `flags: Set<string>`; localStorage-backed; survives routes and reloads |
-| MotionController | `src/motion/MotionController.ts` | after step 5: camera pan on reveal + firing `done:`; mute preference |
-| scenes.ts | `src/motion/scenes.ts` | **to be deleted in step 5** once the three scenes live on their entities |
+| MotionController | `src/motion/MotionController.ts` | transport only: ▶ starts the chain (`revealEngine.onClicked('button-1')`) or resumes; ❚❚ pauses drawings, timers, audio; mute |
+| prefs | `src/store/prefs.ts` | visitor preferences (mute), localStorage-backed; distinct from progress and from canvas state |
+| ~~scenes.ts~~ | deleted in step 5 | order, camera, sound and holds now live on the entities |
 
 ## 4. Rendering pipeline
 
@@ -168,7 +169,7 @@ check after each.
       keyboard behind `tabOrder`
 - [x] 4. Reveal engine: click / done / load sources, first-wins, `onReveal`, `camera`.
       Play button wired as `click:button-1`. `scenes.ts` untouched (legacy ▶ only)
-- [ ] 5. Migrate the three scenes onto entities, delete `scenes.ts`, shrink
+- [x] 5. Migrate the three scenes onto entities, delete `scenes.ts`, shrink
       MotionController, mute persists
 - [ ] 6. Routes: `currentRoute()`, notebook config per route, empty `freshpage1`,
       header links, canvas state reset per notebook
@@ -213,8 +214,10 @@ handwriting({
 | `src/entities/reveal.ts` | parse `revealedBy` strings into structured sources |
 | `src/entities/validate.ts` | startup validator (DEV) and test helper |
 | `src/actions.ts` | actions + guards registries, `Ctx` |
-| `src/store/progress.ts` | persisted `played` + flags |
+| `src/store/progress.ts` | persisted `played` + `clicked` + flags |
+| `src/store/prefs.ts` | persisted visitor preferences (mute) |
 | `src/motion/reveal.ts` | reveal engine |
+| `src/motion/MotionController.ts` | transport (play / pause / mute); `scenes.ts` deleted |
 | `src/components/HandwrittenEntry.tsx` | rewritten loop + click on ink |
 | `src/router.ts`, `src/notebooks/` | hash route reader, notebook configs |
 | `tests/entities-validate.test.ts` | validator runs against the real entity list |

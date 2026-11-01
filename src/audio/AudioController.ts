@@ -8,11 +8,14 @@
 // records when it's been "unlocked" so callers/UI can branch.
 // ═══════════════════════════════════════════════════════════
 
+import { getPref, setPref } from '../store/prefs'
+
 type Listener = () => void
 
 const tracks = new Map<string, HTMLAudioElement>()
 const listeners = new Set<Listener>()
-let muted = false
+// Mute is a visitor preference: it survives notebooks and reloads.
+let muted = getPref('muted')
 let unlocked = false
 
 function emit() {
@@ -42,6 +45,7 @@ export const audio = {
   setMuted(next: boolean) {
     if (muted === next) return
     muted = next
+    setPref('muted', next)
     if (muted) {
       for (const el of tracks.values()) el.pause()
     }
