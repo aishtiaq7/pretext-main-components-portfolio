@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { ENTITIES } from "./entities";
 import type { EntityDef, FixedRegion } from "./types";
 import { activate, makeCtx } from "./actions";
 import { revealEngine } from "./motion/reveal";
+import { motion } from "./motion/MotionController";
 import { CANVAS, PAN_LIMIT } from "./constants";
 import {
   getViewport,
@@ -12,6 +12,7 @@ import {
   setPanRubber,
   settlePan,
   setZoomAndPan,
+  resetViewport,
 } from "./store/viewport";
 import { setMultiTouchActive } from "./store/gestures";
 import { TopHeader } from "./components/TopHeader";
@@ -24,7 +25,9 @@ import { PageWrapper } from "./components/PageWrapper";
 import { SectionPhotoGallery } from "./components/SectionPhotoGallery";
 import { SectionAbout } from "./components/SectionAbout";
 import type { MinimapShape } from "./components/ScrollInputs";
-import { PAGES } from "./pages";
+import type { PageDef } from "./components/PageWrapper";
+import { NOTEBOOKS, getNotebook } from "./notebooks";
+import { useRoute } from "./router";
 import { getWidgetSize, pxToPct } from "./entities/sizes";
 import {
   collectPageRegions,
@@ -36,31 +39,67 @@ import {
 // Page definitions live in `src/pages/index.tsx` — each page carries its own
 // render function so this file stays focused on canvas behavior.
 // Entity sizing lives in `src/entities/sizes.ts`.
+// Notebooks (one canvas per route) live in `src/notebooks/index.ts`.
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val));
 }
 
 // Click behaviour lives in src/actions.ts (registries keyed by string).
-// App only supplies the `panTo` capability, since it owns entity positions.
+// The canvas only supplies the `panTo` capability, since it owns positions.
 
+/**
+ * App = header + the notebook for the current route. The canvas is keyed by
+ * notebook id, so switching routes unmounts the old canvas and mounts a fresh
+ * one: positions, pins, zoom, the phone book and the reveal engine all reset.
+ * Visitor preferences (mute) and progress (played / clicked / flags) live in
+ * their own stores and persist across notebooks.
+ */
 export default function App() {
-  // Viewport transform is applied imperatively by ZoomCanvas, so App does not
-  // subscribe to zoom/pan. Drag handlers read getViewport() at the use site.
+  const route = useRoute();
+  const notebook = getNotebook(route);
+  return (
+    <>
+      <div className="page-bg" />
+      <TopHeader notebooks={NOTEBOOKS} current={notebook.path} />
+      <NotebookCanvas
+        key={notebook.id}
+        entities={notebook.entities}
+        pages={notebook.pages}
+      />
+    </>
+  );
+}
+
+type NotebookCanvasProps = {
+  entities: EntityDef[];
+  pages: PageDef[];
+};
+
+function NotebookCanvas({ entities, pages }: NotebookCanvasProps) {
+  // Viewport transform is applied imperatively by ZoomCanvas, so this
+  // component does not subscribe to zoom/pan. Drag handlers read
+  // getViewport() at the use site.
+
+  // A notebook mounts: fresh camera, chain can be started from ▶ again.
+  useEffect(() => {
+    resetViewport();
+    motion.reset();
+  }, []);
 
   // Entity positions (doodles + obstacles + accents + watermarks + images + sections)
   const [positions, setPositions] = useState<
     Record<string, { x: number; y: number }>
   >(() => {
     const pos: Record<string, { x: number; y: number }> = {};
-    for (const e of ENTITIES) pos[e.id] = { x: e.x, y: e.y };
+    for (const e of entities) pos[e.id] = { x: e.x, y: e.y };
     return pos;
   });
 
   // Pinned state — initialized from entity definitions
   const [pinnedState] = useState<Record<string, boolean>>(() => {
     const state: Record<string, boolean> = {};
-    for (const e of ENTITIES) {
+    for (const e of entities) {
       if (e.pinned !== undefined) state[e.id] = e.pinned;
     }
     return state;
@@ -81,23 +120,23 @@ export default function App() {
     Record<string, { x: number; y: number }>
   >(() => {
     const pos: Record<string, { x: number; y: number }> = {};
-    for (const p of PAGES) pos[p.id] = { x: p.x, y: p.y };
+    for (const p of pages) pos[p.id] = { x: p.x, y: p.y };
     return pos;
   });
 
   // Page frames — pages + anything the registry says is a page-region
   // (sections, active widget). Entities bump into these.
   const pageRegions: FixedRegion[] = useMemo(() => {
-    const regions: FixedRegion[] = PAGES.map((p) => ({
+    const regions: FixedRegion[] = pages.map((p) => ({
       id: p.id,
       x: pagePositions[p.id]?.x ?? p.x,
       y: pagePositions[p.id]?.y ?? p.y,
       w: pxToPct(p.width),
       h: pxToPct(p.height),
     }));
-    regions.push(...collectPageRegions(ENTITIES, positions, activeWidget));
+    regions.push(...collectPageRegions(entities, positions, activeWidget));
     return regions;
-  }, [pagePositions, positions, activeWidget]);
+  }, [pages, entities, pagePositions, positions, activeWidget]);
 
   // Extended collision list — pages-only. Pages bump into:
   //   • everything in `pageRegions` (other pages, sections, widgets)
@@ -106,15 +145,15 @@ export default function App() {
   const pageCollisionRegions: FixedRegion[] = useMemo(
     () => [
       ...pageRegions,
-      ...collectExtendedColliders(ENTITIES, positions, activeWidget),
+      ...collectExtendedColliders(entities, positions, activeWidget),
     ],
-    [pageRegions, positions, activeWidget],
+    [entities, pageRegions, positions, activeWidget],
   );
 
   // Minimap: pages (in declared order, skipping the invisible drag-blocker)
   // followed by entity shapes the registry tagged with a minimapType.
   const minimapShapes = useMemo<MinimapShape[]>(() => {
-    const shapes: MinimapShape[] = PAGES.filter(
+    const shapes: MinimapShape[] = pages.filter(
       (p) => p.id !== "header-zone",
     ).map((p) => {
       const pos = pagePositions[p.id] ?? { x: p.x, y: p.y };
@@ -127,14 +166,14 @@ export default function App() {
         h: p.height,
       };
     });
-    shapes.push(...collectMinimapShapes(ENTITIES, positions));
+    shapes.push(...collectMinimapShapes(entities, positions));
     return shapes;
-  }, [pagePositions, positions]);
+  }, [pages, entities, pagePositions, positions]);
 
   // Obstacle rects for text reflow (rotation-adjusted AABB, capsule-shaped carve).
   const obstacleRects = useMemo(
-    () => collectObstacleRects(ENTITIES, positions),
-    [positions],
+    () => collectObstacleRects(entities, positions),
+    [entities, positions],
   );
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -154,7 +193,7 @@ export default function App() {
 
         // If this is the active widget, push overlapping entities out of the way.
         // Size comes from the registry via the entity definition, not a hardcoded map.
-        const widgetEntity = ENTITIES.find(
+        const widgetEntity = entities.find(
           (e) => e.id === id && e.category === "widget",
         );
         if (widgetEntity && activeWidgetRef.current === id) {
@@ -163,7 +202,7 @@ export default function App() {
           const wH = pxToPct(widgetSize.h);
           const margin = 0.3; // canvas %
 
-          for (const e of ENTITIES) {
+          for (const e of entities) {
             if (e.id === id || e.category === "widget") continue;
             const ePos = next[e.id] || { x: e.x, y: e.y };
             if (
@@ -190,7 +229,7 @@ export default function App() {
         return next;
       });
     },
-    [],
+    [entities],
   );
 
   const handlePagePositionChange = useCallback(
@@ -245,10 +284,10 @@ export default function App() {
   // not re-initialised every time an entity is dragged.
   const panToTrigger = useCallback(
     (triggerId: string) => {
-      const target = ENTITIES.find((e) => e.triggerId === triggerId);
+      const target = entities.find((e) => e.triggerId === triggerId);
       if (target) handleEntityClick(target.id);
     },
-    [handleEntityClick],
+    [entities, handleEntityClick],
   );
   const panToRef = useRef(panToTrigger);
   useEffect(() => { panToRef.current = panToTrigger; }, [panToTrigger]);
@@ -256,9 +295,9 @@ export default function App() {
 
   // Reveal engine: indexes `revealedBy`, fires on click / done / load.
   useEffect(() => {
-    revealEngine.init(ENTITIES, { panTo: stablePanTo });
+    revealEngine.init(entities, { panTo: stablePanTo });
     return () => revealEngine.dispose();
-  }, [stablePanTo]);
+  }, [entities, stablePanTo]);
 
   // A click on a clickable entity (button or finished ink):
   // guard → to-do list → remember the click → reveal whatever waits on it.
@@ -512,18 +551,15 @@ export default function App() {
   // Merge runtime pinned state into entities for rendering
   const entitiesWithPinState = useMemo(
     () =>
-      ENTITIES.map((e) => ({
+      entities.map((e) => ({
         ...e,
         pinned: pinnedState[e.id] ?? e.pinned ?? false,
       })),
-    [pinnedState],
+    [entities, pinnedState],
   );
 
   return (
     <>
-      <div className="page-bg" />
-      <TopHeader />
-
       <div
         ref={viewportRef}
         className="zoom-viewport"
@@ -590,7 +626,7 @@ export default function App() {
           })}
 
           {/* ── Pages (z-index 50, siblings of entities) ── */}
-          {PAGES.map((page) => {
+          {pages.map((page) => {
             const pos = pagePositions[page.id] || { x: page.x, y: page.y };
             return (
               <PageWrapper

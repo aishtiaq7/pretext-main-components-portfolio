@@ -145,13 +145,14 @@ Two-finger gestures never click.
 Reduced motion: the ink animation **always plays** (it is the content). Camera pans
 become instant cuts. Jitter is already disabled.
 
-## 5. Notebooks and routes (step 6)
+## 5. Notebooks and routes
 
-- Hash routing: `/#/freshpage1`. `currentRoute()` is the only place that reads the
-  URL.
-- A notebook is `{ entities, pages }` keyed by route. Home is today's `ENTITIES` and
-  `PAGES`; `freshpage1` starts empty. `TopHeader` stays outside the switch and shows
-  one link per notebook.
+- Hash routing: `/#/freshpage1`. `src/router.ts` is the only place that reads the
+  URL (`currentRoute`, `useRoute`, `href`, `navigate`).
+- A notebook is `{ id, path, title, entities, pages }` in `src/notebooks/index.ts`.
+  Home is today's `ENTITIES` and `PAGES`; `freshpage1` starts with only the
+  header-zone drag blocker. `App` renders `TopHeader` (one link per notebook) and
+  `<NotebookCanvas key={notebook.id}>`, so a route change remounts the canvas.
 - **Canvas state** (zoom, pan, positions, pins, phone book) resets per notebook.
 - **Visitor preferences** (mute) and **visitor progress** (`played`, flags) persist
   across notebooks and reloads in localStorage.
@@ -171,7 +172,7 @@ check after each.
       Play button wired as `click:button-1`. `scenes.ts` untouched (legacy ▶ only)
 - [x] 5. Migrate the three scenes onto entities, delete `scenes.ts`, shrink
       MotionController, mute persists
-- [ ] 6. Routes: `currentRoute()`, notebook config per route, empty `freshpage1`,
+- [x] 6. Routes: `currentRoute()`, notebook config per route, empty `freshpage1`,
       header links, canvas state reset per notebook
 - [ ] 7. Follow-up: legacy optional-field normalization sweep, 60 fps check while a
       drawing animates and the camera pans
@@ -179,7 +180,7 @@ check after each.
 ## 6b. Dev aids
 
 - `npm run dev` validates the entity list on startup and prints problems to the console.
-- In dev the browser exposes `window.__notebook` = `{ revealEngine, triggers, progress, entities }`.
+- In dev the browser exposes `window.__notebook` = `{ revealEngine, triggers, progress, notebooks }`.
   Useful while testing a chain: `__notebook.revealEngine.pauseAll()` freezes pending
   `done:`/`load:` timers, `__notebook.triggers.play('welcome-2')` reveals by hand,
   `__notebook.progress.reset()` forgets what the visitor reached.

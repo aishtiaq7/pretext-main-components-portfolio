@@ -25,6 +25,12 @@ export const CHAIN_START = 'button-1'
 class MotionController {
   private started = false
 
+  /** A notebook mounted: the chain can be started again from ▶. */
+  reset() {
+    this.started = false
+    motionStore.set({ status: 'idle' })
+  }
+
   /** Start the chain, or resume from a pause. */
   play() {
     const { status } = motionStore.get()

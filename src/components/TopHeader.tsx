@@ -1,9 +1,30 @@
-export function TopHeader() {
+import { href, type RoutePath } from '../router'
+import type { Notebook } from '../notebooks'
+
+type Props = {
+  notebooks: Notebook[]
+  current: RoutePath
+}
+
+export function TopHeader({ notebooks, current }: Props) {
   return (
     <header className="top-header">
       <div className="top-header-left">
         <img src="/mica-wizard.svg" alt="" className="top-header-logo" />
         <span className="top-header-name">Awshaf Ishtiaque</span>
+        {notebooks.length > 1 && (
+          <nav className="top-header-nav" aria-label="Notebooks">
+            {notebooks.map((n) => (
+              <a
+                key={n.id}
+                href={href(n.path)}
+                aria-current={n.path === current ? 'page' : undefined}
+              >
+                {n.title}
+              </a>
+            ))}
+          </nav>
+        )}
       </div>
       <div className="top-header-right">
         <a

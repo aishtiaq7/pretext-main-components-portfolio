@@ -256,6 +256,16 @@ export function setPanY(y: number) {
   emit()
 }
 
+/** Back to the initial view (INITIAL_VIEW). Used when a notebook mounts. */
+export function resetViewport() {
+  cancelZoomSpring()
+  state = {
+    zoom: INITIAL_VIEW.zoom,
+    ...focusToPan(INITIAL_VIEW.focusX, INITIAL_VIEW.focusY, INITIAL_VIEW.zoom),
+  }
+  emit()
+}
+
 /**
  * Jump the viewport so the given canvas-% point lands under the viewport
  * center. Optional `zoom` changes the zoom too; otherwise current zoom is kept.
